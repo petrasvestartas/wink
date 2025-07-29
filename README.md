@@ -12,6 +12,24 @@ cargo run
 
 ## Web
 
+### Setup (one-time)
+
+1. **Install wasm-pack**:
+   ```bash
+   cargo install wasm-pack
+   ```
+
+2. **Setup VuePress**:
+   ```bash
+   mkdir docs && cd docs
+   npm init -y
+   npm install vuepress@next @vuepress/client @vuepress/bundler-vite @vuepress/theme-default
+   ```
+
+3. **Create required files** (see detailed examples below)
+
+### Usage
+
 Build WASM and run VuePress dev server:
 
 ```bash
