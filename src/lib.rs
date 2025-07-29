@@ -165,6 +165,7 @@ impl State{
         // Clearing the screen.
         // We need to use the encoder to create a RenderPass.
         // The RenderPass has all the methods for the actual drawing.
+        {
         let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -184,10 +185,8 @@ impl State{
             occlusion_query_set: None,
             timestamp_writes: None,
         });
+        }
 
-        drop(_render_pass);
-        
-    
         // submit will accept anything that implements IntoIter
         self.queue.submit(iter::once(encoder.finish()));
         output.present();
