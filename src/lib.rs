@@ -20,6 +20,8 @@ pub struct State {
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     is_surface_configured: bool,
+    // Shader pipeline
+    render_pipeline: wgpu::RenderPipeline,
     // default pointer to the window
     window: Arc<Window>,
 }
@@ -108,7 +110,73 @@ impl State{
             view_formats: vec![],
             desired_maximum_frame_latency: 2,
         };
-     
+
+        // Pipeline. We will have to load shaders, as the render pipileline require them.
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
+        });
+
+        // Pipeline layout
+        let render_pipeline_layout =
+        device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("Render Pipeline Layout"),
+            bind_group_layouts: &[],
+            push_constant_ranges: &[],
+        });
+
+        // Pipeline for rendering
+        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Render Pipeline"),
+            layout: Some(&render_pipeline_layout),
+            
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vs_main"), // 1. vertex entry point
+                buffers: &[], // 2. tells wgpu that type of vetices we want to pass to vertex shader
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            },
+
+            fragment: Some(wgpu::FragmentState { // 3. This is optional so we wrap to Some(), we need it for colors
+                module: &shader,
+                entry_point: Some("fs_main"), // 1. fragment entry point
+                targets: &[Some(wgpu::ColorTargetState { // 4. tells wgpu what color outputs it should set up
+                    format: config.format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            }),
+
+            // The primitive field describes how to interpret our vertices when converting them into triangles.
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList, // Means that every three verties will correspond to one triangle.
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw, // CounterClockWise is facing forward, cw are culled
+                cull_mode: Some(wgpu::Face::Back), // Cull back faces
+                // Setting this to anything other than Fill requires Features::POLYGON_MODE_LINE
+                // or Features::POLYGON_MODE_POINT
+                polygon_mode: wgpu::PolygonMode::Fill,
+                // Requires Features::DEPTH_CLIP_CONTROL
+                unclipped_depth: false,
+                // Requires Features::CONSERVATIVE_RASTERIZATION
+                conservative: false,
+            },
+
+            // We are not using a depth/stencil buffer currently
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState {
+                count: 1, // Determines how many samples the pipeline will use
+                mask: !0, // Specifies which samples should be active, here we use all
+                alpha_to_coverage_enabled: false, // related to multisampling which is not used here
+            },
+            // If the pipeline will be used with a multiview render pass, this
+            // indicates how many array layers the attachments will have.
+            multiview: None,
+            // Useful for optimizing shader compilation on Android
+            cache: None,
+        });
+        
 
 
         // Now that we configured our render surface.
@@ -119,6 +187,7 @@ impl State{
             queue,
             config,
             is_surface_configured: false,
+            render_pipeline,
             window,
         })
     }
@@ -165,29 +234,35 @@ impl State{
         // Clearing the screen.
         // We need to use the encoder to create a RenderPass.
         // The RenderPass has all the methods for the actual drawing.
+        // The render method via shaders will draw the geometry.
         {
-        let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Render Pass"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &view, // informs wgpu what texture to save the colors to. In this case we specified view that we created using surface.get_current_texture().
-                resolve_target: None, // the texture that will receiv the resolved output, will the same as view unless multisampling is requeired
-                ops: wgpu::Operations { // clear previous screen with a color
-                    load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: 0.9,
-                        g: 0.9,
-                        b: 0.9,
-                        a: 1.0,
-                    }),
-                    store: wgpu::StoreOp::Store, // store the colors to the texture 
-                },
-            })],
-            depth_stencil_attachment: None,
-            occlusion_query_set: None,
-            timestamp_writes: None,
-        });
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Render Pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: 0.9,
+                            g: 0.9,
+                            b: 0.9,
+                            a: 1.0,
+                        }),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                occlusion_query_set: None,
+                timestamp_writes: None,
+            });
+
+            // We set the the pipeline on the render_pass using the one we created for shader.
+            render_pass.set_pipeline(&self.render_pipeline);
+            // We tell wgpu to draw something with three vertices and one instance. 
+            // This is where @builtin(vertex_index) comes from.
+            render_pass.draw(0..3, 0..1);
         }
 
-        // submit will accept anything that implements IntoIter
         self.queue.submit(iter::once(encoder.finish()));
         output.present();
     
