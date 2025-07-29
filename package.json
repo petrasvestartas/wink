@@ -1,0 +1,14 @@
+{
+  "name": "wink",
+  "version": "1.0.0",
+  "description": "Rust wgpu viewer with WASM and VuePress integration",
+  "scripts": {
+    "build-wasm": "wasm-pack build --target web",
+    "dev": "npm run build-wasm && cd docs && npm run docs:dev",
+    "build": "npm run build-wasm && cd docs && npm run docs:build",
+    "rebuild": "npm run build-wasm && cd docs && npm run copy-wasm"
+  },
+  "keywords": ["rust", "wasm", "wgpu", "viewer"],
+  "author": "petrasvestartas",
+  "license": "MIT"
+}

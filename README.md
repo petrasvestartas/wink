@@ -7,11 +7,26 @@ Wink is a Rust library for wgpu viewer.
 ```bash
 cargo check
 cargo build
+cargo run
 ```
 
 ## Web
 
-## Create pkg/demo.js
+Build WASM and run VuePress dev server:
+
+```bash
+npm run dev
+```
+
+Rebuild WASM after Rust changes in another terminal:
+
+```bash
+npm run rebuild
+```
+
+Access at `http://localhost:8080`
+
+### Create pkg/demo.js
 
 ```javascript
 import init, { run_web } from './wink.js';
@@ -301,8 +316,3 @@ npm run docs:dev
 
 This should start a development server at http://localhost:8080 where you can test your WASM integration.
 Would you like me to help you create these files step by step? We can start with the basic setup and then test the WASM integration!
-
-
-
-
-

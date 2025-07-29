@@ -2,9 +2,14 @@
 /target/
 Cargo.lock
 
-# WASM build output
-/pkg/
-*.wasm
+# WASM build output (auto-generated files only)
+/pkg/wink.js
+/pkg/wink_bg.wasm
+/pkg/wink_bg.wasm.d.ts
+/pkg/wink.d.ts
+/pkg/package.json
+/pkg/.gitignore
+/pkg/README.md
 
 # VuePress
 docs/node_modules/

@@ -20,13 +20,5 @@ export default defineUserConfig({
     ],
   }),
   
-  bundler: viteBundler({
-    viteOptions: {
-      server: {
-        fs: {
-          allow: ['..']  // Allow access to parent directory for WASM files
-        }
-      }
-    }
-  }),
+  bundler: viteBundler(),
 })

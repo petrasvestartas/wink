@@ -34,9 +34,10 @@
     },
     data() {
       return {
-        error: "",
-        loading: false,
         demoStarted: false,
+        loading: false,
+        error: "",
+        autoLoad: true, // Auto-load the demo on page load
       };
     },
     methods: {
@@ -45,8 +46,18 @@
         this.error = "";
         
         try {
-          // Import the demo.js file from your pkg directory
-          await import('../../pkg/demo.js');
+          // Load the demo.js file using script tag approach since it's in /public
+          const script = document.createElement('script');
+          script.type = 'module';
+          script.src = '/wasm/demo.js';
+          
+          // Wait for script to load
+          await new Promise((resolve, reject) => {
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+          });
+          
           this.demoStarted = true;
         } catch (e) {
           this.error = `Failed to load WASM demo: ${e.message}`;
