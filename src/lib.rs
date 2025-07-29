@@ -169,16 +169,16 @@ impl State{
         let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &view,
-                resolve_target: None,
-                ops: wgpu::Operations {
+                view: &view, // informs wgpu what texture to save the colors to. In this case we specified view that we created using surface.get_current_texture().
+                resolve_target: None, // the texture that will receiv the resolved output, will the same as view unless multisampling is requeired
+                ops: wgpu::Operations { // clear previous screen with a color
                     load: wgpu::LoadOp::Clear(wgpu::Color {
                         r: 0.9,
                         g: 0.9,
                         b: 0.9,
                         a: 1.0,
                     }),
-                    store: wgpu::StoreOp::Store,
+                    store: wgpu::StoreOp::Store, // store the colors to the texture 
                 },
             })],
             depth_stencil_attachment: None,
