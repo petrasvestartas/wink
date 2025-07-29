@@ -1,0 +1,41 @@
+[package]
+name = "wink"
+version = "0.1.0"
+authors = ["Petras Vestartas <https://www.vestartas.com>"]
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+winit = { version = "0.30", features = ["android-native-activity"] }
+env_logger = "0.10"
+log = "0.4"
+wgpu = "25.0"
+pollster = "0.3"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+# Web dependencies
+# All to build native Rust static library (rlib) and C/C++ compatible library (cdylib)
+# We need rlib if we want to run wgpu in a desktop environment.
+# We need cdylib if we want to run wgpu in a web environment.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# WASM dependencies, that allow lower-level languages such as Rust to run on a web browser.
+# This allows us to write a the bulk of our application in Rus and use a few lines of JavaScript to run it in a web browser.
+[profile.release]
+strip = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies] # Tells Cargo to use these dependencies when building for wasm32
+console_error_panic_hook = "0.1.6" # JS - Console error panic hook
+console_log = "1.0" # JS - Console log
+wgpu = { version = "25.0", features = ["webgl"]} # Enable WebGL on WebGPU, as WebGPU is WIP.
+wasm-bindgen = "0.2" # Most important - Tells browser how to use our crate. It allows to connect JS to Rust.
+wasm-bindgen-futures = "0.4.30"
+web-sys = { version = "0.3", features = [ # Create for many methods and types that are available in the JS.
+    "Document",
+    "Window",
+    "Element",
+]}
+
