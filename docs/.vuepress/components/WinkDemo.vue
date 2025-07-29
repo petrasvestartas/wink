@@ -1,8 +1,9 @@
 <template>
     <div id="wink-demo">
-      <h2>Wink WASM Demo</h2>
       <div class="demo-container">
-        <canvas id="canvas" width="800" height="600"></canvas>
+        <div class="canvas-wrapper">
+          <canvas id="canvas"></canvas>
+        </div>
         <div class="error" v-if="error">
           <strong>Error:</strong> {{ error }}
         </div>
@@ -38,6 +39,7 @@
         loading: false,
         error: "",
         autoLoad: true, // Auto-load the demo on page load
+        resizeTimeout: null,
       };
     },
     methods: {
@@ -46,6 +48,9 @@
         this.error = "";
         
         try {
+          // Set canvas size to be responsive before loading WASM
+          this.setupCanvas();
+          
           // Load the demo.js file using script tag approach since it's in /public
           const script = document.createElement('script');
           script.type = 'module';
@@ -67,11 +72,70 @@
         
         this.loading = false;
       },
+      
+      setupCanvas() {
+        const canvas = document.getElementById('canvas');
+        const wrapper = canvas?.parentElement;
+        
+        if (canvas && wrapper) {
+          // Get the wrapper's dimensions
+          const rect = wrapper.getBoundingClientRect();
+          const containerWidth = wrapper.clientWidth;
+          
+          // Calculate optimal size with some padding
+          const padding = 20;
+          const maxWidth = Math.min(containerWidth - padding, 800);
+          const width = Math.max(400, maxWidth); // Minimum 400px width
+          const height = Math.round((width * 3) / 4); // 4:3 aspect ratio
+          
+          // Set both canvas internal resolution and display size
+          canvas.width = width;
+          canvas.height = height;
+          canvas.style.width = width + 'px';
+          canvas.style.height = height + 'px';
+          
+          console.log(`Canvas resized to: ${width}x${height}`);
+        }
+      },
+      
+      handleResize() {
+        // Debounce resize events to avoid excessive calls
+        if (this.resizeTimeout) {
+          clearTimeout(this.resizeTimeout);
+        }
+        
+        this.resizeTimeout = setTimeout(() => {
+          if (this.demoStarted) {
+            this.setupCanvas();
+            
+            // Trigger a custom event that the WASM code can listen to
+            const canvas = document.getElementById('canvas');
+            if (canvas) {
+              const event = new CustomEvent('canvasResize', {
+                detail: { width: canvas.width, height: canvas.height }
+              });
+              canvas.dispatchEvent(event);
+            }
+          }
+        }, 100); // 100ms debounce
+      }
     },
     async mounted() {
       await this.$nextTick();
+      
+      // Setup responsive canvas on window resize with debouncing
+      window.addEventListener('resize', this.handleResize);
+      
       if (this.autoLoad) {
         await this.loadDemo();
+      }
+    },
+    
+    beforeUnmount() {
+      // Clean up event listeners and timeouts
+      window.removeEventListener('resize', this.handleResize);
+      if (this.resizeTimeout) {
+        clearTimeout(this.resizeTimeout);
       }
     }
   };
@@ -80,14 +144,28 @@
   <style scoped>
   .demo-container {
     text-align: center;
+    margin: 20px auto;
+    width: 100%;
+    max-width: 900px;
+    padding: 0 20px;
+    box-sizing: border-box;
+  }
+  
+  .canvas-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     margin: 20px 0;
+    width: 100%;
+    min-height: 300px;
   }
   
   #canvas {
     border: 2px solid #333;
     background-color: #000;
     display: block;
-    margin: 0 auto 20px auto;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
   
   .error {
@@ -96,17 +174,20 @@
     border: 1px solid #f5c2c7;
     border-radius: 4px;
     padding: 10px;
-    margin: 10px 0;
+    margin: 10px auto;
+    max-width: 600px;
   }
   
   .start-button {
     background-color: #0d6efd;
     color: white;
     border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
+    padding: 12px 24px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 16px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
   }
   
   .start-button:hover:not(:disabled) {
@@ -119,15 +200,33 @@
   }
   
   .instructions {
-    margin-top: 10px;
-    color: #6c757d;
+    margin-top: 15px;
+    color: #666;
+    font-size: 14px;
   }
   
   kbd {
     background-color: #f8f9fa;
     border: 1px solid #dee2e6;
     border-radius: 3px;
-    padding: 2px 4px;
-    font-family: monospace;
+    padding: 2px 6px;
+    font-size: 0.875em;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  }
+  
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .demo-container {
+      padding: 0 10px;
+    }
+    
+    .canvas-wrapper {
+      margin: 15px 0;
+      min-height: 250px;
+    }
+    
+    #canvas {
+      border-width: 1px;
+    }
   }
   </style>
