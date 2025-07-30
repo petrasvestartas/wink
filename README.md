@@ -384,3 +384,9 @@ npm run docs:dev
 
 This should start a development server at http://localhost:8080 where you can test your WASM integration.
 Would you like me to help you create these files step by step? We can start with the basic setup and then test the WASM integration!
+
+
+### VSCode shortcuts
+
+- Fold All: Ctrl+K Ctrl+0 (or Cmd+K Cmd+0 on Mac)
+- Unfold All: Ctrl+K Ctrl+J (or Cmd+K Cmd+J on Mac) 
