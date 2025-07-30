@@ -28,7 +28,7 @@ pub struct State {
     render_pipeline_color: wgpu::RenderPipeline, // Second pipeline (vertex colors)
     use_color_pipeline: bool,                    // Whether to use the second pipeline
     vertex_buffer: wgpu::Buffer, // We will store data of vertex.rs in this buffer
-    num_vertices: u32, // Number of vertices in the buffer
+    index_buffer: wgpu::Buffer, // We will store data of vertex.rs in this buffer
     // default pointer to the window
     window: Arc<Window>,
 }
@@ -266,6 +266,7 @@ impl State{
             }
         );
 
+
         // Now that we configured our render surface.
         // We can create the struct State with its arguments.
         Ok(Self {
@@ -277,9 +278,9 @@ impl State{
             // Pipeline for rendering solid color
             render_pipeline_solid,
             render_pipeline_color,
-            use_color_pipeline: false,  
+            use_color_pipeline: true,  
             vertex_buffer,
-            num_vertices: vertices.len() as u32,
+            index_buffer,
             window,
         })
     }
@@ -347,7 +348,8 @@ impl State{
                 occlusion_query_set: None,
                 timestamp_writes: None,
             });
-
+        
+        
             // We set the the pipeline on the render_pass using the one we created for shader.
             if self.use_color_pipeline {
                 render_pass.set_pipeline(&self.render_pipeline_solid);
@@ -360,11 +362,16 @@ impl State{
             // Second argument allows us to specifiy which portion of buffer to use, .. is entire buffer.
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
 
-            // We tell wgpu to draw something with three vertices and one instance. 
-            // This is where @builtin(vertex_index) comes from.
-            render_pass.draw(0..self.num_vertices, 0..1);
-        }
+            // You can only have one index buffer set at a time.
+            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16); // 1.
 
+            // When using an index buffer, we need to use draw_indexed instead of draw.
+            // First argument is the range of indices to draw.
+            // Second argument is the base vertex.
+            // Third argument is the instance count.
+            render_pass.draw_indexed(0..(self.index_buffer.size() / std::mem::size_of::<u16>() as u64) as u32, 0, 0..1);
+        
+        }
         self.queue.submit(iter::once(encoder.finish()));
         output.present();
     
@@ -540,7 +547,8 @@ impl ApplicationHandler<State> for App {
 // Now we actually need to run our code
 // This function sets up the logger as well as creates the event loop and our app
 // THen runs our app to completeion
-pub fn run(vertices: &[Vertex], indices: &[u16]) -> anyhow::Result<()> {
+pub fn run() -> anyhow::Result<()> {
+
     #[cfg(not(target_arch = "wasm32"))]
     {
         env_logger::init();
@@ -551,6 +559,10 @@ pub fn run(vertices: &[Vertex], indices: &[u16]) -> anyhow::Result<()> {
     }
 
     let event_loop = EventLoop::with_user_event().build()?;
+
+
+
+    let (vertices, indices) = get_geometry();
     let mut app = App::new(
         #[cfg(target_arch = "wasm32")]
         &event_loop,
@@ -574,4 +586,29 @@ pub fn run_web() -> Result<(), wasm_bindgen::JsValue> {
     Ok(())
 }
 
+
+// Geometry
+// This has to be replaced with a proper geometry file reader.
+
+
+pub fn get_geometry() -> (&'static [Vertex], &'static [u16]) {
+
+    const VERTICES: &[Vertex] = &[
+        // Colors converted from sRGB to linear space
+        // [0.5, 0.5, 0.5] -> [0.21404114, 0.21404114, 0.21404114]
+        Vertex { position: [-0.0868241, 0.49240386, 0.0], color: [0.21404114, 0.21404114, 0.21404114] }, // A
+        // [0.0, 0.0, 0.5] -> [0.0, 0.0, 0.21404114]
+        Vertex { position: [-0.49513406, 0.06958647, 0.0], color: [0.0, 0.0, 0.21404114] }, // B
+        // [0.5, 0.0, 0.0] -> [0.21404114, 0.0, 0.0]
+        Vertex { position: [-0.21918549, -0.44939706, 0.0], color: [0.21404114, 0.0, 0.0] }, // C
+        // [0.0, 0.0, 0.0] -> [0.0, 0.0, 0.0]
+        Vertex { position: [0.35966998, -0.3473291, 0.0], color: [0.0, 0.0, 0.0] }, // D
+        // [1.0, 1.0, 1.0] -> [1.0, 1.0, 1.0]
+        Vertex { position: [0.44147372, 0.2347359, 0.0], color: [1.0, 1.0, 1.0] }, // E
+    ];
     
+    const INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4, /* padding */ 0];
+
+    
+    (VERTICES, INDICES)
+}
