@@ -357,6 +357,8 @@ The source code for this demo is available in the [GitHub repository](https://gi
 
 ### Update docs/package.json 
 
+> **Note**: This project requires Node.js 16 due to VuePress/Vite compatibility issues. Use `nvm use 16` if you have multiple Node versions.
+
 ```json
 {
   "name": "wink-docs",
@@ -367,9 +369,10 @@ The source code for this demo is available in the [GitHub repository](https://gi
     "docs:build": "vuepress build"
   },
   "devDependencies": {
-    "vuepress": "^2.0.0-rc.0",
-    "@vuepress/client": "^2.0.0-rc.0",
-    "@vuepress/bundler-vite": "^2.0.0-rc.0"
+    "vuepress": "^2.0.0-rc.24",
+    "@vuepress/client": "^2.0.0-rc.24",
+    "@vuepress/bundler-vite": "^2.0.0-rc.24",
+    "web-streams-polyfill": "^3.2.1"
   }
 }
 ```
@@ -377,7 +380,11 @@ The source code for this demo is available in the [GitHub repository](https://gi
 ### Test the Setup
 
 ```bash
+# Switch to Node.js 16 if needed
+nvm use 16
+
 cd docs
+npm install
 npm run docs:dev
 ```
 
