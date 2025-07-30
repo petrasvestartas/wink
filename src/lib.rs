@@ -7,10 +7,9 @@ use winit::{
     keyboard::{KeyCode, PhysicalKey}, 
     window::Window
 };
-mod vertex;
+pub mod vertex;
 use vertex::Vertex;
 use wgpu::util::DeviceExt;
-use bytemuck::{Pod, Zeroable};
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -29,6 +28,7 @@ pub struct State {
     render_pipeline_color: wgpu::RenderPipeline, // Second pipeline (vertex colors)
     use_color_pipeline: bool,                    // Whether to use the second pipeline
     vertex_buffer: wgpu::Buffer, // We will store data of vertex.rs in this buffer
+    num_vertices: u32, // Number of vertices in the buffer
     // default pointer to the window
     window: Arc<Window>,
 }
@@ -149,7 +149,9 @@ impl State{
             vertex: wgpu::VertexState {
                 module: &shader_solid, // <-- Change the shader
                 entry_point: Some("vs_main"), // 1. vertex entry point
-                buffers: &[], // 2. tells wgpu that type of vetices we want to pass to vertex shader
+                buffers: &[
+                    Vertex::desc(), // The implementation of the vertex struct
+                ], // 2. tells wgpu that type of vetices we want to pass to vertex shader
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
 
@@ -202,7 +204,9 @@ impl State{
             vertex: wgpu::VertexState {
                 module: &shader_color, // <-- Change the shader
                 entry_point: Some("vs_main"), // 1. vertex entry point
-                buffers: &[], // 2. tells wgpu that type of vetices we want to pass to vertex shader
+                buffers: &[
+                    Vertex::desc(),
+                ], // 2. tells wgpu that type of vetices we want to pass to vertex shader
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
 
@@ -275,6 +279,7 @@ impl State{
             render_pipeline_color,
             use_color_pipeline: false,  
             vertex_buffer,
+            num_vertices: vertices.len() as u32,
             window,
         })
     }
@@ -349,9 +354,15 @@ impl State{
             } else {
                 render_pass.set_pipeline(&self.render_pipeline_color);
             }
+
+            // Set the vertex buffer otherwise the app will crash.
+            // First arguement is the buffer slot index
+            // Second argument allows us to specifiy which portion of buffer to use, .. is entire buffer.
+            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+
             // We tell wgpu to draw something with three vertices and one instance. 
             // This is where @builtin(vertex_index) comes from.
-            render_pass.draw(0..3, 0..1);
+            render_pass.draw(0..self.num_vertices, 0..1);
         }
 
         self.queue.submit(iter::once(encoder.finish()));
@@ -381,15 +392,15 @@ pub struct App {
     #[cfg(target_arch = "wasm32")]
     proxy: Option<winit::event_loop::EventLoopProxy<State>>,
     state: Option<State>,
-    vertices: &'static [Vertex], // User geometry
-    indices: &'static [u16], // User geometry
+    vertices: Vec<Vertex>, // User geometry
+    indices: Vec<u16>, // User geometry
 }
 
 impl App {
     pub fn new(
         #[cfg(target_arch = "wasm32")] event_loop: &EventLoop<State>,
-        vertices: &'static [Vertex], // User geometry
-        indices: &'static [u16], // User geometry
+        vertices: Vec<Vertex>, // User geometry
+        indices: Vec<u16>, // User geometry
     ) -> Self {
         #[cfg(target_arch = "wasm32")]
         let proxy = Some(event_loop.create_proxy());
@@ -435,7 +446,7 @@ impl ApplicationHandler<State> for App {
         {
             // If we are not on web we can use pollster to
             // await the 
-            self.state = Some(pollster::block_on(State::new(window, self.vertices, self.indices)).unwrap());
+            self.state = Some(pollster::block_on(State::new(window, &self.vertices, &self.indices)).unwrap());
         }
 
         #[cfg(target_arch = "wasm32")]
@@ -443,12 +454,12 @@ impl ApplicationHandler<State> for App {
             // Run the future asynchronously and use the
             // proxy to send the results to the event loop
             if let Some(proxy) = self.proxy.take() {
-                let vertices = self.vertices;
-                let indices = self.indices;
+                let vertices = self.vertices.clone(); // User geometry
+                let indices = self.indices.clone(); // User geometry
                 wasm_bindgen_futures::spawn_local(async move {
                     assert!(proxy
                         .send_event(
-                            State::new(window, vertices, indices)
+                            State::new(window, &vertices, &indices)
                                 .await
                                 .expect("Unable to create canvas!!!")
                         )
@@ -543,8 +554,8 @@ pub fn run(vertices: &[Vertex], indices: &[u16]) -> anyhow::Result<()> {
     let mut app = App::new(
         #[cfg(target_arch = "wasm32")]
         &event_loop,
-        vertices,  // User geometry
-        indices,   // User geometry
+        vertices.to_vec(),  // Convert to Vec here
+        indices.to_vec(),   // Convert to Vec here
     );  
     event_loop.run_app(&mut app)?;
 

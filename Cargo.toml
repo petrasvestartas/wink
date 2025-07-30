@@ -11,6 +11,7 @@ env_logger = "0.10"
 log = "0.4"
 wgpu = "25.0"
 pollster = "0.3"
+bytemuck = { version = "1.14", features = ["derive"] }
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false
