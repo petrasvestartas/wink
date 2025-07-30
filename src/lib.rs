@@ -7,6 +7,10 @@ use winit::{
     keyboard::{KeyCode, PhysicalKey}, 
     window::Window
 };
+mod vertex;
+use vertex::Vertex;
+use wgpu::util::DeviceExt;
+use bytemuck::{Pod, Zeroable};
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -24,13 +28,14 @@ pub struct State {
     render_pipeline_solid: wgpu::RenderPipeline, // First pipeline (one color)
     render_pipeline_color: wgpu::RenderPipeline, // Second pipeline (vertex colors)
     use_color_pipeline: bool,                    // Whether to use the second pipeline
+    vertex_buffer: wgpu::Buffer, // We will store data of vertex.rs in this buffer
     // default pointer to the window
     window: Arc<Window>,
 }
 
 impl State{
     // We don't need to be async right now, will implement later
-    pub async fn new(window: Arc<Window>) -> anyhow::Result<Self> {
+    pub async fn new(window: Arc<Window>, vertices: &[Vertex], indices: &[u16]) -> anyhow::Result<Self> {
 
         let size = window.inner_size();
 
@@ -241,7 +246,21 @@ impl State{
             cache: None,
         });
         
+        let vertex_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(vertices),
+                usage: wgpu::BufferUsages::VERTEX,
+            }
+        );
 
+        let index_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Index Buffer"),
+                contents: bytemuck::cast_slice(indices),
+                usage: wgpu::BufferUsages::INDEX,
+            }
+        );
 
         // Now that we configured our render surface.
         // We can create the struct State with its arguments.
@@ -255,6 +274,7 @@ impl State{
             render_pipeline_solid,
             render_pipeline_color,
             use_color_pipeline: false,  
+            vertex_buffer,
             window,
         })
     }
@@ -361,14 +381,22 @@ pub struct App {
     #[cfg(target_arch = "wasm32")]
     proxy: Option<winit::event_loop::EventLoopProxy<State>>,
     state: Option<State>,
+    vertices: &'static [Vertex], // User geometry
+    indices: &'static [u16], // User geometry
 }
 
 impl App {
-    pub fn new(#[cfg(target_arch = "wasm32")] event_loop: &EventLoop<State>) -> Self {
+    pub fn new(
+        #[cfg(target_arch = "wasm32")] event_loop: &EventLoop<State>,
+        vertices: &'static [Vertex], // User geometry
+        indices: &'static [u16], // User geometry
+    ) -> Self {
         #[cfg(target_arch = "wasm32")]
         let proxy = Some(event_loop.create_proxy());
         Self {
             state: None,
+            vertices, // User geometry
+            indices, // User geometry
             #[cfg(target_arch = "wasm32")]
             proxy,
         }
@@ -407,7 +435,7 @@ impl ApplicationHandler<State> for App {
         {
             // If we are not on web we can use pollster to
             // await the 
-            self.state = Some(pollster::block_on(State::new(window)).unwrap());
+            self.state = Some(pollster::block_on(State::new(window, self.vertices, self.indices)).unwrap());
         }
 
         #[cfg(target_arch = "wasm32")]
@@ -415,10 +443,12 @@ impl ApplicationHandler<State> for App {
             // Run the future asynchronously and use the
             // proxy to send the results to the event loop
             if let Some(proxy) = self.proxy.take() {
+                let vertices = self.vertices;
+                let indices = self.indices;
                 wasm_bindgen_futures::spawn_local(async move {
                     assert!(proxy
                         .send_event(
-                            State::new(window)
+                            State::new(window, vertices, indices)
                                 .await
                                 .expect("Unable to create canvas!!!")
                         )
@@ -499,7 +529,7 @@ impl ApplicationHandler<State> for App {
 // Now we actually need to run our code
 // This function sets up the logger as well as creates the event loop and our app
 // THen runs our app to completeion
-pub fn run() -> anyhow::Result<()> {
+pub fn run(vertices: &[Vertex], indices: &[u16]) -> anyhow::Result<()> {
     #[cfg(not(target_arch = "wasm32"))]
     {
         env_logger::init();
@@ -513,7 +543,9 @@ pub fn run() -> anyhow::Result<()> {
     let mut app = App::new(
         #[cfg(target_arch = "wasm32")]
         &event_loop,
-    );
+        vertices,  // User geometry
+        indices,   // User geometry
+    );  
     event_loop.run_app(&mut app)?;
 
     Ok(())
