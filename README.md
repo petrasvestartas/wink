@@ -2,6 +2,58 @@
 
 Wink is a Rust library for wgpu viewer.
 
+## Prerequisites
+
+Before setting up this project on a new PC, install the following:
+
+### 1. Rust and Cargo
+```bash
+# Install Rust via rustup
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
+
+# Verify installation
+rustc --version
+cargo --version
+```
+
+### 2. wasm-pack
+```bash
+cargo install wasm-pack
+```
+
+### 3. Node.js 20+ via NVM
+VuePress requires Node.js 20 or later. Install NVM (Node Version Manager) first:
+
+```bash
+# Install NVM
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+
+# Reload your shell
+source ~/.bashrc
+
+# Install and use Node.js 20
+nvm install 20
+nvm use 20
+nvm alias default 20
+
+# Verify installation
+node --version  # Should show v20.x.x
+npm --version   # Should show v10.x.x
+```
+
+### 4. Git (if not already installed)
+```bash
+# Ubuntu/Debian
+sudo apt update && sudo apt install git
+
+# macOS (with Homebrew)
+brew install git
+
+# Verify installation
+git --version
+```
+
 ## Build locally using cargo
 
 ```bash
@@ -68,9 +120,7 @@ cd /Users/petras/rust/wink
 mkdir docs
 cd docs
 npm init -y
-npm install -D vuepress@next @vuepress/client@next @vuepress/bundler-vite@next
-npm install -D @vuepress/theme-default@next
-npm install -D sass-embedded
+npm install -D vuepress@next @vuepress/client@next @vuepress/bundler-vite@next @vuepress/theme-default@next sass-embedded
 ```
 
 ### Create the VuePress Directory Structure
