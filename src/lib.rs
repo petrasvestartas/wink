@@ -20,8 +20,10 @@ pub struct State {
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     is_surface_configured: bool,
-    // Shader pipeline
-    render_pipeline: wgpu::RenderPipeline,
+    // Shader pipelines
+    render_pipeline_solid: wgpu::RenderPipeline, // First pipeline (one color)
+    render_pipeline_color: wgpu::RenderPipeline, // Second pipeline (vertex colors)
+    use_color_pipeline: bool,                    // Whether to use the second pipeline
     // default pointer to the window
     window: Arc<Window>,
 }
@@ -111,10 +113,19 @@ impl State{
             desired_maximum_frame_latency: 2,
         };
 
-        // Pipeline. We will have to load shaders, as the render pipileline require them.
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // SHADERS
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        // Pipeline. We will have to load shaders, as the render pipeline require them.
+        let shader_solid = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Solid Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("shader_solid.wgsl").into()),
+        });
+
+        let shader_color = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Color Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("shader_color.wgsl").into()),
         });
 
         // Pipeline layout
@@ -126,19 +137,72 @@ impl State{
         });
 
         // Pipeline for rendering
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Render Pipeline"),
+        let render_pipeline_solid = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Solid Pipeline"),
             layout: Some(&render_pipeline_layout),
             
             vertex: wgpu::VertexState {
-                module: &shader,
+                module: &shader_solid, // <-- Change the shader
                 entry_point: Some("vs_main"), // 1. vertex entry point
                 buffers: &[], // 2. tells wgpu that type of vetices we want to pass to vertex shader
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
 
             fragment: Some(wgpu::FragmentState { // 3. This is optional so we wrap to Some(), we need it for colors
-                module: &shader,
+                module: &shader_solid,  // <-- Change the shader
+                entry_point: Some("fs_main"), // 1. fragment entry point
+                targets: &[Some(wgpu::ColorTargetState { // 4. tells wgpu what color outputs it should set up
+                    format: config.format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            }),
+
+            // The primitive field describes how to interpret our vertices when converting them into triangles.
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList, // Means that every three verties will correspond to one triangle.
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw, // CounterClockWise is facing forward, cw are culled
+                cull_mode: Some(wgpu::Face::Back), // Cull back faces
+                // Setting this to anything other than Fill requires Features::POLYGON_MODE_LINE
+                // or Features::POLYGON_MODE_POINT
+                polygon_mode: wgpu::PolygonMode::Fill,
+                // Requires Features::DEPTH_CLIP_CONTROL
+                unclipped_depth: false,
+                // Requires Features::CONSERVATIVE_RASTERIZATION
+                conservative: false,
+            },
+
+            // We are not using a depth/stencil buffer currently
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState {
+                count: 1, // Determines how many samples the pipeline will use
+                mask: !0, // Specifies which samples should be active, here we use all
+                alpha_to_coverage_enabled: false, // related to multisampling which is not used here
+            },
+            // If the pipeline will be used with a multiview render pass, this
+            // indicates how many array layers the attachments will have.
+            multiview: None,
+            // Useful for optimizing shader compilation on Android
+            cache: None,
+        });
+
+
+         // Pipeline for rendering
+         let render_pipeline_color = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Color Pipeline"),
+            layout: Some(&render_pipeline_layout),
+            
+            vertex: wgpu::VertexState {
+                module: &shader_color, // <-- Change the shader
+                entry_point: Some("vs_main"), // 1. vertex entry point
+                buffers: &[], // 2. tells wgpu that type of vetices we want to pass to vertex shader
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            },
+
+            fragment: Some(wgpu::FragmentState { // 3. This is optional so we wrap to Some(), we need it for colors
+                module: &shader_color, // <-- Change the shader
                 entry_point: Some("fs_main"), // 1. fragment entry point
                 targets: &[Some(wgpu::ColorTargetState { // 4. tells wgpu what color outputs it should set up
                     format: config.format,
@@ -187,7 +251,10 @@ impl State{
             queue,
             config,
             is_surface_configured: false,
-            render_pipeline,
+            // Pipeline for rendering solid color
+            render_pipeline_solid,
+            render_pipeline_color,
+            use_color_pipeline: false,  
             window,
         })
     }
@@ -204,9 +271,9 @@ impl State{
         }
     }
 
-    fn update(&mut self) {
-        // TODO: Update the state of the application
-    }
+    // fn update(&mut self) {
+    //     // TODO: Update the state of the application
+    // }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         self.window.request_redraw(); // We ask the window to draw another frame
@@ -257,7 +324,11 @@ impl State{
             });
 
             // We set the the pipeline on the render_pass using the one we created for shader.
-            render_pass.set_pipeline(&self.render_pipeline);
+            if self.use_color_pipeline {
+                render_pass.set_pipeline(&self.render_pipeline_solid);
+            } else {
+                render_pass.set_pipeline(&self.render_pipeline_color);
+            }
             // We tell wgpu to draw something with three vertices and one instance. 
             // This is where @builtin(vertex_index) comes from.
             render_pass.draw(0..3, 0..1);
@@ -273,9 +344,11 @@ impl State{
 
     // Handle key events.
     // Escape - to exit the app
-    fn handle_key(&self, event_loop: &ActiveEventLoop, code: KeyCode, is_pressed: bool) {
+    // Space - to change the shader in the render pipeline
+    fn handle_key(&mut self, event_loop: &ActiveEventLoop, code: KeyCode, is_pressed: bool) {
         match (code, is_pressed) {
             (KeyCode::Escape, true) => event_loop.exit(),
+            (KeyCode::Space, true) => self.use_color_pipeline = !self.use_color_pipeline,
             _ => {}
         }
     }
