@@ -1,4 +1,4 @@
-use std::{iter, sync::Arc}; // Arc is a thread-safe reference-counted pointer
+use std::{iter, sync::Arc, fs};
 use anyhow::Result;
 use winit::{
     application::ApplicationHandler, 
@@ -10,6 +10,7 @@ use winit::{
 pub mod vertex;
 use vertex::Vertex;
 use wgpu::util::DeviceExt;
+use serde_json::Value;
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -566,8 +567,8 @@ pub fn run() -> anyhow::Result<()> {
     let mut app = App::new(
         #[cfg(target_arch = "wasm32")]
         &event_loop,
-        vertices.to_vec(),  // Convert to Vec here
-        indices.to_vec(),   // Convert to Vec here
+        vertices,
+        indices,
     );  
     event_loop.run_app(&mut app)?;
 
@@ -588,27 +589,61 @@ pub fn run_web() -> Result<(), wasm_bindgen::JsValue> {
 
 
 // Geometry
-// This has to be replaced with a proper geometry file reader.
-
-
-pub fn get_geometry() -> (&'static [Vertex], &'static [u16]) {
-
-    const VERTICES: &[Vertex] = &[
-        // Colors converted from sRGB to linear space
-        // [0.5, 0.5, 0.5] -> [0.21404114, 0.21404114, 0.21404114]
-        Vertex { position: [-0.0868241, 0.49240386, 0.0], color: [0.21404114, 0.21404114, 0.21404114] }, // A
-        // [0.0, 0.0, 0.5] -> [0.0, 0.0, 0.21404114]
-        Vertex { position: [-0.49513406, 0.06958647, 0.0], color: [0.0, 0.0, 0.21404114] }, // B
-        // [0.5, 0.0, 0.0] -> [0.21404114, 0.0, 0.0]
-        Vertex { position: [-0.21918549, -0.44939706, 0.0], color: [0.21404114, 0.0, 0.0] }, // C
-        // [0.0, 0.0, 0.0] -> [0.0, 0.0, 0.0]
-        Vertex { position: [0.35966998, -0.3473291, 0.0], color: [0.0, 0.0, 0.0] }, // D
-        // [1.0, 1.0, 1.0] -> [1.0, 1.0, 1.0]
-        Vertex { position: [0.44147372, 0.2347359, 0.0], color: [1.0, 1.0, 1.0] }, // E
-    ];
+// Deserialize star mesh from all_geometry.json
+pub fn get_geometry() -> (Vec<Vertex>, Vec<u16>) {
+    // Read and parse the JSON file
+    let json_str = fs::read_to_string("/Users/petras/brg/2_code/openmodel/all_geometry.json").expect("Failed to read all_geometry.json");
+    let json: Value = serde_json::from_str(&json_str).expect("Failed to parse JSON");
     
-    const INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4, /* padding */ 0];
-
+    // Extract the first mesh
+    let mesh = &json["meshes"][0];
+    let vertex_data = &mesh["vertex"];
+    let face_data = &mesh["face"];
     
-    (VERTICES, INDICES)
+    // Convert vertices with random colors
+    let mut vertices = Vec::new();
+    let mut vertex_map = std::collections::HashMap::new();
+    let mut next_index = 0;
+    
+    println!("=== Star Mesh Verification ===");
+    println!("Vertex count: {}", vertex_data.as_object().unwrap().len());
+    
+    for (key, vertex) in vertex_data.as_object().unwrap() {
+        let x = vertex["x"].as_f64().unwrap();
+        let y = vertex["y"].as_f64().unwrap();
+        let z = vertex["z"].as_f64().unwrap();
+        
+        // Read colors from vertex attributes
+        let r = vertex.get("attributes").and_then(|attrs| attrs.get("r")).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
+        let g = vertex.get("attributes").and_then(|attrs| attrs.get("g")).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
+        let b = vertex.get("attributes").and_then(|attrs| attrs.get("b")).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
+        let color = [r, g, b];
+        
+        vertices.push(Vertex {
+            position: [x as f32, y as f32, z as f32],
+            color: color,
+        });
+        
+        vertex_map.insert(key.parse::<u16>().unwrap(), next_index);
+        println!("Vertex {}: ({:.6}, {:.6}, {:.6}) -> Index {}", key, x, y, z, next_index);
+        next_index += 1;
+    }
+    
+    // Convert faces to indices
+    let mut indices = Vec::new();
+    println!("Face count: {}", face_data.as_object().unwrap().len());
+    
+    for (face_key, face_vertices) in face_data.as_object().unwrap() {
+        println!("Face {}: {:?}", face_key, face_vertices.as_array().unwrap());
+        for vertex_id in face_vertices.as_array().unwrap() {
+            let id = vertex_id.as_u64().unwrap() as u16;
+            indices.push(vertex_map[&id] as u16);
+        }
+    }
+    
+    println!("Total indices: {}", indices.len());
+    println!("Expected triangles: {}", indices.len() / 3);
+    println!("=== Star Mesh Loaded Successfully ===");
+    
+    (vertices, indices)
 }
