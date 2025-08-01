@@ -16,6 +16,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 rand = "0.8"
 openmodel = { path = "/Users/petras/brg/2_code/openmodel" }
+cgmath = "0.18" # Math library for 3D graphics - camera
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false

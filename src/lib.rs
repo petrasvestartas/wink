@@ -8,7 +8,9 @@ use winit::{
     window::Window
 };
 pub mod vertex;
+pub mod camera;
 use vertex::Vertex;
+use camera::{Camera, CameraUniform, CameraController};
 use wgpu::util::DeviceExt;
 use openmodel::common::json_load;
 use openmodel::AllGeometryData;
@@ -31,6 +33,12 @@ pub struct State {
     use_color_pipeline: bool,                    // Whether to use the second pipeline
     vertex_buffer: wgpu::Buffer, // We will store data of vertex.rs in this buffer
     index_buffer: wgpu::Buffer, // We will store data of vertex.rs in this buffer
+    // Camera
+    camera: Camera,
+    camera_uniform: CameraUniform,
+    camera_buffer: wgpu::Buffer,
+    camera_bind_group: wgpu::BindGroup,
+    camera_controller: CameraController,
     // default pointer to the window
     window: Arc<Window>,
 }
@@ -135,11 +143,50 @@ impl State{
             source: wgpu::ShaderSource::Wgsl(include_str!("shader_color.wgsl").into()),
         });
 
+        // Camera setup
+        let camera = Camera::new(size.width as f32, size.height as f32);
+        let camera_uniform = CameraUniform::new();
+        
+        let camera_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Camera Buffer"),
+                contents: bytemuck::cast_slice(&[camera_uniform]),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            }
+        );
+
+        let camera_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Camera Bind Group Layout"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }
+            ],
+        });
+
+        let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Camera Bind Group"),
+            layout: &camera_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: camera_buffer.as_entire_binding(),
+                }
+            ],
+        });
+
         // Pipeline layout
         let render_pipeline_layout =
         device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[],
+            bind_group_layouts: &[&camera_bind_group_layout],
             push_constant_ranges: &[],
         });
 
@@ -283,6 +330,12 @@ impl State{
             use_color_pipeline: true,  
             vertex_buffer,
             index_buffer,
+            // Camera
+            camera,
+            camera_uniform,
+            camera_buffer,
+            camera_bind_group,
+            camera_controller: CameraController::new(0.5),
             window,
         })
     }
@@ -299,9 +352,15 @@ impl State{
         }
     }
 
-    // fn update(&mut self) {
-    //     // TODO: Update the state of the application
-    // }
+    fn input(&mut self, event: &WindowEvent) -> bool {
+        self.camera_controller.process_events(event)
+    }
+
+    fn update(&mut self) {
+        self.camera_controller.update_camera(&mut self.camera);
+        self.camera_uniform.update_view_proj(&self.camera);
+        self.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&[self.camera_uniform]));
+    }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         self.window.request_redraw(); // We ask the window to draw another frame
@@ -358,6 +417,9 @@ impl State{
             } else {
                 render_pass.set_pipeline(&self.render_pipeline_solid);
             }
+
+            // Set the camera bind group
+            render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
 
             // Set the vertex buffer otherwise the app will crash.
             // First arguement is the buffer slot index
@@ -509,11 +571,18 @@ impl ApplicationHandler<State> for App {
             None => return,
         };
 
+        // Handle camera input first
+        if state.input(&event) {
+            return; // If camera handled the event, don't process it further
+        }
+
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
             WindowEvent::Resized(size) => state.resize(size.width, size.height),
             // Redraw method to render the geometry
             WindowEvent::RedrawRequested => {
+                // Call update before render
+                state.update();
                 match state.render() {
                     Ok(_) => {}
                     // Reconfigure the surface if it's lost or outdated
