@@ -133,6 +133,9 @@ impl State{
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // SHADERS
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Debug: capture validation errors during pipeline/build steps (especially useful on Web)
+        // Push one scope before creating pipelines; we'll pop it after both are created.
+        device.push_error_scope(wgpu::ErrorFilter::Validation);
 
         // Pipeline. We will have to load shaders, as the render pipeline require them.
         let shader_solid = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -198,7 +201,7 @@ impl State{
                 topology: wgpu::PrimitiveTopology::TriangleList, // Means that every three verties will correspond to one triangle.
                 strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw, // CounterClockWise is facing forward, cw are culled
-                cull_mode: Some(wgpu::Face::Back), // Cull back faces
+                cull_mode: None, // Debug: disable culling to rule out winding issues on Web
                 // Setting this to anything other than Fill requires Features::POLYGON_MODE_LINE
                 // or Features::POLYGON_MODE_POINT
                 polygon_mode: wgpu::PolygonMode::Fill,
@@ -253,7 +256,7 @@ impl State{
                 topology: wgpu::PrimitiveTopology::TriangleList, // Means that every three verties will correspond to one triangle.
                 strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw, // CounterClockWise is facing forward, cw are culled
-                cull_mode: Some(wgpu::Face::Back), // Cull back faces
+                cull_mode: None, // Debug: disable culling to rule out winding issues on Web
                 // Setting this to anything other than Fill requires Features::POLYGON_MODE_LINE
                 // or Features::POLYGON_MODE_POINT
                 polygon_mode: wgpu::PolygonMode::Fill,
@@ -276,7 +279,17 @@ impl State{
             // Useful for optimizing shader compilation on Android
             cache: None,
         });
-        
+
+        // Pop and log any validation errors that might have occurred during pipeline creation
+        #[cfg(target_arch = "wasm32")]
+        if let Some(err) = device.pop_error_scope().await {
+            web_sys::console::error_1(&format!("WGPU validation (pipeline): {:?}", err).into());
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        if let Some(err) = device.pop_error_scope().await {
+            eprintln!("WGPU validation (pipeline): {:?}", err);
+        }
+
         let vertex_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
@@ -303,6 +316,12 @@ impl State{
             contents: bytemuck::cast_slice(&[camera_uniform]),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
+
+        // Debug: log the first row of the view-proj on Web to ensure it isn't zeros/NaNs
+        #[cfg(target_arch = "wasm32")]
+        {
+            web_sys::console::log_1(&format!("Camera VP row0: {:?}", camera_uniform.view_proj[0]).into());
+        }
 
         let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &camera_bind_group_layout,
@@ -349,6 +368,8 @@ impl State{
             self.config.width = width;
             self.config.height = height;
             self.surface.configure(&self.device, &self.config);
+            // Keep camera projection in sync with the surface size (important on Web)
+            self.camera.aspect = self.config.width as f32 / self.config.height as f32;
             self.is_surface_configured = true;
         }
     }

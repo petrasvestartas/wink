@@ -1,1 +1,0 @@
-AllGeometryData: serde::de::DeserializeOwned
