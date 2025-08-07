@@ -2,13 +2,17 @@ use std::{iter, sync::Arc}; // Arc is a thread-safe reference-counted pointer
 use anyhow::Result;
 use winit::{
     application::ApplicationHandler, 
-    event::{WindowEvent, KeyEvent, MouseButton}, //* - import everythingi is skipped due to warnings
+    event::{WindowEvent, KeyEvent, MouseButton, ElementState}, //* - import everythingi is skipped due to warnings
     event_loop::{ActiveEventLoop, EventLoop}, 
     keyboard::{KeyCode, PhysicalKey}, 
     window::Window
 };
 pub mod vertex;
+pub mod camera;
+pub mod timing;
 use vertex::Vertex;
+use camera::{Camera, CameraUniform, CameraController};
+use timing::Instant;
 use wgpu::util::DeviceExt;
 
 #[cfg(target_arch = "wasm32")]
@@ -29,6 +33,14 @@ pub struct State {
     use_color_pipeline: bool,                    // Whether to use the second pipeline
     vertex_buffer: wgpu::Buffer, // We will store data of vertex.rs in this buffer
     index_buffer: wgpu::Buffer, // We will store data of vertex.rs in this buffer
+    // Camera system - testing step by step
+    camera: Camera,
+    camera_uniform: CameraUniform,
+    camera_buffer: wgpu::Buffer,
+    camera_bind_group: wgpu::BindGroup,
+    camera_controller: CameraController,
+    last_render_time: Instant,
+    mouse_pressed: bool,
     // default pointer to the window
     window: Arc<Window>,
 }
@@ -133,11 +145,26 @@ impl State{
             source: wgpu::ShaderSource::Wgsl(include_str!("shader_color.wgsl").into()),
         });
 
-        // Pipeline layout
+        // Pipeline layout - testing camera bind group step by step
+        let camera_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+                label: Some("camera_bind_group_layout"),
+            });
+
         let render_pipeline_layout =
         device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[],
+            bind_group_layouts: &[&camera_bind_group_layout],
             push_constant_ranges: &[],
         });
 
@@ -266,6 +293,27 @@ impl State{
             }
         );
 
+        // Initialize camera system - testing step by step
+        let camera = Camera::new(size.width as f32, size.height as f32);
+        let mut camera_uniform = CameraUniform::new();
+        camera_uniform.update_view_proj(&camera);
+
+        let camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Camera Buffer"),
+            contents: bytemuck::cast_slice(&[camera_uniform]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &camera_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: camera_buffer.as_entire_binding(),
+            }],
+            label: Some("camera_bind_group"),
+        });
+
+        let camera_controller = CameraController::new(4.0, 0.4);
 
         // Now that we configured our render surface.
         // We can create the struct State with its arguments.
@@ -281,6 +329,14 @@ impl State{
             use_color_pipeline: true,  
             vertex_buffer,
             index_buffer,
+            // Camera system - testing step by step
+            camera,
+            camera_uniform,
+            camera_buffer,
+            camera_bind_group,
+            camera_controller,
+            last_render_time: Instant::now(),
+            mouse_pressed: false,
             window,
         })
     }
@@ -297,9 +353,45 @@ impl State{
         }
     }
 
-    // fn update(&mut self) {
-    //     // TODO: Update the state of the application
-    // }
+    fn input(&mut self, event: &WindowEvent) -> bool {
+        match event {
+            WindowEvent::KeyboardInput {
+                event:
+                    KeyEvent {
+                        physical_key: PhysicalKey::Code(key),
+                        state,
+                        ..
+                    },
+                ..
+            } => self.camera_controller.process_keyboard(*key, *state),
+            WindowEvent::MouseWheel { delta, .. } => {
+                self.camera_controller.process_scroll(delta);
+                true
+            }
+            WindowEvent::MouseInput { button, state, .. } => {
+                // Handle right mouse for general mouse_pressed tracking
+                if *button == MouseButton::Right {
+                    self.mouse_pressed = *state == ElementState::Pressed;
+                }
+                // Use the camera controller's proper mouse button handler
+                self.camera_controller.process_mouse_button(*state, *button)
+            }
+            _ => false,
+        }
+    }
+
+    fn update(&mut self) {
+        let now = Instant::now();
+        let dt = now - self.last_render_time;
+        self.last_render_time = now;
+        self.camera_controller.update_camera(&mut self.camera, dt);
+        self.camera_uniform.update_view_proj(&self.camera);
+        self.queue.write_buffer(
+            &self.camera_buffer,
+            0,
+            bytemuck::cast_slice(&[self.camera_uniform]),
+        );
+    }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         self.window.request_redraw(); // We ask the window to draw another frame
@@ -356,6 +448,9 @@ impl State{
             } else {
                 render_pass.set_pipeline(&self.render_pipeline_color);
             }
+
+            // Set the camera bind group
+            render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
 
             // Set the vertex buffer otherwise the app will crash.
             // First arguement is the buffer slot index
@@ -507,11 +602,16 @@ impl ApplicationHandler<State> for App {
             None => return,
         };
 
+        if state.input(&event) {
+            return;
+        }
+
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
             WindowEvent::Resized(size) => state.resize(size.width, size.height),
             // Redraw method to render the geometry
             WindowEvent::RedrawRequested => {
+                state.update();
                 match state.render() {
                     Ok(_) => {}
                     // Reconfigure the surface if it's lost or outdated
@@ -524,11 +624,6 @@ impl ApplicationHandler<State> for App {
                     }
                 }
             }
-            WindowEvent::MouseInput { state, button, .. } => match (button, state.is_pressed()) {
-                (MouseButton::Left, true) => {}
-                (MouseButton::Left, false) => {}
-                _ => {}
-            },
             WindowEvent::KeyboardInput {
                 event:
                     KeyEvent {
@@ -539,6 +634,24 @@ impl ApplicationHandler<State> for App {
                 ..
             } => state.handle_key(event_loop, code, key_state.is_pressed()),
             _ => {}
+        }
+    }
+
+    fn device_event(
+        &mut self,
+        _event_loop: &ActiveEventLoop,
+        _device_id: winit::event::DeviceId,
+        event: winit::event::DeviceEvent,
+    ) {
+        if let Some(state) = &mut self.state {
+            match event {
+                winit::event::DeviceEvent::MouseMotion { delta } => {
+                    if state.mouse_pressed {
+                        state.camera_controller.process_mouse(delta.0, delta.1);
+                    }
+                }
+                _ => {}
+            }
         }
     }
 }
