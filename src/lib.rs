@@ -293,7 +293,7 @@ impl State{
             }
         );
 
-        // Initialize camera system - testing step by step
+        // Initialize camera system
         let camera = Camera::new(size.width as f32, size.height as f32);
         let mut camera_uniform = CameraUniform::new();
         camera_uniform.update_view_proj(&camera);
@@ -449,7 +449,7 @@ impl State{
                 render_pass.set_pipeline(&self.render_pipeline_color);
             }
 
-            // Set the camera bind group
+            // Set the camera bind group (pipeline expects it even if shaders don't use it)
             render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
 
             // Set the vertex buffer otherwise the app will crash.
