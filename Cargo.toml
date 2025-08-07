@@ -3,6 +3,9 @@ name = "wink"
 version = "0.1.0"
 authors = ["Petras Vestartas <https://www.vestartas.com>"]
 edition = "2021"
+description = "wink: minimal wgpu + winit + WASM example with professional quaternion camera"
+repository = "https://github.com/petrasvestartas/wink"
+license = "MIT"
 
 [dependencies]
 anyhow = "1.0"
@@ -31,9 +34,8 @@ crate-type = ["cdylib", "rlib"]
 # Only strip for native builds, not WASM (causes validation errors)
 strip = false
 
-# Strip only for native targets
-[target.'cfg(not(target_arch = "wasm32"))'.profile.release]
-strip = true
+# Note: Cargo does not support target-specific profile overrides in Cargo.toml.
+# If you need different strip behavior per target, configure it via build flags or CI.
 
 [target.'cfg(target_arch = "wasm32")'.dependencies] # Tells Cargo to use these dependencies when building for wasm32
 console_error_panic_hook = "0.1.6" # JS - Console error panic hook

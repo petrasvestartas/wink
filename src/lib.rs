@@ -200,8 +200,15 @@ impl State{
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList, // Means that every three verties will correspond to one triangle.
                 strip_index_format: None,
+                // Face orientation and culling debug:
+                // - With DEBUG_FACE_COLORING = true in shaders:
+                //     front faces (CCW) = vertex colors, back faces = red
+                // - To see BOTH sides: keep cull_mode = None (debug view)
+                // - To see ONLY front faces: set cull_mode = Some(wgpu::Face::Back)
+                // - To see ONLY back faces:  set cull_mode = Some(wgpu::Face::Front)
+                // - If colors appear flipped, change front_face between Ccw/Cw to match your mesh winding
                 front_face: wgpu::FrontFace::Ccw, // CounterClockWise is facing forward, cw are culled
-                cull_mode: None, // Debug: disable culling to rule out winding issues on Web
+                cull_mode: None, // Debug default: no culling to view both front/back coloring
                 // Setting this to anything other than Fill requires Features::POLYGON_MODE_LINE
                 // or Features::POLYGON_MODE_POINT
                 polygon_mode: wgpu::PolygonMode::Fill,
@@ -255,8 +262,15 @@ impl State{
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList, // Means that every three verties will correspond to one triangle.
                 strip_index_format: None,
+                // Face orientation and culling debug:
+                // - With DEBUG_FACE_COLORING = true in shaders:
+                //     front faces (CCW) = vertex colors, back faces = red
+                // - To see BOTH sides: keep cull_mode = None (debug view)
+                // - To see ONLY front faces: set cull_mode = Some(wgpu::Face::Back)
+                // - To see ONLY back faces:  set cull_mode = Some(wgpu::Face::Front)
+                // - If colors appear flipped, change front_face between Ccw/Cw to match your mesh winding
                 front_face: wgpu::FrontFace::Ccw, // CounterClockWise is facing forward, cw are culled
-                cull_mode: None, // Debug: disable culling to rule out winding issues on Web
+                cull_mode: None, // Debug default: no culling to view both front/back coloring
                 // Setting this to anything other than Fill requires Features::POLYGON_MODE_LINE
                 // or Features::POLYGON_MODE_POINT
                 polygon_mode: wgpu::PolygonMode::Fill,
@@ -465,9 +479,9 @@ impl State{
         
             // We set the the pipeline on the render_pass using the one we created for shader.
             if self.use_color_pipeline {
-                render_pass.set_pipeline(&self.render_pipeline_solid);
-            } else {
                 render_pass.set_pipeline(&self.render_pipeline_color);
+            } else {
+                render_pass.set_pipeline(&self.render_pipeline_solid);
             }
 
             // Set the camera bind group (pipeline expects it even if shaders don't use it)

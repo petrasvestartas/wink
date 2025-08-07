@@ -9,7 +9,8 @@ var<uniform> camera: CameraUniform;
 // Debug: bypass camera to isolate pipeline vs uniform issues
 const BYPASS_CAMERA: bool = false; // camera ON by default; set true to bypass for debugging
 // Debug: color faces by orientation to visualize culling
-const DEBUG_FACE_COLORING: bool = true; // set false to use vertex color
+// For the SOLID pipeline, keep this OFF to render a constant light gray.
+const DEBUG_FACE_COLORING: bool = true; // false -> constant gray
 
 struct VertexInput {
     @location(0) position: vec3<f32>,
@@ -41,15 +42,14 @@ fn vs_main(
 @fragment
 fn fs_main(in: VertexOutput, @builtin(front_facing) is_front: bool) -> @location(0) vec4<f32> {
     if (DEBUG_FACE_COLORING) {
-        // Green for front faces, Red for back faces
-        var col: vec3<f32>;
+        // Debug mode: keep backs BLACK; fronts constant gray for SOLID pipeline
         if (is_front) {
-            col = vec3<f32>(0.2, 0.9, 0.2);
+            return vec4<f32>(0.7, 0.7, 0.7, 1.0);
         } else {
-            col = vec3<f32>(0.9, 0.2, 0.2);
+            return vec4<f32>(0.0, 0.0, 0.0, 1.0);
         }
-        return vec4<f32>(col, 1.0);
     } else {
-        return vec4<f32>(in.color, 1.0);
+        // Default SOLID look: constant light gray
+        return vec4<f32>(0.7, 0.7, 0.7, 1.0);
     }
 }
