@@ -1,9 +1,8 @@
-use bytemuck;
 use cgmath::*;
-use crate::timing::{Instant, Duration};
+use crate::timing::Duration;
 use winit::dpi::PhysicalPosition;
 use winit::event::*;
-use winit::keyboard::{KeyCode, PhysicalKey};
+use winit::keyboard::KeyCode;
 
 #[rustfmt::skip]
 pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
@@ -245,8 +244,6 @@ pub struct CameraController {
     amount_backward: f32,
     amount_up: f32,
     amount_down: f32,
-    rotate_horizontal: f32,
-    rotate_vertical: f32,
     scroll: f32,
     speed: f32,
     sensitivity: f32,
@@ -280,8 +277,6 @@ impl CameraController {
             amount_backward: 0.0,
             amount_up: 0.0,
             amount_down: 0.0,
-            rotate_horizontal: 0.0,
-            rotate_vertical: 0.0,
             scroll: 0.0,
             speed,
             sensitivity,
@@ -318,11 +313,11 @@ impl CameraController {
                 self.amount_right = amount;
                 true
             }
-            KeyCode::Space => {
+            KeyCode::KeyE => {
                 self.amount_up = amount;
                 true
             }
-            KeyCode::ShiftLeft => {
+            KeyCode::KeyQ | KeyCode::ShiftLeft => {
                 self.amount_down = amount;
                 true
             }

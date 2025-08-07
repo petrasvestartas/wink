@@ -8,6 +8,10 @@ var<uniform> camera: CameraUniform;
 
 // Debug: bypass camera to isolate pipeline vs uniform issues
 const BYPASS_CAMERA: bool = false; // camera ON by default; set true to bypass for debugging
+// Debug: color faces by orientation to visualize culling/winding
+// For the color pipeline, keep this OFF for standard per-vertex colors
+// (turn ON to visualize culling as front=vertex color, back=red)
+const DEBUG_FACE_COLORING: bool = false; // false -> vertex colors
 
 struct VertexInput {
     @location(0) position: vec3<f32>,
@@ -36,10 +40,16 @@ fn vs_main(
 // Fragment shader
 
 @fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-        return vec4<f32>(
-        0.7,
-        0.7,
-        0.7,
-        1.0);
+fn fs_main(in: VertexOutput, @builtin(front_facing) is_front: bool) -> @location(0) vec4<f32> {
+    if (DEBUG_FACE_COLORING) {
+        // Debug mode: fronts use vertex color; backs are BLACK
+        if (is_front) {
+            return vec4<f32>(in.color, 1.0);
+        } else {
+            return vec4<f32>(0.0, 0.0, 0.0, 1.0);
+        }
+    } else {
+        // Default COLOR look: per-vertex colors
+        return vec4<f32>(in.color, 1.0);
+    }
 }
