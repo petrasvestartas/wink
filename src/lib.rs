@@ -14,6 +14,9 @@ use vertex::Vertex;
 use camera::{Camera, CameraUniform, CameraController};
 use timing::Instant;
 use wgpu::util::DeviceExt;
+// OpenModel: JSON geometry + mesh utilities
+use openmodel::AllGeometryData;
+use openmodel::geometry::{Mesh, Point};
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -714,8 +717,8 @@ pub fn run() -> anyhow::Result<()> {
     let mut app = App::new(
         #[cfg(target_arch = "wasm32")]
         &event_loop,
-        vertices.to_vec(),  // Convert to Vec here
-        indices.to_vec(),   // Convert to Vec here
+        vertices,
+        indices,
     );  
     event_loop.run_app(&mut app)?;
 
@@ -735,28 +738,80 @@ pub fn run_web() -> Result<(), wasm_bindgen::JsValue> {
 }
 
 
-// Geometry
-// This has to be replaced with a proper geometry file reader.
+// Geometry: load JSON meshes, add grid + Z-axis pipes, convert to buffers
+pub fn get_geometry() -> (Vec<Vertex>, Vec<u16>) {
+    // Helper: push mesh faces as triangles (fan) with per-vertex or default color
+    fn append_mesh_as_triangles(mesh: &Mesh, default_color: [f32; 3], vertices: &mut Vec<Vertex>, indices: &mut Vec<u16>) {
+        for (_face_key, face_vertices) in mesh.get_face_data() {
+            if face_vertices.len() < 3 { continue; }
+            for i in 1..(face_vertices.len() - 1) {
+                let tri = [face_vertices[0], face_vertices[i], face_vertices[i + 1]];
+                for &vk in &tri {
+                    if let Some(pos) = mesh.vertex_position(vk) {
+                        let use_default = if let Some(vd) = mesh.vertex.get(&vk) {
+                            !(vd.attributes.contains_key("r") && vd.attributes.contains_key("g") && vd.attributes.contains_key("b"))
+                        } else { true };
+                        let color = if use_default {
+                            default_color
+                        } else if let Some(vd) = mesh.vertex.get(&vk) {
+                            let c = vd.color();
+                            [c[0] as f32, c[1] as f32, c[2] as f32]
+                        } else { default_color };
 
+                        if vertices.len() >= u16::MAX as usize { break; }
+                        vertices.push(Vertex { position: [pos.x as f32, pos.y as f32, pos.z as f32], color });
+                        indices.push((vertices.len() - 1) as u16);
+                    }
+                }
+            }
+        }
+    }
 
-pub fn get_geometry() -> (&'static [Vertex], &'static [u16]) {
+    // Helper: 10x10 grid (11 lines per direction) + 1-unit Z axis as pipes
+    fn make_grid_and_axis_meshes() -> Vec<(Mesh, [f32; 3])> {
+        let mut out = Vec::new();
+        let size: i32 = 5; // -5..=5 => 11 lines => 10x10 cells
+        let radius: f64 = 0.02;
+        let grid_color: [f32; 3] = [0.3, 0.3, 0.3];
+        let axis_color: [f32; 3] = [0.0, 0.0, 1.0];
 
-    const VERTICES: &[Vertex] = &[
-        // Colors converted from sRGB to linear space
-        // [0.5, 0.5, 0.5] -> [0.21404114, 0.21404114, 0.21404114]
-        Vertex { position: [-0.0868241, 0.49240386, 0.0], color: [0.21404114, 0.21404114, 0.21404114] }, // A
-        // [0.0, 0.0, 0.5] -> [0.0, 0.0, 0.21404114]
-        Vertex { position: [-0.49513406, 0.06958647, 0.0], color: [0.0, 0.0, 0.21404114] }, // B
-        // [0.5, 0.0, 0.0] -> [0.21404114, 0.0, 0.0]
-        Vertex { position: [-0.21918549, -0.44939706, 0.0], color: [0.21404114, 0.0, 0.0] }, // C
-        // [0.0, 0.0, 0.0] -> [0.0, 0.0, 0.0]
-        Vertex { position: [0.35966998, -0.3473291, 0.0], color: [0.0, 0.0, 0.0] }, // D
-        // [1.0, 1.0, 1.0] -> [1.0, 1.0, 1.0]
-        Vertex { position: [0.44147372, 0.2347359, 0.0], color: [1.0, 1.0, 1.0] }, // E
-    ];
-    
-    const INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4, /* padding */ 0];
+        for i in -size..=size {
+            let y = i as f64;
+            out.push((Mesh::create_pipe(Point::new(-(size as f64), y, 0.0), Point::new(size as f64, y, 0.0), radius), grid_color));
+        }
+        for i in -size..=size {
+            let x = i as f64;
+            out.push((Mesh::create_pipe(Point::new(x, -(size as f64), 0.0), Point::new(x, size as f64, 0.0), radius), grid_color));
+        }
+        out.push((Mesh::create_pipe(Point::new(0.0, 0.0, 0.0), Point::new(0.0, 0.0, 1.0), 0.03), axis_color));
+        out
+    }
 
-    
-    (VERTICES, INDICES)
+    // 1) Load embedded JSON geometry
+    let json_str = include_str!("openmodel/all_geometry.json");
+    let all_geom: AllGeometryData = serde_json::from_str(json_str).unwrap_or(AllGeometryData {
+        points: vec![],
+        vectors: vec![],
+        lines: vec![],
+        planes: vec![],
+        colors: vec![],
+        point_clouds: vec![],
+        line_clouds: vec![],
+        plines: vec![],
+        xforms: vec![],
+        meshes: vec![],
+    });
+
+    // 2) Aggregate meshes: loaded + procedural grid/axis
+    let mut vertices: Vec<Vertex> = Vec::new();
+    let mut indices: Vec<u16> = Vec::new();
+
+    for m in &all_geom.meshes {
+        append_mesh_as_triangles(m, [0.8, 0.8, 0.8], &mut vertices, &mut indices);
+    }
+    for (m, color) in make_grid_and_axis_meshes() {
+        append_mesh_as_triangles(&m, color, &mut vertices, &mut indices);
+    }
+
+    (vertices, indices)
 }
