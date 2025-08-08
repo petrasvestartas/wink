@@ -5,8 +5,9 @@
   "scripts": {
     "copy-wasm": "mkdir -p .vuepress/public/wasm && cp ../pkg/*.js ../pkg/*.wasm ../pkg/*.d.ts .vuepress/public/wasm/ 2>/dev/null || true",
     "build-wasm": "cd .. && wasm-pack build --target web",
-    "docs:dev": "npm run copy-wasm && vuepress dev",
+    "docs:dev": "npm run copy-wasm && node .vuepress/scripts/watch-geometry.js & vuepress dev",
     "docs:build": "npm run copy-wasm && vuepress build",
+    "watch-geometry": "node .vuepress/scripts/watch-geometry.js",
     "dev": "npm run build-wasm && npm run docs:dev",
     "build": "npm run build-wasm && npm run docs:build"
   },
