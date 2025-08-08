@@ -1,0 +1,38 @@
+[package]
+name = "openmodel"
+version = "0.1.0"
+edition = "2021"
+authors = ["Petras Vestartas petrasvestartas@gmail.com>"]
+description = "Geometry library for structures."
+license = "MIT"
+repository = "https://github.com/petrasvestartas/openmodel"
+homepage = "https://vestartas.com/"
+documentation = "https://docs.rs/openmodel"
+readme = "README.md"
+keywords = ["statics", "structures", "geometry"]
+categories = ["algorithms", "data-structures"]
+
+[dependencies]
+# Serde is used for serializing and deserializing Rust data structures.
+# Serde JSON is an extension of Serde specifically for working with JSON data.
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.135"
+
+# UUID is used for generating and handling universally unique identifiers (UUIDs). 
+# The "v4" feature enables version 4 UUIDs, and "serde" integrates with Serde for serialization/deserialization.
+uuid = { version = "1.0", features = ["v4", "serde", "js"] }
+
+
+
+[lib]
+name = "openmodel"
+path = "src/lib.rs"
+
+[[bin]]
+name = "openmodel_bin"
+path = "src/main.rs"
+
+[dev-dependencies]
+
+[package.metadata.docs.rs]
+all-features = true
