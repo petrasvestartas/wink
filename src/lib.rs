@@ -19,7 +19,8 @@ use openmodel::AllGeometryData;
 use openmodel::geometry::{Mesh, Point};
 
 // Shared remote geometry URL used by both native and WASM builds
-const REMOTE_GEOMETRY_URL: &str = "https://raw.githubusercontent.com/petrasvestartas/storage/main/geometry/all_geometry.json";
+const REMOTE_GEOMETRY_URL: &str = "https://raw.githubusercontent.com/petrasvestartas/storage/refs/heads/main/geometry/all_geometry.json";
+
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
