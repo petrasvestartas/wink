@@ -19,7 +19,28 @@ use openmodel::AllGeometryData;
 use openmodel::geometry::{Mesh, Point};
 
 // Shared remote geometry URL used by both native and WASM builds
-const REMOTE_GEOMETRY_URL: &str = "https://raw.githubusercontent.com/petrasvestartas/storage/refs/heads/main/geometry/all_geometry.json";
+// Use standard raw path: https://raw.githubusercontent.com/<user>/<repo>/<branch>/<path>
+const REMOTE_GEOMETRY_URL: &str = "https://raw.githubusercontent.com/petrasvestartas/storage/main/geometry/all_geometry.json";
+#[cfg(target_arch = "wasm32")]
+const LOCAL_GEOMETRY_HTTP_PATH: &str = "/geometry/all_geometry.json"; // served by docs dev server
+
+// Native-only: absolute path to local JSON for fast runtime reloads (fallbacks to include_str! if not found)
+#[cfg(not(target_arch = "wasm32"))]
+const LOCAL_GEOMETRY_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/openmodel/all_geometry.json");
+
+// Polling interval for change detection (ms)
+const GEOMETRY_POLL_INTERVAL_MS: u64 = 1000;
+
+#[cfg(target_arch = "wasm32")]
+use std::cell::{Cell, RefCell};
+
+#[cfg(target_arch = "wasm32")]
+thread_local! {
+    static PENDING_GEOMETRY: RefCell<Option<(Vec<Vertex>, Vec<u16>)>> = RefCell::new(None);
+    static REMOTE_HASH: RefCell<Option<u64>> = RefCell::new(None);
+    static LOCAL_HASH: RefCell<Option<u64>> = RefCell::new(None);
+    static REMOTE_FETCHING: Cell<bool> = Cell::new(false);
+}
 
 
 #[cfg(target_arch = "wasm32")]
@@ -28,11 +49,17 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_futures::JsFuture;
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen_futures::spawn_local;
 
 #[cfg(target_arch = "wasm32")]
 async fn fetch_text(url: &str) -> Option<String> {
     let window = web_sys::window()?;
-    let resp_value = JsFuture::from(window.fetch_with_str(url)).await.ok()?;
+    // Cache-busting: append a timestamp to avoid 304/ok=false and stale caches
+    let ts = window.performance()?.now() as u64;
+    let sep = if url.contains('?') { "&" } else { "?" };
+    let bust = format!("{}{}ts={}", url, sep, ts);
+    let resp_value = JsFuture::from(window.fetch_with_str(&bust)).await.ok()?;
     let resp: web_sys::Response = resp_value.dyn_into().ok()?;
     if !resp.ok() { return None; }
     let text_promise = resp.text().ok()?;
@@ -40,6 +67,15 @@ async fn fetch_text(url: &str) -> Option<String> {
     text.as_string()
 }
 
+// Tiny FNV-1a hash for quick change detection
+fn fnv1a64(bytes: &[u8]) -> u64 {
+    let mut hash: u64 = 0xcbf29ce484222325;
+    for b in bytes {
+        hash ^= *b as u64;
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    hash
+}
 // Helper: push mesh faces as triangles (fan) with per-vertex or default color
 fn append_mesh_as_triangles(
     mesh: &Mesh,
@@ -111,9 +147,16 @@ pub struct State{
     camera_bind_group: wgpu::BindGroup,
     camera_controller: CameraController,
     last_render_time: Instant,
+    // Change detection throttle timestamp
+    last_poll_time: Instant,
     mouse_pressed: bool,
     // default pointer to the window
     window: Arc<Window>,
+    // Native-only: track local file mtime and remote ETag/Last-Modified between polls
+    #[cfg(not(target_arch = "wasm32"))]
+    last_local_mtime: Option<std::time::SystemTime>,
+    #[cfg(not(target_arch = "wasm32"))]
+    last_remote_tag: Option<String>,
 }
 
 impl State{
@@ -441,9 +484,190 @@ impl State{
             camera_bind_group,
             camera_controller,
             last_render_time: Instant::now(),
+            last_poll_time: Instant::now(),
             mouse_pressed: false,
             window,
+            #[cfg(not(target_arch = "wasm32"))]
+            last_local_mtime: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            last_remote_tag: None,
         })
+    }
+
+    // Replace GPU buffers with new geometry
+    fn replace_geometry(&mut self, vertices: &[Vertex], indices: &[u16]) {
+        let new_vertex_buffer = self.device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(vertices),
+                usage: wgpu::BufferUsages::VERTEX,
+            }
+        );
+        let new_index_buffer = self.device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Index Buffer"),
+                contents: bytemuck::cast_slice(indices),
+                usage: wgpu::BufferUsages::INDEX,
+            }
+        );
+        self.vertex_buffer = new_vertex_buffer;
+        self.index_buffer = new_index_buffer;
+        #[cfg(target_arch = "wasm32")]
+        {
+            web_sys::console::log_1(&"Geometry buffers reloaded".into());
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            log::info!("Geometry buffers reloaded");
+        }
+    }
+
+    // Check for geometry changes and reload if needed (throttled)
+    fn poll_geometry_changes(&mut self) {
+        let now = Instant::now();
+        if (now - self.last_poll_time).as_millis() < (GEOMETRY_POLL_INTERVAL_MS as u128) {
+            return;
+        }
+        self.last_poll_time = now;
+
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            use std::time::{Duration as StdDuration};
+            let mut changed = false;
+
+            // Local file mtime check
+            if let Ok(meta) = std::fs::metadata(LOCAL_GEOMETRY_PATH) {
+                if let Ok(mtime) = meta.modified() {
+                    if self.last_local_mtime.map_or(true, |prev| prev != mtime) {
+                        self.last_local_mtime = Some(mtime);
+                        changed = true;
+                    }
+                }
+            }
+
+            // Remote HEAD ETag/Last-Modified check (fast, small timeout)
+            if let Ok(client) = reqwest::blocking::Client::builder()
+                .timeout(StdDuration::from_millis(400))
+                .build()
+            {
+                if let Ok(resp) = client.head(REMOTE_GEOMETRY_URL).send() {
+                    if resp.status().is_success() {
+                        let headers = resp.headers();
+                        let tag = headers
+                            .get(reqwest::header::ETAG)
+                            .and_then(|v| v.to_str().ok())
+                            .map(|s| format!("etag:{}", s))
+                            .or_else(|| headers
+                                .get(reqwest::header::LAST_MODIFIED)
+                                .and_then(|v| v.to_str().ok())
+                                .map(|s| format!("lm:{}", s)))
+                            .or_else(|| headers
+                                .get(reqwest::header::CONTENT_LENGTH)
+                                .and_then(|v| v.to_str().ok())
+                                .map(|s| format!("len:{}", s)));
+                        if let Some(tag) = tag {
+                            if self.last_remote_tag.as_deref() != Some(tag.as_str()) {
+                                self.last_remote_tag = Some(tag);
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if changed {
+                let (vertices, indices) = get_geometry();
+                self.replace_geometry(&vertices, &indices);
+            }
+        }
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            // If a fetch is already running, just try to apply pending result
+            let already_fetching = REMOTE_FETCHING.with(|f| f.get());
+            if !already_fetching {
+                REMOTE_FETCHING.with(|f| f.set(true));
+                // Spawn async poll for remote JSON; only apply if content hash changed
+                spawn_local(async move {
+                    // Fetch local-served JSON
+                    let local_text = fetch_text(LOCAL_GEOMETRY_HTTP_PATH).await;
+                    let local_changed = if let Some(ref t) = local_text {
+                        let new_hash = fnv1a64(t.as_bytes());
+                        LOCAL_HASH.with(|h| {
+                            let mut hb = h.borrow_mut();
+                            if hb.map_or(true, |old| old != new_hash) { *hb = Some(new_hash); true } else { false }
+                        })
+                    } else { false };
+
+                    // Fetch remote RAW JSON
+                    let remote_text = fetch_text(REMOTE_GEOMETRY_URL).await;
+                    let remote_changed = if let Some(ref t) = remote_text {
+                        let new_hash = fnv1a64(t.as_bytes());
+                        REMOTE_HASH.with(|h| {
+                            let mut hb = h.borrow_mut();
+                            if hb.map_or(true, |old| old != new_hash) { *hb = Some(new_hash); true } else { false }
+                        })
+                    } else { false };
+
+                    if local_changed || remote_changed {
+                        // Build geometry from both sources (remote + local) while avoiding duplicates by content hash.
+                        // If neither is available, fall back to embedded. Always add grid/axis once.
+                        let mut vertices: Vec<Vertex> = Vec::new();
+                        let mut indices: Vec<u16> = Vec::new();
+
+                        let mut used_sources: Vec<&str> = Vec::new();
+                        let mut remote_h: Option<u64> = None;
+
+                        if let Some(t) = &remote_text {
+                            if let Ok(all_geom_remote) = serde_json::from_str::<AllGeometryData>(t) {
+                                for m in &all_geom_remote.meshes { append_mesh_as_triangles(m, [0.8,0.8,0.8], &mut vertices, &mut indices); }
+                                remote_h = Some(fnv1a64(t.as_bytes()));
+                                used_sources.push("remote");
+                            } else {
+                                web_sys::console::warn_1(&"Poll: failed to parse remote JSON".into());
+                            }
+                        }
+
+                        if let Some(t) = &local_text {
+                            let h = fnv1a64(t.as_bytes());
+                            if remote_h != Some(h) {
+                                if let Ok(all_geom_local) = serde_json::from_str::<AllGeometryData>(t) {
+                                    for m in &all_geom_local.meshes { append_mesh_as_triangles(m, [0.8,0.8,0.8], &mut vertices, &mut indices); }
+                                    used_sources.push("local");
+                                } else {
+                                    web_sys::console::warn_1(&"Poll: failed to parse local JSON".into());
+                                }
+                            } else {
+                                web_sys::console::log_1(&"Poll: skipping local (duplicate of remote)".into());
+                            }
+                        }
+
+                        if used_sources.is_empty() {
+                            let json_str = include_str!("openmodel/all_geometry.json");
+                            let all_geom: AllGeometryData = serde_json::from_str(json_str).unwrap_or(AllGeometryData {
+                                points: vec![], vectors: vec![], lines: vec![], planes: vec![], colors: vec![],
+                                point_clouds: vec![], line_clouds: vec![], plines: vec![], xforms: vec![], meshes: vec![],
+                            });
+                            for m in &all_geom.meshes { append_mesh_as_triangles(m, [0.8,0.8,0.8], &mut vertices, &mut indices); }
+                            used_sources.push("embedded");
+                        }
+
+                        // Always add procedural grid and axis once
+                        for (m, color) in make_grid_and_axis_meshes() { append_mesh_as_triangles(&m, color, &mut vertices, &mut indices); }
+
+                        PENDING_GEOMETRY.with(|p| *p.borrow_mut() = Some((vertices, indices)));
+                        web_sys::console::log_1(&format!("Geometry changed; sources: {}", used_sources.join("+")).into());
+                    }
+                    REMOTE_FETCHING.with(|f| f.set(false));
+                });
+            }
+
+            // Apply any pending geometry prepared by the async task
+            let pending = PENDING_GEOMETRY.with(|p| p.borrow_mut().take());
+            if let Some((vertices, indices)) = pending {
+                self.replace_geometry(&vertices, &indices);
+            }
+        }
     }
 
     pub fn resize(&mut self, width: u32, height: u32){
@@ -488,6 +712,8 @@ impl State{
     }
 
     fn update(&mut self) {
+        // Poll for geometry changes periodically and hot-reload buffers if needed
+        self.poll_geometry_changes();
         let now = Instant::now();
         let dt = now - self.last_render_time;
         self.last_render_time = now;
@@ -818,9 +1044,11 @@ pub fn run_web() -> Result<(), wasm_bindgen::JsValue> {
 // Geometry: load JSON meshes, add grid + Z-axis pipes, convert to buffers
 #[cfg(not(target_arch = "wasm32"))]
 pub fn get_geometry() -> (Vec<Vertex>, Vec<u16>) {
-    // 1) Load embedded JSON geometry
-    let json_str = include_str!("openmodel/all_geometry.json");
-    let all_geom: AllGeometryData = serde_json::from_str(json_str).unwrap_or(AllGeometryData {
+    // 1) Load JSON geometry from disk if available (fast mtime check), fallback to embedded
+    let json_str = std::fs::read_to_string(LOCAL_GEOMETRY_PATH)
+        .unwrap_or_else(|_| include_str!("openmodel/all_geometry.json").to_string());
+    let local_or_embedded_hash = fnv1a64(json_str.as_bytes());
+    let all_geom: AllGeometryData = serde_json::from_str(&json_str).unwrap_or(AllGeometryData {
         points: vec![],
         vectors: vec![],
         lines: vec![],
@@ -848,17 +1076,24 @@ pub fn get_geometry() -> (Vec<Vertex>, Vec<u16>) {
     match reqwest::blocking::get(REMOTE_GEOMETRY_URL) {
         Ok(resp) if resp.status().is_success() => {
             match resp.text() {
-                Ok(text) => match serde_json::from_str::<AllGeometryData>(&text) {
-                    Ok(all_geom_remote) => {
-                        for m in &all_geom_remote.meshes {
-                            append_mesh_as_triangles(m, [0.8, 0.8, 0.8], &mut vertices, &mut indices);
+                Ok(text) => {
+                    let remote_hash = fnv1a64(text.as_bytes());
+                    if remote_hash != local_or_embedded_hash {
+                        match serde_json::from_str::<AllGeometryData>(&text) {
+                            Ok(all_geom_remote) => {
+                                for m in &all_geom_remote.meshes {
+                                    append_mesh_as_triangles(m, [0.8, 0.8, 0.8], &mut vertices, &mut indices);
+                                }
+                                log::info!(
+                                    "Merged remote JSON meshes (native): {}",
+                                    all_geom_remote.meshes.len()
+                                );
+                            }
+                            Err(err) => log::warn!("Failed to parse remote JSON (native): {}", err),
                         }
-                        log::info!(
-                            "Loaded remote JSON meshes (native): {}",
-                            all_geom_remote.meshes.len()
-                        );
+                    } else {
+                        log::info!("Skipping remote (duplicate of local/embedded) (native)");
                     }
-                    Err(err) => log::warn!("Failed to parse remote JSON (native): {}", err),
                 },
                 Err(err) => log::warn!("Failed reading remote response (native): {}", err),
             }
@@ -877,50 +1112,55 @@ pub fn get_geometry() -> (Vec<Vertex>, Vec<u16>) {
 // WASM: fetch remote RAW JSON and merge with embedded + procedural meshes
 #[cfg(target_arch = "wasm32")]
 pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>) {
-    // 1) Load embedded JSON geometry
-    let json_str = include_str!("openmodel/all_geometry.json");
-    let all_geom: AllGeometryData = serde_json::from_str(json_str).unwrap_or(AllGeometryData {
-        points: vec![],
-        vectors: vec![],
-        lines: vec![],
-        planes: vec![],
-        colors: vec![],
-        point_clouds: vec![],
-        line_clouds: vec![],
-        plines: vec![],
-        xforms: vec![],
-        meshes: vec![],
-    });
-
-    // 2) Aggregate meshes: embedded + procedural grid/axis
+    // Build geometry by merging remote and local, avoiding duplicates via content hash; fallback to embedded.
     let mut vertices: Vec<Vertex> = Vec::new();
     let mut indices: Vec<u16> = Vec::new();
 
-    for m in &all_geom.meshes {
-        append_mesh_as_triangles(m, [0.8, 0.8, 0.8], &mut vertices, &mut indices);
-    }
-    for (m, color) in make_grid_and_axis_meshes() {
-        append_mesh_as_triangles(&m, color, &mut vertices, &mut indices);
+    let local_text = fetch_text(LOCAL_GEOMETRY_HTTP_PATH).await;
+    let remote_text = fetch_text(REMOTE_GEOMETRY_URL).await;
+
+    let mut used_sources: Vec<&str> = Vec::new();
+    let mut remote_h: Option<u64> = None;
+
+    if let Some(t) = &remote_text {
+        match serde_json::from_str::<AllGeometryData>(t) {
+            Ok(g) => {
+                for m in &g.meshes { append_mesh_as_triangles(m, [0.8,0.8,0.8], &mut vertices, &mut indices); }
+                remote_h = Some(fnv1a64(t.as_bytes()));
+                used_sources.push("remote");
+            }
+            Err(err) => web_sys::console::warn_1(&format!("Initial: failed to parse remote JSON: {}", err).into()),
+        }
     }
 
-    // 3) Try to fetch and merge remote JSON
-    if let Some(text) = fetch_text(REMOTE_GEOMETRY_URL).await {
-        match serde_json::from_str::<AllGeometryData>(&text) {
-            Ok(all_geom_remote) => {
-                for m in &all_geom_remote.meshes {
-                    append_mesh_as_triangles(m, [0.8, 0.8, 0.8], &mut vertices, &mut indices);
+    if let Some(t) = &local_text {
+        let h = fnv1a64(t.as_bytes());
+        if remote_h != Some(h) {
+            match serde_json::from_str::<AllGeometryData>(t) {
+                Ok(g) => {
+                    for m in &g.meshes { append_mesh_as_triangles(m, [0.8,0.8,0.8], &mut vertices, &mut indices); }
+                    used_sources.push("local");
                 }
-                web_sys::console::log_1(&format!(
-                    "Loaded remote JSON meshes: {}", all_geom_remote.meshes.len()
-                ).into());
+                Err(err) => web_sys::console::warn_1(&format!("Initial: failed to parse local JSON: {}", err).into()),
             }
-            Err(err) => {
-                web_sys::console::warn_1(&format!("Failed to parse remote JSON: {}", err).into());
-            }
+        } else {
+            web_sys::console::log_1(&format!("Initial: skipping local (duplicate of remote)").into());
         }
-    } else {
-        web_sys::console::warn_1(&"Remote JSON fetch skipped/failed; using embedded only".into());
     }
+
+    if used_sources.is_empty() {
+        let json_str = include_str!("openmodel/all_geometry.json");
+        let all_geom: AllGeometryData = serde_json::from_str(json_str).unwrap_or(AllGeometryData {
+            points: vec![], vectors: vec![], lines: vec![], planes: vec![], colors: vec![],
+            point_clouds: vec![], line_clouds: vec![], plines: vec![], xforms: vec![], meshes: vec![],
+        });
+        for m in &all_geom.meshes { append_mesh_as_triangles(m, [0.8,0.8,0.8], &mut vertices, &mut indices); }
+        used_sources.push("embedded");
+    }
+
+    for (m, color) in make_grid_and_axis_meshes() { append_mesh_as_triangles(&m, color, &mut vertices, &mut indices); }
+
+    web_sys::console::log_1(&format!("Initial geometry sources: {}", used_sources.join("+")).into());
 
     (vertices, indices)
 }
