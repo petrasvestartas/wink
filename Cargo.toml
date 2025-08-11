@@ -30,6 +30,10 @@ wasm-opt = false
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[[bin]]
+name = "wink-app"
+path = "src/main.rs"
+
 # WASM dependencies, that allow lower-level languages such as Rust to run on a web browser.
 # This allows us to write a the bulk of our application in Rus and use a few lines of JavaScript to run it in a web browser.
 # Conditional profile settings
@@ -53,8 +57,10 @@ web-sys = { version = "0.3", features = [ # Create for many methods and types th
     "Performance",
     "HtmlCanvasElement",
     "Response",
+    "Request",
+    "RequestInit",
+    "RequestCache",
     "console",
 ]}
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
+ 

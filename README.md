@@ -54,6 +54,27 @@ brew install git
 git --version
 ```
 
+## Windows quickstart (PowerShell)
+
+Use this when you're on Windows and Cargo is already installed:
+
+```powershell
+cd C:\rust\wink
+cargo fetch      # download dependencies
+cargo build      # compile (debug)
+cargo run        # run
+```
+
+If you hit build/link errors on Windows:
+
+- Install "Microsoft C++ Build Tools" (Visual Studio) and select "Desktop development with C++".
+- For web/docs: install nvm-windows from https://github.com/coreybutler/nvm-windows/releases, then:
+  ```powershell
+  nvm install 20
+  nvm use 20
+  ```
+- wasm-pack (one-time): `cargo install wasm-pack`
+
 ## Build locally using cargo
 
 ```bash

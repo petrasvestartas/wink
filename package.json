@@ -4,9 +4,9 @@
   "description": "Rust wgpu viewer with WASM and VuePress integration",
   "scripts": {
     "build-wasm": "wasm-pack build --target web",
-    "dev": "npm run build-wasm && cd docs && npm run docs:dev",
-    "build": "npm run build-wasm && cd docs && npm run docs:build",
-    "rebuild": "npm run build-wasm && cd docs && npm run copy-wasm && touch .vuepress/config.js && echo 'WASM rebuilt at '$(date)"
+    "dev": "npm run build-wasm && npm --prefix docs run docs:dev",
+    "build": "npm run build-wasm && npm --prefix docs run docs:build",
+    "rebuild": "npm run build-wasm && npm --prefix docs run copy-wasm && node -e \"require('fs').writeFileSync('docs/.vuepress/WASM_REBUILT.txt', new Date().toISOString())\""
   },
   "keywords": ["rust", "wasm", "wgpu", "viewer"],
   "author": "petrasvestartas",
