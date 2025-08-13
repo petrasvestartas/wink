@@ -11,6 +11,9 @@ pub mod vertex;
 pub mod camera;
 pub mod timing;
 pub mod instance;
+pub mod shader_color_pipeline;
+pub mod shader_solid_pipeline;
+pub mod shader_pipe_pipeline;
 use vertex::Vertex;
 use camera::{Camera, CameraUniform, CameraController};
 use timing::Instant;
@@ -330,17 +333,6 @@ impl State{
         // Push one scope before creating pipelines; we'll pop it after both are created.
         device.push_error_scope(wgpu::ErrorFilter::Validation);
 
-        // Pipeline. We will have to load shaders, as the render pipeline require them.
-        let shader_solid = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Solid Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("shader_solid.wgsl").into()),
-        });
-
-        let shader_color = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Color Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("shader_color.wgsl").into()),
-        });
-
         // Pipeline layout - testing camera bind group step by step
         let camera_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -357,149 +349,14 @@ impl State{
                 label: Some("camera_bind_group_layout"),
             });
 
-        let render_pipeline_layout =
-        device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[&camera_bind_group_layout],
-            push_constant_ranges: &[],
-        });
+        // Pipelines via modules (unified instancing preserved)
+        let render_pipeline_solid = crate::shader_solid_pipeline::create(
+            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT,
+        );
 
-        // Pipeline for rendering
-        let render_pipeline_solid = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Solid Pipeline"),
-            layout: Some(&render_pipeline_layout),
-            
-            vertex: wgpu::VertexState {
-                module: &shader_solid, // <-- Change the shader
-                entry_point: Some("vs_main"), // 1. vertex entry point
-                buffers: &[
-                    Vertex::desc(), // The implementation of the vertex struct
-                    InstanceRaw::desc(), // The implementation of the instance struct
-                ], // 2. tells wgpu that type of vetices we want to pass to vertex shader
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-            },
-
-            fragment: Some(wgpu::FragmentState { // 3. This is optional so we wrap to Some(), we need it for colors
-                module: &shader_solid,  // <-- Change the shader
-                entry_point: Some("fs_main"), // 1. fragment entry point
-                targets: &[Some(wgpu::ColorTargetState { // 4. tells wgpu what color outputs it should set up
-                    format: config.format,
-                    blend: Some(wgpu::BlendState::REPLACE),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-            }),
-
-            // The primitive field describes how to interpret our vertices when converting them into triangles.
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList, // Means that every three verties will correspond to one triangle.
-                strip_index_format: None,
-                // Face orientation and culling debug:
-                // - With DEBUG_FACE_COLORING = true in shaders:
-                //     front faces (CCW) = vertex colors, back faces = red
-                // - To see BOTH sides: keep cull_mode = None (debug view)
-                // - To see ONLY front faces: set cull_mode = Some(wgpu::Face::Back)
-                // - To see ONLY back faces:  set cull_mode = Some(wgpu::Face::Front)
-                // - If colors appear flipped, change front_face between Ccw/Cw to match your mesh winding
-                front_face: wgpu::FrontFace::Ccw, // CounterClockWise is facing forward, cw are culled
-                cull_mode: None, // Debug default: no culling to view both front/back coloring
-                // Setting this to anything other than Fill requires Features::POLYGON_MODE_LINE
-                // or Features::POLYGON_MODE_POINT
-                polygon_mode: wgpu::PolygonMode::Fill,
-                // Requires Features::DEPTH_CLIP_CONTROL
-                unclipped_depth: false,
-                // Requires Features::CONSERVATIVE_RASTERIZATION
-                conservative: false,
-            },
-
-            // ADDED (depth): Enable depth testing and writing
-            depth_stencil: Some(wgpu::DepthStencilState {
-                format: DEPTH_FORMAT,
-                depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::Less,
-                stencil: wgpu::StencilState::default(),
-                bias: wgpu::DepthBiasState::default(),
-            }),
-            multisample: wgpu::MultisampleState {
-                count: 1, // Determines how many samples the pipeline will use
-                mask: !0, // Specifies which samples should be active, here we use all
-                alpha_to_coverage_enabled: false, // related to multisampling which is not used here
-            },
-            // If the pipeline will be used with a multiview render pass, this
-            // indicates how many array layers the attachments will have.
-            multiview: None,
-            // Useful for optimizing shader compilation on Android
-            cache: None,
-        });
-
-
-         // Pipeline for rendering
-         let render_pipeline_color = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Color Pipeline"),
-            layout: Some(&render_pipeline_layout),
-            
-            vertex: wgpu::VertexState {
-                module: &shader_color, // <-- Change the shader
-                entry_point: Some("vs_main"), // 1. vertex entry point
-                buffers: &[
-                    Vertex::desc(), // The implementation of the vertex struct
-                    InstanceRaw::desc(), // The implementation of the instance struct
-                ], // 2. tells wgpu that type of vetices we want to pass to vertex shader
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-            },
-
-            fragment: Some(wgpu::FragmentState { // 3. This is optional so we wrap to Some(), we need it for colors
-                module: &shader_color, // <-- Change the shader
-                entry_point: Some("fs_main"), // 1. fragment entry point
-                targets: &[Some(wgpu::ColorTargetState { // 4. tells wgpu what color outputs it should set up
-                    format: config.format,
-                    blend: Some(wgpu::BlendState::REPLACE),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-            }),
-
-            // The primitive field describes how to interpret our vertices when converting them into triangles.
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList, // Means that every three verties will correspond to one triangle.
-                strip_index_format: None,
-                // Face orientation and culling debug:
-                // - With DEBUG_FACE_COLORING = true in shaders:
-                //     front faces (CCW) = vertex colors, back faces = red
-                // - To see BOTH sides: keep cull_mode = None (debug view)
-                // - To see ONLY front faces: set cull_mode = Some(wgpu::Face::Back)
-                // - To see ONLY back faces:  set cull_mode = Some(wgpu::Face::Front)
-                // - If colors appear flipped, change front_face between Ccw/Cw to match your mesh winding
-                front_face: wgpu::FrontFace::Ccw, // CounterClockWise is facing forward, cw are culled
-                cull_mode: None, // Debug default: no culling to view both front/back coloring
-                // Setting this to anything other than Fill requires Features::POLYGON_MODE_LINE
-                // or Features::POLYGON_MODE_POINT
-                polygon_mode: wgpu::PolygonMode::Fill,
-                // Requires Features::DEPTH_CLIP_CONTROL
-                unclipped_depth: false,
-                // Requires Features::CONSERVATIVE_RASTERIZATION
-                conservative: false,
-            },
-
-            // We are not using a depth/stencil buffer currently
-            depth_stencil: Some(wgpu::DepthStencilState {
-                format: DEPTH_FORMAT,
-                depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::Less,
-                stencil: wgpu::StencilState::default(),
-                bias: wgpu::DepthBiasState::default(),
-            }),
-            multisample: wgpu::MultisampleState {
-                count: 1, // Determines how many samples the pipeline will use
-                mask: !0, // Specifies which samples should be active, here we use all
-                alpha_to_coverage_enabled: false, // related to multisampling which is not used here
-            },
-            // If the pipeline will be used with a multiview render pass, this
-            // indicates how many array layers the attachments will have.
-            multiview: None,
-            // Useful for optimizing shader compilation on Android
-            cache: None,
-        });
+        let render_pipeline_color = crate::shader_color_pipeline::create(
+            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT,
+        );
 
         // Pop and log any validation errors that might have occurred during pipeline creation
         #[cfg(target_arch = "wasm32")]
@@ -688,35 +545,6 @@ impl State{
         // Configure surface immediately to avoid first-frame issues
         state.resize(size.width, size.height);
         Ok(state)
-    }
-
-    // Replace GPU buffers with new geometry
-    fn replace_geometry(&mut self, vertices: &[Vertex], indices: &[u16]) {
-        let new_vertex_buffer = self.device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(vertices),
-                usage: wgpu::BufferUsages::VERTEX,
-            }
-        );
-        let new_index_buffer = self.device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Index Buffer"),
-                contents: bytemuck::cast_slice(indices),
-                usage: wgpu::BufferUsages::INDEX,
-            }
-        );
-        self.vertex_buffer = new_vertex_buffer;
-        self.index_buffer = new_index_buffer;
-        self.num_indices = indices.len() as u32;
-        #[cfg(target_arch = "wasm32")]
-        {
-            web_sys::console::log_1(&"Geometry buffers reloaded".into());
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            log::info!("Geometry buffers reloaded");
-        }
     }
 
     // Replace entire scene: geometry + instance batches
