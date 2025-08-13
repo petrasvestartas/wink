@@ -10,10 +10,16 @@ use winit::{
 pub mod vertex;
 pub mod camera;
 pub mod timing;
+pub mod instance;
 use vertex::Vertex;
 use camera::{Camera, CameraUniform, CameraController};
 use timing::Instant;
 use wgpu::util::DeviceExt;
+use instance::Instance;
+use instance::InstanceRaw;
+use instance::DrawBatch;
+use instance::BatchDraw;
+use cgmath::prelude::*;
 // OpenModel: JSON geometry + mesh utilities
 use openmodel::AllGeometryData;
 use openmodel::geometry::{Mesh, Point};
@@ -28,12 +34,18 @@ const LOCAL_GEOMETRY_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/open
 // Polling interval for change detection (ms)
 const GEOMETRY_POLL_INTERVAL_MS: u64 = 1000;
 
+// ADDED (depth): Depth buffer format used by pipelines and depth texture
+#[cfg(target_arch = "wasm32")]
+const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24Plus;
+#[cfg(not(target_arch = "wasm32"))]
+const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
+
 #[cfg(target_arch = "wasm32")]
 use std::cell::{Cell, RefCell};
 
 #[cfg(target_arch = "wasm32")]
 thread_local! {
-    static PENDING_GEOMETRY: RefCell<Option<(Vec<Vertex>, Vec<u16>)>> = RefCell::new(None);
+    static PENDING_GEOMETRY: RefCell<Option<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>)>> = RefCell::new(None);
     static LOCAL_HASH: RefCell<Option<u64>> = RefCell::new(None);
     static LOCAL_FETCHING: Cell<bool> = Cell::new(false);
 }
@@ -121,6 +133,42 @@ fn append_mesh_as_triangles(
     }
 }
 
+// Helper: convert openmodel Xform (column-major) to Instance
+fn xform_to_instance(xf: &openmodel::primitives::Xform) -> Instance {
+    let t = cgmath::Vector3::new(xf.m[12] as f32, xf.m[13] as f32, xf.m[14] as f32);
+    let c0 = cgmath::Vector3::new(xf.m[0] as f32, xf.m[1] as f32, xf.m[2] as f32);
+    let c1 = cgmath::Vector3::new(xf.m[4] as f32, xf.m[5] as f32, xf.m[6] as f32);
+    let c2 = cgmath::Vector3::new(xf.m[8] as f32, xf.m[9] as f32, xf.m[10] as f32);
+    // Extract non-uniform scale as column lengths
+    let mut sx = c0.magnitude();
+    let mut sy = c1.magnitude();
+    let mut sz = c2.magnitude();
+    // Avoid division by zero
+    if sx == 0.0 { sx = 1.0; }
+    if sy == 0.0 { sy = 1.0; }
+    if sz == 0.0 { sz = 1.0; }
+
+    let n0 = c0 / sx;
+    let n1 = c1 / sy;
+    let mut n2 = c2 / sz;
+
+    // Ensure proper rotation (determinant > 0). If it's a reflection, fold sign into Z scale.
+    let mut rot3 = cgmath::Matrix3::from_cols(n0, n1, n2);
+    if rot3.determinant() < 0.0 {
+        // Flip one axis in rotation and bake the sign into scale to preserve the transform
+        n2 = -n2;
+        sz = -sz;
+        rot3 = cgmath::Matrix3::from_cols(n0, n1, n2);
+    }
+
+    let q = cgmath::Quaternion::from(rot3);
+    Instance {
+        position: t,
+        rotation: q,
+        scale: cgmath::Vector3::new(sx, sy, sz),
+    }
+}
+
 // Helper: 10x10 grid (11 lines per direction) + 1-unit Z axis as pipes
 fn make_grid_and_axis_meshes() -> Vec<(Mesh, [f32; 3])> {
     let mut out = Vec::new();
@@ -153,6 +201,7 @@ pub struct State{
     use_color_pipeline: bool,                    // Whether to use the second pipeline
     vertex_buffer: wgpu::Buffer, // We will store data of vertex.rs in this buffer
     index_buffer: wgpu::Buffer, // We will store data of vertex.rs in this buffer
+    num_indices: u32,
     // Camera system - testing step by step
     camera: Camera,
     camera_uniform: CameraUniform,
@@ -168,14 +217,27 @@ pub struct State{
     window: Arc<Window>,
     // Native-only: background poller delivers geometry here to avoid blocking the render thread
     #[cfg(not(target_arch = "wasm32"))]
-    geom_rx: std::sync::mpsc::Receiver<(Vec<Vertex>, Vec<u16>)>,
+    geom_rx: std::sync::mpsc::Receiver<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>)>,
+    // Instance data
+    instances: Vec<Instance>,
+    instance_buffer: wgpu::Buffer,
+    // Per-batch draws (CPU descriptor) and flattened mapping
+    batches: Vec<BatchDraw>,
+    // ADDED (depth): Depth buffer
+    depth_texture: wgpu::Texture,
+    depth_view: wgpu::TextureView,
 }
 
 impl State{
     // We don't need to be async right now, will implement later
-    pub async fn new(window: Arc<Window>, vertices: &[Vertex], indices: &[u16]) -> anyhow::Result<Self> {
+    pub async fn new(window: Arc<Window>, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch]) -> anyhow::Result<Self> {
 
         let size = window.inner_size();
+       
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Normal geometry
+        //////////////////////////////////////////////////////////////////////////////////////////////////////
 
         // The instance is a handle to our GPU
         // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
@@ -312,6 +374,7 @@ impl State{
                 entry_point: Some("vs_main"), // 1. vertex entry point
                 buffers: &[
                     Vertex::desc(), // The implementation of the vertex struct
+                    InstanceRaw::desc(), // The implementation of the instance struct
                 ], // 2. tells wgpu that type of vetices we want to pass to vertex shader
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
@@ -349,8 +412,14 @@ impl State{
                 conservative: false,
             },
 
-            // We are not using a depth/stencil buffer currently
-            depth_stencil: None,
+            // ADDED (depth): Enable depth testing and writing
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: DEPTH_FORMAT,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less,
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            }),
             multisample: wgpu::MultisampleState {
                 count: 1, // Determines how many samples the pipeline will use
                 mask: !0, // Specifies which samples should be active, here we use all
@@ -373,7 +442,8 @@ impl State{
                 module: &shader_color, // <-- Change the shader
                 entry_point: Some("vs_main"), // 1. vertex entry point
                 buffers: &[
-                    Vertex::desc(),
+                    Vertex::desc(), // The implementation of the vertex struct
+                    InstanceRaw::desc(), // The implementation of the instance struct
                 ], // 2. tells wgpu that type of vetices we want to pass to vertex shader
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
@@ -412,7 +482,13 @@ impl State{
             },
 
             // We are not using a depth/stencil buffer currently
-            depth_stencil: None,
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: DEPTH_FORMAT,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less,
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            }),
             multisample: wgpu::MultisampleState {
                 count: 1, // Determines how many samples the pipeline will use
                 mask: !0, // Specifies which samples should be active, here we use all
@@ -438,7 +514,7 @@ impl State{
         // Native: spawn a background poller thread that watches for local geometry file changes (mtime)
         // and sends rebuilt vertex/index buffers through a channel. This prevents UI freezes from blocking I/O.
         #[cfg(not(target_arch = "wasm32"))]
-        let (tx_geom, rx_geom) = std::sync::mpsc::channel::<(Vec<Vertex>, Vec<u16>)>();
+        let (tx_geom, rx_geom) = std::sync::mpsc::channel::<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>)>();
 
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -459,8 +535,8 @@ impl State{
                     }
 
                     if changed {
-                        let (vertices, indices) = get_geometry();
-                        let _ = tx_geom.send((vertices, indices));
+                        let (vertices, indices, batches) = get_geometry();
+                        let _ = tx_geom.send((vertices, indices, batches));
                     }
                     std::thread::sleep(StdDuration::from_millis(GEOMETRY_POLL_INTERVAL_MS));
                 }
@@ -483,6 +559,46 @@ impl State{
                 usage: wgpu::BufferUsages::INDEX,
             }
         );
+        
+        let num_indices = indices.len() as u32;
+        
+        // Instances come from batches below (default identity per-batch if none provided)
+
+        // Flatten instances and build per-batch draw info
+        let mut flat_instances: Vec<Instance> = Vec::new();
+        let mut batch_draws: Vec<BatchDraw> = Vec::new();
+
+        for b in batches_in {
+            // default: one identity if no transforms provided
+            let insts: Vec<Instance> = if b.instances.is_empty() {
+                vec![Instance {
+                    position: cgmath::Vector3::new(0.0, 0.0, 0.0),
+                    rotation: cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0)),
+                    scale: cgmath::Vector3::new(1.0, 1.0, 1.0),
+                }]
+            } else {
+                b.instances.clone()
+            };
+
+            let instance_offset = flat_instances.len() as u32;
+            let instance_count = insts.len() as u32;
+            flat_instances.extend(insts.into_iter());
+
+            batch_draws.push(BatchDraw {
+                first_index: b.first_index,
+                index_count: b.index_count,
+                base_vertex: b.base_vertex,
+                instance_offset,
+                instance_count,
+            });
+        }
+
+        let instance_data = flat_instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
+        let instance_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Instance Buffer"),
+            contents: bytemuck::cast_slice(&instance_data),
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+        });
 
         // Initialize camera system
         let camera = Camera::new(size.width as f32, size.height as f32);
@@ -512,6 +628,23 @@ impl State{
 
         let camera_controller = CameraController::new(4.0, 0.4);
 
+        // ADDED (depth): Create depth texture matching the surface size
+        let depth_texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Depth Texture"),
+            size: wgpu::Extent3d {
+                width: config.width,
+                height: config.height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: DEPTH_FORMAT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        });
+        let depth_view = depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
+
         // Now that we configured our render surface.
         // We can create the struct State with its arguments.
         let mut state = Self {
@@ -526,19 +659,31 @@ impl State{
             use_color_pipeline: true,  
             vertex_buffer,
             index_buffer,
+            num_indices,
             // Camera system - testing step by step
             camera,
             camera_uniform,
             camera_buffer,
             camera_bind_group,
             camera_controller,
+            // Instance data
+            instances: flat_instances,
+            instance_buffer,
+            batches: batch_draws,
+            // Last render time
             last_render_time: Instant::now(),
             #[cfg(target_arch = "wasm32")]
             last_poll_time: Instant::now(),
+            // Mouse state
             mouse_pressed: false,
+            // Window
             window,
+            // Geometry receiver
             #[cfg(not(target_arch = "wasm32"))]
             geom_rx: rx_geom,
+            // ADDED (depth): Depth buffer fields (texture + view)
+            depth_texture,
+            depth_view,
         };
         // Configure surface immediately to avoid first-frame issues
         state.resize(size.width, size.height);
@@ -563,6 +708,7 @@ impl State{
         );
         self.vertex_buffer = new_vertex_buffer;
         self.index_buffer = new_index_buffer;
+        self.num_indices = indices.len() as u32;
         #[cfg(target_arch = "wasm32")]
         {
             web_sys::console::log_1(&"Geometry buffers reloaded".into());
@@ -573,13 +719,79 @@ impl State{
         }
     }
 
+    // Replace entire scene: geometry + instance batches
+    fn replace_scene(&mut self, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch]) {
+        // Replace vertex/index buffers
+        let new_vertex_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: bytemuck::cast_slice(vertices),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+        let new_index_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Index Buffer"),
+            contents: bytemuck::cast_slice(indices),
+            usage: wgpu::BufferUsages::INDEX,
+        });
+        self.vertex_buffer = new_vertex_buffer;
+        self.index_buffer = new_index_buffer;
+        self.num_indices = indices.len() as u32;
+
+        // Rebuild flattened instances and batch draws
+        let mut flat_instances: Vec<Instance> = Vec::new();
+        let mut batch_draws: Vec<BatchDraw> = Vec::new();
+
+        for b in batches_in {
+            // default: one identity if no transforms provided
+            let insts: Vec<Instance> = if b.instances.is_empty() {
+                vec![Instance {
+                    position: cgmath::Vector3::new(0.0, 0.0, 0.0),
+                    rotation: cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0)),
+                    scale: cgmath::Vector3::new(1.0, 1.0, 1.0),
+                }]
+            } else {
+                b.instances.clone()
+            };
+
+            let instance_offset = flat_instances.len() as u32;
+            let instance_count = insts.len() as u32;
+            flat_instances.extend(insts.into_iter());
+
+            batch_draws.push(BatchDraw {
+                first_index: b.first_index,
+                index_count: b.index_count,
+                base_vertex: b.base_vertex,
+                instance_offset,
+                instance_count,
+            });
+        }
+
+        let instance_data = flat_instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
+        let new_instance_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Instance Buffer"),
+            contents: bytemuck::cast_slice(&instance_data),
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+        });
+        self.instances = flat_instances;
+        self.instance_buffer = new_instance_buffer;
+        self.batches = batch_draws;
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            web_sys::console::log_1(&"Scene reloaded".into());
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            log::info!("Scene reloaded");
+        }
+    }
+
     // Check for geometry changes and reload if needed
     fn poll_geometry_changes(&mut self) {
         // Native: drain background updates without throttling or blocking the render thread
         #[cfg(not(target_arch = "wasm32"))]
         {
-            while let Ok((vertices, indices)) = self.geom_rx.try_recv() {
-                self.replace_geometry(&vertices, &indices);
+            while let Ok((vertices, indices, batches)) = self.geom_rx.try_recv() {
+                self.replace_scene(&vertices, &indices, &batches);
             }
             return;
         }
@@ -609,36 +821,10 @@ impl State{
                     } else { false };
                     
                     if local_changed {
-                        // Build geometry from local file; if unavailable, fall back to embedded. Always add grid/axis once.
-                        let mut vertices: Vec<Vertex> = Vec::new();
-                        let mut indices: Vec<u16> = Vec::new();
-
-                        let mut used_sources: Vec<&str> = Vec::new();
-
-                        if let Some(t) = &local_text {
-                            if let Ok(all_geom_local) = serde_json::from_str::<AllGeometryData>(t) {
-                                for m in &all_geom_local.meshes { append_mesh_as_triangles(m, [0.8,0.8,0.8], &mut vertices, &mut indices); }
-                                used_sources.push("local");
-                            } else {
-                                web_sys::console::warn_1(&"Poll: failed to parse local JSON".into());
-                            }
-                        }
-
-                        if used_sources.is_empty() {
-                            let json_str = include_str!("openmodel/all_geometry.json");
-                            let all_geom: AllGeometryData = serde_json::from_str(json_str).unwrap_or(AllGeometryData {
-                                points: vec![], vectors: vec![], lines: vec![], planes: vec![], colors: vec![],
-                                point_clouds: vec![], line_clouds: vec![], plines: vec![], xforms: vec![], meshes: vec![],
-                            });
-                            for m in &all_geom.meshes { append_mesh_as_triangles(m, [0.8,0.8,0.8], &mut vertices, &mut indices); }
-                            used_sources.push("embedded");
-                        }
-
-                        // Always add procedural grid and axis once
-                        for (m, color) in make_grid_and_axis_meshes() { append_mesh_as_triangles(&m, color, &mut vertices, &mut indices); }
-
-                        PENDING_GEOMETRY.with(|p| *p.borrow_mut() = Some((vertices, indices)));
-                        web_sys::console::log_1(&format!("Geometry changed; source: {}", used_sources.join("+")).into());
+                        // Rebuild full scene using the same logic as initial load
+                        let (vertices, indices, batches) = get_geometry().await;
+                        PENDING_GEOMETRY.with(|p| *p.borrow_mut() = Some((vertices, indices, batches)));
+                        web_sys::console::log_1(&"Geometry changed; source: local".into());
                     }
                     LOCAL_FETCHING.with(|f| f.set(false));
                 });
@@ -646,8 +832,8 @@ impl State{
 
             // Apply any pending geometry prepared by the async task
             let pending = PENDING_GEOMETRY.with(|p| p.borrow_mut().take());
-            if let Some((vertices, indices)) = pending {
-                self.replace_geometry(&vertices, &indices);
+            if let Some((vertices, indices, batches)) = pending {
+                self.replace_scene(&vertices, &indices, &batches);
             }
         }
     }
@@ -662,6 +848,22 @@ impl State{
             self.surface.configure(&self.device, &self.config);
             // Keep camera projection in sync with the surface size (important on Web)
             self.camera.aspect = self.config.width as f32 / self.config.height as f32;
+            // ADDED (depth): Recreate depth texture to match new size
+            self.depth_texture = self.device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("Depth Texture"),
+                size: wgpu::Extent3d {
+                    width: self.config.width,
+                    height: self.config.height,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: DEPTH_FORMAT,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+                view_formats: &[],
+            });
+            self.depth_view = self.depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
             self.is_surface_configured = true;
         }
     }
@@ -751,7 +953,15 @@ impl State{
                         store: wgpu::StoreOp::Store,
                     },
                 })],
-                depth_stencil_attachment: None,
+                // ADDED (depth): Attach depth buffer with clear=1.0
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &self.depth_view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0),
+                        store: wgpu::StoreOp::Store,
+                    }),
+                    stencil_ops: None,
+                }),
                 occlusion_query_set: None,
                 timestamp_writes: None,
             });
@@ -772,6 +982,10 @@ impl State{
             // Second argument allows us to specifiy which portion of buffer to use, .. is entire buffer.
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
 
+
+            // Set the instance buffer
+            render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
+
             // You can only have one index buffer set at a time.
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16); // 1.
 
@@ -779,8 +993,19 @@ impl State{
             // First argument is the range of indices to draw.
             // Second argument is the base vertex.
             // Third argument is the instance count.
-            render_pass.draw_indexed(0..(self.index_buffer.size() / std::mem::size_of::<u16>() as u64) as u32, 0, 0..1);
-        
+            let stride = std::mem::size_of::<InstanceRaw>() as u64;
+            for d in &self.batches {
+                if d.index_count == 0 || d.instance_count == 0 { continue; }
+                let start = d.instance_offset as u64 * stride;
+                let end = start + d.instance_count as u64 * stride;
+                render_pass.set_vertex_buffer(1, self.instance_buffer.slice(start..end));
+                render_pass.draw_indexed(
+                    d.first_index..(d.first_index + d.index_count),
+                    d.base_vertex,
+                    0..d.instance_count,
+                );
+            }
+
         }
         self.queue.submit(iter::once(encoder.finish()));
         output.present();
@@ -810,7 +1035,8 @@ pub struct App {
     proxy: Option<winit::event_loop::EventLoopProxy<State>>,
     state: Option<State>,
     vertices: Vec<Vertex>, // User geometry
-    indices: Vec<u16>, // User geometry
+    indices: Vec<u16>, // User geometry,
+    batches: Vec<DrawBatch>,
 }
 
 impl App {
@@ -819,17 +1045,24 @@ impl App {
         event_loop: &EventLoop<State>,
         vertices: Vec<Vertex>, // User geometry
         indices: Vec<u16>, // User geometry
-    ) -> Self {
+        batches: Vec<DrawBatch>,
+    ) -> Self {      
+
+        // Create the proxy for wasm
         #[cfg(target_arch = "wasm32")]
         let proxy = Some(event_loop.create_proxy());
         Self {
             state: None,
             vertices, // User geometry
             indices, // User geometry
+            batches,
             #[cfg(target_arch = "wasm32")]
             proxy,
         }
+    
     }
+
+
 }
 
 // This gives a variety of functions: key press, mouse movements, lifecycle events.
@@ -864,7 +1097,7 @@ impl ApplicationHandler<State> for App {
         {
             // If we are not on web we can use pollster to
             // await the 
-            self.state = Some(pollster::block_on(State::new(window, &self.vertices, &self.indices)).unwrap());
+            self.state = Some(pollster::block_on(State::new(window, &self.vertices, &self.indices, &self.batches)).unwrap());
         }
 
         #[cfg(target_arch = "wasm32")]
@@ -874,10 +1107,10 @@ impl ApplicationHandler<State> for App {
             if let Some(proxy) = self.proxy.take() {
                 wasm_bindgen_futures::spawn_local(async move {
                     // Build geometry on WASM (embedded + grid/axis + local JSON if available)
-                    let (vertices, indices) = get_geometry().await;
+                    let (vertices, indices, batches) = get_geometry().await;
                     assert!(proxy
                         .send_event(
-                            State::new(window, &vertices, &indices)
+                            State::new(window, &vertices, &indices, &batches)
                                 .await
                                 .expect("Unable to create canvas!!!")
                         )
@@ -992,17 +1225,19 @@ pub fn run() -> anyhow::Result<()> {
 
 
     #[cfg(not(target_arch = "wasm32"))]
-    let (vertices, indices) = get_geometry();
+    let (vertices, indices, batches) = get_geometry();
 
     #[cfg(not(target_arch = "wasm32"))]
     let mut app = App::new(
         vertices,
         indices,
+        batches,
     );
 
     #[cfg(target_arch = "wasm32")]
     let mut app = App::new(
         &event_loop,
+        Vec::new(),
         Vec::new(),
         Vec::new(),
     );
@@ -1026,7 +1261,7 @@ pub fn run_web() -> Result<(), wasm_bindgen::JsValue> {
 
 // Geometry: load JSON meshes, add grid + Z-axis pipes, convert to buffers
 #[cfg(not(target_arch = "wasm32"))]
-pub fn get_geometry() -> (Vec<Vertex>, Vec<u16>) {
+pub fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
     // 1) Load JSON geometry from disk if available (fast mtime check), fallback to embedded
     let json_str = std::fs::read_to_string(LOCAL_GEOMETRY_PATH)
         .unwrap_or_else(|_| include_str!("openmodel/all_geometry.json").to_string());
@@ -1041,54 +1276,152 @@ pub fn get_geometry() -> (Vec<Vertex>, Vec<u16>) {
         plines: vec![],
         xforms: vec![],
         meshes: vec![],
+        mesh_instances: vec![],
     });
 
     // 2) Aggregate meshes: loaded + procedural grid/axis
     let mut vertices: Vec<Vertex> = Vec::new();
     let mut indices: Vec<u16> = Vec::new();
+    let mut batches: Vec<DrawBatch> = Vec::new();
 
-    for m in &all_geom.meshes {
+    // Track which batch corresponds to which source mesh index
+    let mut mesh_to_batch: Vec<Option<usize>> = vec![None; all_geom.meshes.len()];
+    for (i, m) in all_geom.meshes.iter().enumerate() {
+        let first_index = indices.len() as u32;
         append_mesh_as_triangles(m, [0.8, 0.8, 0.8], &mut vertices, &mut indices);
+        let index_count = (indices.len() as u32) - first_index;
+        if index_count > 0 {
+            // base_vertex must be 0 because indices are global
+            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![] });
+            mesh_to_batch[i] = Some(batches.len() - 1);
+        }
     }
     for (m, color) in make_grid_and_axis_meshes() {
+        let first_index = indices.len() as u32;
         append_mesh_as_triangles(&m, color, &mut vertices, &mut indices);
+        let index_count = (indices.len() as u32) - first_index;
+        if index_count > 0 {
+            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![] });
+        }
     }
-    (vertices, indices)
+
+    // create one big pipe
+
+    let pipe = Mesh::create_pipe(Point::new(0.0, 0.0, 0.0), Point::new(0.0, 0.0, 1.0), 1.0);
+    let first_index = indices.len() as u32;
+    append_mesh_as_triangles(&pipe, [0.8, 0.8, 0.8], &mut vertices, &mut indices);
+    let index_count = (indices.len() as u32) - first_index;
+    if index_count > 0 {
+        // base_vertex must be 0 because indices are global
+        batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![] });
+    }
+
+
+
+    // Edge pipe instancing: use a single unit pipe mesh and per-edge transforms
+    let mut edge_instances: Vec<Instance> = Vec::new();
+    let edge_radius: f64 = 0.02;
+    for m in &all_geom.meshes {
+        let tfs = m.extract_edge_pipe_transforms(edge_radius);
+        for tf in tfs { edge_instances.push(xform_to_instance(&tf)); }
+    }
+    if !edge_instances.is_empty() {
+        let unit_pipe = Mesh::create_unit_pipe();
+        let first_index = indices.len() as u32;
+        append_mesh_as_triangles(&unit_pipe, [0.0, 0.0, 0.0], &mut vertices, &mut indices);
+        let index_count = (indices.len() as u32) - first_index;
+        if index_count > 0 {
+            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: edge_instances });
+        }
+    }
+
+    // Populate per-mesh instances into batches
+    for mi in &all_geom.mesh_instances {
+        if let Some(Some(bi)) = mesh_to_batch.get(mi.mesh_index) {
+            let insts = mi.transforms.iter().map(|xf| xform_to_instance(xf)).collect::<Vec<_>>();
+            batches[*bi].instances = insts;
+        }
+    }
+    (vertices, indices, batches)
 }
 
 // WASM: fetch local JSON and merge with embedded + procedural meshes
 #[cfg(target_arch = "wasm32")]
-pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>) {
+pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
     // Build geometry from local file; fallback to embedded. Always add grid/axis once.
     let mut vertices: Vec<Vertex> = Vec::new();
     let mut indices: Vec<u16> = Vec::new();
+    let mut batches: Vec<DrawBatch> = Vec::new();
 
     let local_text = fetch_text(LOCAL_GEOMETRY_HTTP_PATH).await;
     let mut used_sources: Vec<&str> = Vec::new();
 
-    if let Some(t) = &local_text {
+    // Choose primary geometry source
+    let all_geom: AllGeometryData = if let Some(t) = &local_text {
         match serde_json::from_str::<AllGeometryData>(t) {
-            Ok(g) => {
-                for m in &g.meshes { append_mesh_as_triangles(m, [0.8,0.8,0.8], &mut vertices, &mut indices); }
-                used_sources.push("local");
+            Ok(g) => { used_sources.push("local"); g },
+            Err(err) => { web_sys::console::warn_1(&format!("Initial: failed to parse local JSON: {}", err).into());
+                let json_str = include_str!("openmodel/all_geometry.json");
+                serde_json::from_str(json_str).unwrap_or(AllGeometryData {
+                    points: vec![], vectors: vec![], lines: vec![], planes: vec![], colors: vec![],
+                    point_clouds: vec![], line_clouds: vec![], plines: vec![], xforms: vec![], meshes: vec![], mesh_instances: vec![],
+                })
             }
-            Err(err) => web_sys::console::warn_1(&format!("Initial: failed to parse local JSON: {}", err).into()),
+        }
+    } else {
+        let json_str = include_str!("openmodel/all_geometry.json");
+        serde_json::from_str(json_str).unwrap_or(AllGeometryData {
+            points: vec![], vectors: vec![], lines: vec![], planes: vec![], colors: vec![],
+            point_clouds: vec![], line_clouds: vec![], plines: vec![], xforms: vec![], meshes: vec![], mesh_instances: vec![],
+        })
+    };
+    if used_sources.is_empty() { used_sources.push("embedded"); }
+
+    // Build batches for primary meshes
+    let mut mesh_to_batch: Vec<Option<usize>> = vec![None; all_geom.meshes.len()];
+    for (i, m) in all_geom.meshes.iter().enumerate() {
+        let first_index = indices.len() as u32;
+        append_mesh_as_triangles(m, [0.8,0.8,0.8], &mut vertices, &mut indices);
+        let index_count = (indices.len() as u32) - first_index;
+        if index_count > 0 {
+            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![] });
+            mesh_to_batch[i] = Some(batches.len() - 1);
+        }
+    }
+    // Procedural grid/axis once
+    for (m, color) in make_grid_and_axis_meshes() {
+        let first_index = indices.len() as u32;
+        append_mesh_as_triangles(&m, color, &mut vertices, &mut indices);
+        let index_count = (indices.len() as u32) - first_index;
+        if index_count > 0 {
+            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![] });
+        }
+    }
+    // Edge pipe instancing: use a single unit pipe mesh and per-edge transforms
+    let mut edge_instances: Vec<Instance> = Vec::new();
+    let edge_radius: f64 = 0.02;
+    for m in &all_geom.meshes {
+        let tfs = m.extract_edge_pipe_transforms(edge_radius);
+        for tf in tfs { edge_instances.push(xform_to_instance(&tf)); }
+    }
+    if !edge_instances.is_empty() {
+        let unit_pipe = Mesh::create_unit_pipe();
+        let first_index = indices.len() as u32;
+        append_mesh_as_triangles(&unit_pipe, [0.0, 0.0, 0.0], &mut vertices, &mut indices);
+        let index_count = (indices.len() as u32) - first_index;
+        if index_count > 0 {
+            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: edge_instances });
+        }
+    }
+    // Populate per-mesh instances
+    for mi in &all_geom.mesh_instances {
+        if let Some(Some(bi)) = mesh_to_batch.get(mi.mesh_index) {
+            let insts = mi.transforms.iter().map(|xf| xform_to_instance(xf)).collect::<Vec<_>>();
+            batches[*bi].instances = insts;
         }
     }
 
-    if used_sources.is_empty() {
-        let json_str = include_str!("openmodel/all_geometry.json");
-        let all_geom: AllGeometryData = serde_json::from_str(json_str).unwrap_or(AllGeometryData {
-            points: vec![], vectors: vec![], lines: vec![], planes: vec![], colors: vec![],
-            point_clouds: vec![], line_clouds: vec![], plines: vec![], xforms: vec![], meshes: vec![],
-        });
-        for m in &all_geom.meshes { append_mesh_as_triangles(m, [0.8,0.8,0.8], &mut vertices, &mut indices); }
-        used_sources.push("embedded");
-    }
-
-    for (m, color) in make_grid_and_axis_meshes() { append_mesh_as_triangles(&m, color, &mut vertices, &mut indices); }
-
     web_sys::console::log_1(&format!("Initial geometry source: {}", used_sources.join("+")).into());
 
-    (vertices, indices)
+    (vertices, indices, batches)
 }

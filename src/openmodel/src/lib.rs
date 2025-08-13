@@ -12,6 +12,13 @@ use primitives::Xform;
 use common::{JsonSerializable, FromJsonData};
 use serde::{Serialize, Deserialize};
 
+// MeshInstances: 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MeshInstances {
+    pub mesh_index: usize,              // or mesh GUID
+    pub transforms: Vec<primitives::Xform>,
+}
+
 // Comprehensive geometry data structure with all geometry types
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AllGeometryData {
@@ -25,6 +32,8 @@ pub struct AllGeometryData {
     pub plines: Vec<Pline>,
     pub xforms: Vec<Xform>,
     pub meshes: Vec<Mesh>,
+    #[serde(default)]
+    pub mesh_instances: Vec<MeshInstances>,
 }
 
 // Implement JsonSerializable for AllGeometryData to work with json_dump/json_load

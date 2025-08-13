@@ -899,6 +899,73 @@ impl Mesh {
         self.vertex_normals_weighted(NormalWeighting::Area)
     }
     
+    /// Compute per-edge transforms for instancing a unit pipe mesh.
+    ///
+    /// Returns a transform for each unique edge of the mesh that maps a unit cylinder
+    /// aligned along the +Z axis with length=1 and radius=1 (centered at the origin,
+    /// from z = -0.5 to z = +0.5) onto the edge as a pipe of the given radius.
+    ///
+    /// The transform encodes translation to the edge midpoint, rotation to align +Z with
+    /// the edge direction, and non-uniform scale (radius, radius, length).
+    pub fn extract_edge_pipe_transforms(&self, radius: f64) -> Vec<Xform> {
+        use std::collections::HashMap;
+        let mut transforms: Vec<Xform> = Vec::new();
+
+        // Count undirected edge usages across faces
+        let mut edge_counts: HashMap<(usize, usize), usize> = HashMap::new();
+        for face_vertices in self.face.values() {
+            let n = face_vertices.len();
+            for i in 0..n {
+                let v1 = face_vertices[i];
+                let v2 = face_vertices[(i + 1) % n];
+                let edge = if v1 < v2 { (v1, v2) } else { (v2, v1) };
+                *edge_counts.entry(edge).or_insert(0) += 1;
+            }
+        }
+
+        // Create transforms only for boundary edges (used by exactly one face)
+        for ((a, b), cnt) in edge_counts.into_iter() {
+            if cnt != 1 { continue; }
+            if let (Some(p0), Some(p1)) = (self.vertex_position(a), self.vertex_position(b)) {
+                let dir = Vector::new(p1.x - p0.x, p1.y - p0.y, p1.z - p0.z);
+                let len = dir.length();
+                if len < 1e-6 { continue; }
+
+                let axis = dir.normalize();
+                let z_axis = Vector::new(0.0, 0.0, 1.0);
+
+                // Rotation aligning +Z to the edge direction
+                let dot = axis.dot(&z_axis);
+                let rotation = if (dot - 1.0).abs() < 1e-6 {
+                    Xform::identity()
+                } else if (dot + 1.0).abs() < 1e-6 {
+                    // 180 deg around X (any axis orthogonal to Z would do)
+                    Xform::rotation_x(PI)
+                } else {
+                    let rot_axis = z_axis.cross(&axis).normalize();
+                    let angle = z_axis.dot(&axis).acos();
+                    Xform::rotation(&rot_axis, angle)
+                };
+
+                // Midpoint translation
+                let midpoint = Point::new(
+                    (p0.x + p1.x) / 2.0,
+                    (p0.y + p1.y) / 2.0,
+                    (p0.z + p1.z) / 2.0,
+                );
+                let translation = Xform::translation(midpoint.x, midpoint.y, midpoint.z);
+
+                // Non-uniform scale: radius in X/Y, edge length in Z
+                let scale = Xform::scaling(radius, radius, len);
+
+                // Compose: T * R * S (column-major)
+                transforms.push(translation * rotation * scale);
+            }
+        }
+
+        transforms
+    }
+    
     /// Create a pipe mesh from a line segment.
     /// 
     /// Creates a cylindrical mesh along a line segment defined by two points.
@@ -912,7 +979,7 @@ impl Mesh {
     /// * `radius` - Radius of the pipe
     /// 
     /// # Returns
-    /// A new Mesh representing a 12-sided pipe along the specified line
+    /// A new Mesh representing an 8-sided pipe along the specified line
     /// 
     /// # Example
     /// 
@@ -937,8 +1004,9 @@ impl Mesh {
         let axis = direction.normalize();
         
         // Create transformation matrix
-        // 1. Scale: radius in X,Y and length in Z
-        let scale = Xform::scaling(radius, radius, length);
+        // 1. Scale: the base profile uses 0.5 radius in XY, so scale by 2*radius to reach the requested radius.
+        //    Z is scaled by segment length so the base spans [-0.5, +0.5] -> total length = length
+        let scale = Xform::scaling(2.0 * radius, 2.0 * radius, length);
         
         // 2. Rotation: align Z-axis with line direction
         let z_axis = Vector::new(0.0, 0.0, 1.0);
@@ -966,35 +1034,8 @@ impl Mesh {
         // Combine transformations: T * R * S
         let transform = translation * rotation * scale;
         
-        // Hardcoded vertices for 12-sided unit cylinder
-        let unit_vertices = vec![
-            Point::new(0.0, 0.0, -0.5), // Bottom center
-            Point::new(1.0000000000, 0.0000000000, -0.5), // Bottom rim 0
-            Point::new(0.8660254038, 0.5000000000, -0.5), // Bottom rim 1
-            Point::new(0.5000000000, 0.8660254038, -0.5), // Bottom rim 2
-            Point::new(0.0000000000, 1.0000000000, -0.5), // Bottom rim 3
-            Point::new(-0.5000000000, 0.8660254038, -0.5), // Bottom rim 4
-            Point::new(-0.8660254038, 0.5000000000, -0.5), // Bottom rim 5
-            Point::new(-1.0000000000, 0.0000000000, -0.5), // Bottom rim 6
-            Point::new(-0.8660254038, -0.5000000000, -0.5), // Bottom rim 7
-            Point::new(-0.5000000000, -0.8660254038, -0.5), // Bottom rim 8
-            Point::new(-0.0000000000, -1.0000000000, -0.5), // Bottom rim 9
-            Point::new(0.5000000000, -0.8660254038, -0.5), // Bottom rim 10
-            Point::new(0.8660254038, -0.5000000000, -0.5), // Bottom rim 11
-            Point::new(0.0, 0.0, 0.5), // Top center
-            Point::new(1.0000000000, 0.0000000000, 0.5), // Top rim 0
-            Point::new(0.8660254038, 0.5000000000, 0.5), // Top rim 1
-            Point::new(0.5000000000, 0.8660254038, 0.5), // Top rim 2
-            Point::new(0.0000000000, 1.0000000000, 0.5), // Top rim 3
-            Point::new(-0.5000000000, 0.8660254038, 0.5), // Top rim 4
-            Point::new(-0.8660254038, 0.5000000000, 0.5), // Top rim 5
-            Point::new(-1.0000000000, 0.0000000000, 0.5), // Top rim 6
-            Point::new(-0.8660254038, -0.5000000000, 0.5), // Top rim 7
-            Point::new(-0.5000000000, -0.8660254038, 0.5), // Top rim 8
-            Point::new(-0.0000000000, -1.0000000000, 0.5), // Top rim 9
-            Point::new(0.5000000000, -0.8660254038, 0.5), // Top rim 10
-            Point::new(0.8660254038, -0.5000000000, 0.5), // Top rim 11
-        ];
+        // Get shared 8-sided unit geometry (radius 0.5 in XY, length 1 along Z)
+        let (unit_vertices, faces) = Mesh::pipe8_unit_vertices_and_faces();
         
         // Transform and add all vertices to mesh
         let mut vertex_keys = Vec::with_capacity(unit_vertices.len());
@@ -1003,29 +1044,96 @@ impl Mesh {
             vertex_keys.push(mesh.add_vertex(transformed_vertex, None));
         }
         
-        // Hardcoded faces for 12-sided unit cylinder
-        let faces = vec![
-            vec![0, 2, 1], vec![0, 3, 2], vec![0, 4, 3], vec![0, 5, 4], // Bottom cap
-            vec![0, 6, 5], vec![0, 7, 6], vec![0, 8, 7], vec![0, 9, 8],
-            vec![0, 10, 9], vec![0, 11, 10], vec![0, 12, 11], vec![0, 1, 12],
-            vec![13, 14, 15], vec![13, 15, 16], vec![13, 16, 17], vec![13, 17, 18], // Top cap
-            vec![13, 18, 19], vec![13, 19, 20], vec![13, 20, 21], vec![13, 21, 22],
-            vec![13, 22, 23], vec![13, 23, 24], vec![13, 24, 25], vec![13, 25, 14],
-            vec![1, 2, 14], vec![14, 2, 15], vec![2, 3, 15], vec![15, 3, 16], // Sides
-            vec![3, 4, 16], vec![16, 4, 17], vec![4, 5, 17], vec![17, 5, 18],
-            vec![5, 6, 18], vec![18, 6, 19], vec![6, 7, 19], vec![19, 7, 20],
-            vec![7, 8, 20], vec![20, 8, 21], vec![8, 9, 21], vec![21, 9, 22],
-            vec![9, 10, 22], vec![22, 10, 23], vec![10, 11, 23], vec![23, 11, 24],
-            vec![11, 12, 24], vec![24, 12, 25], vec![12, 1, 25], vec![25, 1, 14],
-        ];
-        
-        // Add all faces to mesh
+        // Add all faces to mesh with the same winding
         for face_indices in faces {
             let face_vertices: Vec<usize> = face_indices.iter().map(|&i| vertex_keys[i]).collect();
             mesh.add_face(face_vertices, None);
         }
         
         mesh
+    }
+
+
+    /// Create a unit 8-sided cylinder mesh aligned to +Z (radius=0.5, length=1).
+    /// Centered at the origin, spanning z in [-0.5, +0.5]. Intended for instancing.
+    pub fn create_unit_pipe() -> Self {
+        let mut mesh = Mesh::new();
+        let (unit_vertices, faces) = Mesh::pipe8_unit_vertices_and_faces();
+        
+        // Add vertices
+        let mut vertex_keys = Vec::with_capacity(unit_vertices.len());
+        for v in unit_vertices { vertex_keys.push(mesh.add_vertex(v, None)); }
+        
+        // Add faces
+        for face in faces {
+            let face_vertices: Vec<usize> = face.iter().map(|&i| vertex_keys[i]).collect();
+            mesh.add_face(face_vertices, None);
+        }
+        
+        mesh
+    }
+
+    /// Shared 8-sided unit pipe geometry (top ring 0..=7 at z=+0.5, bottom ring 8..=15 at z=-0.5)
+    /// Winding is consistent CCW for fronts with front_face = CCW.
+    fn pipe8_unit_vertices_and_faces() -> (Vec<Point>, Vec<Vec<usize>>) {
+        // Vertices
+        let unit_vertices = vec![
+            // Top ring (z = +0.5)
+            Point::new(0.5, 0.0, 0.5),
+            Point::new(0.353553, 0.353553, 0.5),
+            Point::new(0.0, 0.5, 0.5),
+            Point::new(-0.353553, 0.353553, 0.5),
+            Point::new(-0.5, 0.0, 0.5),
+            Point::new(-0.353553, -0.353553, 0.5),
+            Point::new(0.0, -0.5, 0.5),
+            Point::new(0.353553, -0.353553, 0.5),
+            // Bottom ring (z = -0.5)
+            Point::new(0.5, 0.0, -0.5),
+            Point::new(0.353553, 0.353553, -0.5),
+            Point::new(0.0, 0.5, -0.5),
+            Point::new(-0.353553, 0.353553, -0.5),
+            Point::new(-0.5, 0.0, -0.5),
+            Point::new(-0.353553, -0.353553, -0.5),
+            Point::new(0.0, -0.5, -0.5),
+            Point::new(0.353553, -0.353553, -0.5),
+        ];
+        
+        // Faces (triangles): bottom cap, top cap, side quads split
+        let faces = vec![
+            // Side quads (first triangle per segment)
+            vec![8, 9, 1],
+            vec![9, 10, 2],
+            vec![10, 11, 3],
+            vec![11, 12, 4],
+            vec![12, 13, 5],
+            vec![13, 14, 6],
+            vec![14, 15, 7],
+            vec![15, 8, 0],
+            // Bottom cap (z = -0.5)
+            vec![15, 13, 11],
+            vec![13, 12, 11],
+            vec![15, 14, 13],
+            vec![9, 8, 15],
+            vec![9, 11, 10],
+            vec![15, 11, 9],
+            // Top cap (z = +0.5)
+            vec![7, 3, 5],
+            vec![5, 3, 4],
+            vec![7, 5, 6],
+            vec![1, 7, 0],
+            vec![1, 2, 3],
+            vec![7, 1, 3],
+            // Side quads (second triangle per segment)
+            vec![8, 1, 0],
+            vec![9, 2, 1],
+            vec![10, 3, 2],
+            vec![11, 4, 3],
+            vec![12, 5, 4],
+            vec![13, 6, 5],
+            vec![14, 7, 6],
+            vec![15, 0, 7],
+        ];
+        (unit_vertices, faces)
     }
 
 
