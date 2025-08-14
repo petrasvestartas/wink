@@ -22,6 +22,7 @@ use instance::Instance;
 use instance::InstanceRaw;
 use instance::DrawBatch;
 use instance::BatchDraw;
+use instance::BatchKind;
 use cgmath::prelude::*;
 // OpenModel: JSON geometry + mesh utilities
 use openmodel::AllGeometryData;
@@ -42,6 +43,9 @@ const GEOMETRY_POLL_INTERVAL_MS: u64 = 1000;
 const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24Plus;
 #[cfg(not(target_arch = "wasm32"))]
 const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum PipelineMode { Solid, Color, Pipe }
 
 #[cfg(target_arch = "wasm32")]
 use std::cell::{Cell, RefCell};
@@ -201,7 +205,10 @@ pub struct State{
     // Shader pipelines
     render_pipeline_solid: wgpu::RenderPipeline, // First pipeline (one color)
     render_pipeline_color: wgpu::RenderPipeline, // Second pipeline (vertex colors)
-    use_color_pipeline: bool,                    // Whether to use the second pipeline
+    render_pipeline_pipe: wgpu::RenderPipeline,  // Third pipeline (pipe-specific)
+    pipeline_mode: PipelineMode,                 // Active pipeline selection
+    // Pipe rendering controls
+    pipe_px_radius: f32,
     vertex_buffer: wgpu::Buffer, // We will store data of vertex.rs in this buffer
     index_buffer: wgpu::Buffer, // We will store data of vertex.rs in this buffer
     num_indices: u32,
@@ -358,6 +365,10 @@ impl State{
             &device, &config, &camera_bind_group_layout, DEPTH_FORMAT,
         );
 
+        let render_pipeline_pipe = crate::shader_pipe_pipeline::create(
+            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT,
+        );
+
         // Pop and log any validation errors that might have occurred during pipeline creation
         #[cfg(target_arch = "wasm32")]
         if let Some(err) = device.pop_error_scope().await {
@@ -447,6 +458,7 @@ impl State{
                 base_vertex: b.base_vertex,
                 instance_offset,
                 instance_count,
+                kind: b.kind,
             });
         }
 
@@ -461,6 +473,16 @@ impl State{
         let camera = Camera::new(size.width as f32, size.height as f32);
         let mut camera_uniform = CameraUniform::new();
         camera_uniform.update_view_proj(&camera);
+        // Initialize extended view/pipe parameters
+        let default_pipe_px_radius: f32 = 2.0;
+        camera_uniform.set_eye_dir(&camera);
+        camera_uniform.set_view_params(
+            config.width as f32,
+            config.height as f32,
+            camera.fovy,
+            camera.aspect,
+            default_pipe_px_radius,
+        );
 
         let camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Camera Buffer"),
@@ -510,10 +532,12 @@ impl State{
             queue,
             config,
             is_surface_configured: false,
-            // Pipeline for rendering solid color
+            // Pipelines
             render_pipeline_solid,
             render_pipeline_color,
-            use_color_pipeline: true,  
+            render_pipeline_pipe,
+            pipeline_mode: PipelineMode::Color,  
+            pipe_px_radius: default_pipe_px_radius,
             vertex_buffer,
             index_buffer,
             num_indices,
@@ -590,6 +614,7 @@ impl State{
                 base_vertex: b.base_vertex,
                 instance_offset,
                 instance_count,
+                kind: b.kind,
             });
         }
 
@@ -731,6 +756,15 @@ impl State{
         self.last_render_time = now;
         self.camera_controller.update_camera(&mut self.camera, dt);
         self.camera_uniform.update_view_proj(&self.camera);
+        // Update extended camera/pipe parameters each frame
+        self.camera_uniform.set_eye_dir(&self.camera);
+        self.camera_uniform.set_view_params(
+            self.config.width as f32,
+            self.config.height as f32,
+            self.camera.fovy,
+            self.camera.aspect,
+            self.pipe_px_radius,
+        );
         self.queue.write_buffer(
             &self.camera_buffer,
             0,
@@ -793,26 +827,11 @@ impl State{
                 occlusion_query_set: None,
                 timestamp_writes: None,
             });
-        
-        
-            // We set the the pipeline on the render_pass using the one we created for shader.
-            if self.use_color_pipeline {
-                render_pass.set_pipeline(&self.render_pipeline_color);
-            } else {
-                render_pass.set_pipeline(&self.render_pipeline_solid);
-            }
 
-            // Set the camera bind group (pipeline expects it even if shaders don't use it)
-            render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
 
-            // Set the vertex buffer otherwise the app will crash.
-            // First arguement is the buffer slot index
-            // Second argument allows us to specifiy which portion of buffer to use, .. is entire buffer.
+            // Bind shared vertex buffer (slot 0) once
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-
-
-            // Set the instance buffer
-            render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
+            // We'll set the instance buffer (slot 1) per-batch below
 
             // You can only have one index buffer set at a time.
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16); // 1.
@@ -823,6 +842,22 @@ impl State{
             // Third argument is the instance count.
             let stride = std::mem::size_of::<InstanceRaw>() as u64;
             for d in &self.batches {
+                // Integrated rendering:
+                // - Pipe batches render in BOTH Solid and Color modes using the pipe pipeline.
+                // - Surface batches render with Solid or Color depending on current mode.
+                match d.kind {
+                    BatchKind::Pipe => {
+                        render_pass.set_pipeline(&self.render_pipeline_pipe);
+                    }
+                    BatchKind::Surface => {
+                        match self.pipeline_mode {
+                            PipelineMode::Color => render_pass.set_pipeline(&self.render_pipeline_color),
+                            _ => render_pass.set_pipeline(&self.render_pipeline_solid),
+                        }
+                    }
+                }
+                // Set the camera bind group (after pipeline)
+                render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
                 if d.index_count == 0 || d.instance_count == 0 { continue; }
                 let start = d.instance_offset as u64 * stride;
                 let end = start + d.instance_count as u64 * stride;
@@ -845,11 +880,39 @@ impl State{
 
     // Handle key events.
     // Escape - to exit the app
-    // Space - to change the shader in the render pipeline
+    // Space - toggle pipeline (Solid <-> Color)
     fn handle_key(&mut self, event_loop: &ActiveEventLoop, code: KeyCode, is_pressed: bool) {
         match (code, is_pressed) {
             (KeyCode::Escape, true) => event_loop.exit(),
-            (KeyCode::Space, true) => self.use_color_pipeline = !self.use_color_pipeline,
+            (KeyCode::Space, true) => {
+                self.pipeline_mode = match self.pipeline_mode {
+                    PipelineMode::Solid => PipelineMode::Color,
+                    _ => PipelineMode::Solid,
+                };
+                #[cfg(target_arch = "wasm32")]
+                {
+                    web_sys::console::log_1(&format!("Pipeline mode: {:?}", self.pipeline_mode).into());
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                {
+                    log::info!("Pipeline mode: {:?}", self.pipeline_mode);
+                }
+            }
+            // Adjust pipe pixel radius (affects only Pipe shader)
+            (KeyCode::BracketLeft, true) => {
+                self.pipe_px_radius = (self.pipe_px_radius * 0.9).max(0.25);
+                #[cfg(target_arch = "wasm32")]
+                web_sys::console::log_1(&format!("pipe_px_radius = {:.2}", self.pipe_px_radius).into());
+                #[cfg(not(target_arch = "wasm32"))]
+                log::info!("pipe_px_radius = {:.2}", self.pipe_px_radius);
+            }
+            (KeyCode::BracketRight, true) => {
+                self.pipe_px_radius = (self.pipe_px_radius * 1.1111).min(64.0);
+                #[cfg(target_arch = "wasm32")]
+                web_sys::console::log_1(&format!("pipe_px_radius = {:.2}", self.pipe_px_radius).into());
+                #[cfg(not(target_arch = "wasm32"))]
+                log::info!("pipe_px_radius = {:.2}", self.pipe_px_radius);
+            }
             _ => {}
         }
     }
@@ -1021,14 +1084,13 @@ impl ApplicationHandler<State> for App {
         event: winit::event::DeviceEvent,
     ) {
         if let Some(state) = &mut self.state {
-            match event {
-                winit::event::DeviceEvent::MouseMotion { delta } => {
-                    if state.mouse_pressed {
-                        state.camera_controller.process_mouse(delta.0, delta.1);
-                    }
-                }
-                _ => {}
-            }
+             match event {
+                 winit::event::DeviceEvent::MouseMotion { delta } => {
+                    // Always forward mouse motion; controller decides based on active mode (orbit/pan)
+                    state.camera_controller.process_mouse(delta.0, delta.1);
+                 }
+                 _ => {}
+             }
         }
     }
 }
@@ -1120,7 +1182,7 @@ pub fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
         let index_count = (indices.len() as u32) - first_index;
         if index_count > 0 {
             // base_vertex must be 0 because indices are global
-            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![] });
+            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![], kind: BatchKind::Surface });
             mesh_to_batch[i] = Some(batches.len() - 1);
         }
     }
@@ -1129,7 +1191,7 @@ pub fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
         append_mesh_as_triangles(&m, color, &mut vertices, &mut indices);
         let index_count = (indices.len() as u32) - first_index;
         if index_count > 0 {
-            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![] });
+            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![], kind: BatchKind::Surface });
         }
     }
 
@@ -1141,7 +1203,7 @@ pub fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
     let index_count = (indices.len() as u32) - first_index;
     if index_count > 0 {
         // base_vertex must be 0 because indices are global
-        batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![] });
+        batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![], kind: BatchKind::Surface });
     }
 
 
@@ -1156,10 +1218,12 @@ pub fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
     if !edge_instances.is_empty() {
         let unit_pipe = Mesh::create_unit_pipe();
         let first_index = indices.len() as u32;
-        append_mesh_as_triangles(&unit_pipe, [0.0, 0.0, 0.0], &mut vertices, &mut indices);
+        append_mesh_as_triangles(&unit_pipe, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
         let index_count = (indices.len() as u32) - first_index;
         if index_count > 0 {
-            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: edge_instances });
+            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: edge_instances, kind: BatchKind::Pipe });
+            #[cfg(not(target_arch = "wasm32"))]
+            log::info!("Created native pipe batch: instances={}, index_count={}", batches.last().unwrap().instances.len(), index_count);
         }
     }
 
@@ -1212,7 +1276,7 @@ pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
         append_mesh_as_triangles(m, [0.8,0.8,0.8], &mut vertices, &mut indices);
         let index_count = (indices.len() as u32) - first_index;
         if index_count > 0 {
-            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![] });
+            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![], kind: BatchKind::Surface });
             mesh_to_batch[i] = Some(batches.len() - 1);
         }
     }
@@ -1222,7 +1286,7 @@ pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
         append_mesh_as_triangles(&m, color, &mut vertices, &mut indices);
         let index_count = (indices.len() as u32) - first_index;
         if index_count > 0 {
-            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![] });
+            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![], kind: BatchKind::Surface });
         }
     }
     // Edge pipe instancing: use a single unit pipe mesh and per-edge transforms
@@ -1235,10 +1299,11 @@ pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
     if !edge_instances.is_empty() {
         let unit_pipe = Mesh::create_unit_pipe();
         let first_index = indices.len() as u32;
-        append_mesh_as_triangles(&unit_pipe, [0.0, 0.0, 0.0], &mut vertices, &mut indices);
+        append_mesh_as_triangles(&unit_pipe, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
         let index_count = (indices.len() as u32) - first_index;
         if index_count > 0 {
-            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: edge_instances });
+            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: edge_instances, kind: BatchKind::Pipe });
+            web_sys::console::log_1(&format!("Created WASM pipe batch: instances={}, index_count={}", batches.last().unwrap().instances.len(), index_count).into());
         }
     }
     // Populate per-mesh instances

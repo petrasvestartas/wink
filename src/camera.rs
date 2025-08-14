@@ -110,6 +110,11 @@ impl Camera {
         cam
     }
 
+    pub fn forward_dir(&self) -> Vector3<f32> {
+        // Forward points from eye toward target
+        (self.target - self.position).normalize()
+    }
+
     // Update the camera position based on quaternion orientation and distance
     pub fn update_position(&mut self) {
         if self.turntable_mode {
@@ -222,17 +227,56 @@ impl Camera {
 #[repr(C)]
 pub struct CameraUniform {
     pub view_proj: [[f32; 4]; 4],
+    // x: viewport width, y: viewport height, z: fovy (degrees), w: aspect
+    pub viewport_fovy_aspect_pipe_px_radius: [f32; 4],
+    // x: pipe pixel radius, yzw: reserved
+    pub pipe_params: [f32; 4],
+    // Camera eye position (world space), w unused
+    pub eye_pos: [f32; 4],
+    // Camera forward direction (world space), w unused
+    pub view_dir: [f32; 4],
 }
 
 impl CameraUniform {
     pub fn new() -> Self {
         Self {
             view_proj: Matrix4::identity().into(),
+            viewport_fovy_aspect_pipe_px_radius: [0.0, 0.0, 45.0, 1.0],
+            pipe_params: [2.0, 0.0, 0.0, 0.0],
+            eye_pos: [0.0, 0.0, 0.0, 0.0],
+            view_dir: [0.0, 0.0, -1.0, 0.0],
         }
     }
 
     pub fn update_view_proj(&mut self, camera: &Camera) {
         self.view_proj = camera.build_view_projection_matrix().into();
+    }
+
+    pub fn set_view_params(
+        &mut self,
+        viewport_width: f32,
+        viewport_height: f32,
+        fovy_degrees: f32,
+        aspect: f32,
+        pipe_px_radius: f32,
+    ) {
+        self.viewport_fovy_aspect_pipe_px_radius = [
+            viewport_width,
+            viewport_height,
+            fovy_degrees,
+            aspect,
+        ];
+        self.pipe_params = [pipe_px_radius, 0.0, 0.0, 0.0];
+    }
+
+    pub fn set_eye(&mut self, camera: &Camera) {
+        self.eye_pos = [camera.position.x, camera.position.y, camera.position.z, 0.0];
+    }
+
+    pub fn set_eye_dir(&mut self, camera: &Camera) {
+        self.eye_pos = [camera.position.x, camera.position.y, camera.position.z, 0.0];
+        let f = camera.forward_dir();
+        self.view_dir = [f.x, f.y, f.z, 0.0];
     }
 }
 

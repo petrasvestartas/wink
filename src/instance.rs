@@ -19,6 +19,12 @@ impl Instance {
  
 
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum BatchKind {
+    Surface,
+    Pipe,
+}
+
 // Since quaternion are not available in shader,
 // we need to convert the Instance data into a matrix and store it in a struct called InstanceRaw.
 // This is the data that will go into the wgpu::Buffer
@@ -84,6 +90,7 @@ pub struct DrawBatch {
     pub index_count: u32,
     pub base_vertex: i32,
     pub instances: Vec<Instance>, // empty => default identity at draw time
+    pub kind: BatchKind,
 }
 
 pub struct BatchDraw {
@@ -92,4 +99,5 @@ pub struct BatchDraw {
     pub base_vertex: i32,
     pub instance_offset: u32, // into flattened instance array
     pub instance_count: u32,
+    pub kind: BatchKind,
 }
