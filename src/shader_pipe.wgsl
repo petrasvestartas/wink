@@ -12,7 +12,7 @@ struct CameraUniform {
     view_proj: mat4x4<f32>,
     // x: viewport width, y: viewport height, z: fovy (degrees), w: aspect
     viewport_fovy_aspect_pipe_px_radius: vec4<f32>,
-    // x: pipe pixel radius, yzw: reserved
+    // x: pipe pixel radius, y: ortho_half_height, z: is_ortho (1 or 0), w: reserved
     pipe_params: vec4<f32>,
     // eye position in world space
     eye_pos: vec4<f32>,
@@ -67,11 +67,62 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
     let viewport_w = max(viewport.x, 1.0);
     let viewport_h = max(viewport.y, 1.0);
     let px_radius = max(camera.pipe_params.x, 0.0);
+    let ortho_half_h = max(camera.pipe_params.y, 1e-6);
+    let is_ortho = camera.pipe_params.z > 0.5;
 
     // Center point on the cylinder axis at this local z (world and clip)
     let p_center_ws = axis_world;
     let p_center_cs = camera.view_proj * p_center_ws;
     let p_center_ndc = p_center_cs.xy / p_center_cs.w;
+
+    // Constant-pixel NDC offset path (geometry-shader-style expansion)
+    let use_ndc_offset: bool = true;
+    if (use_ndc_offset) {
+        out.color = model.color;
+
+        // Two orthonormal radial directions in world space (u,v) perpendicular to the axis
+        let axis_world_dir = normalize(instance.model_matrix_2.xyz);
+        let up_ws = vec3<f32>(0.0, 1.0, 0.0);
+        let t_ws = select(up_ws, vec3<f32>(1.0, 0.0, 0.0), abs(dot(axis_world_dir, up_ws)) > 0.99);
+        let u_ws = normalize(cross(axis_world_dir, t_ws));
+        let v_ws = normalize(cross(axis_world_dir, u_ws));
+
+        // Build pixel-space basis from small world steps along u and v
+        let viewport = camera.viewport_fovy_aspect_pipe_px_radius.xy;
+        let viewport_w = max(viewport.x, 1.0);
+        let viewport_h = max(viewport.y, 1.0);
+        let ndc_to_px = vec2<f32>(0.5 * viewport_w, 0.5 * viewport_h);
+        // Step size proportional to the unscaled ring radius for numerical stability
+        let avg_xy = 0.5 * (length(instance.model_matrix_0.xyz) + length(instance.model_matrix_1.xyz));
+        let eps2 = max(0.5 * avg_xy, 1e-6);
+        let pu_cs = camera.view_proj * vec4<f32>(p_center_ws.xyz + u_ws * eps2, 1.0);
+        let pv_cs = camera.view_proj * vec4<f32>(p_center_ws.xyz + v_ws * eps2, 1.0);
+        let pu_ndc = pu_cs.xy / pu_cs.w;
+        let pv_ndc = pv_cs.xy / pv_cs.w;
+        let e_u_px = (pu_ndc - p_center_ndc) * ndc_to_px;
+        let e_v_px = (pv_ndc - p_center_ndc) * ndc_to_px;
+        let e_u_dir = e_u_px / max(length(e_u_px), 1e-6);
+        let e_v_dir = e_v_px / max(length(e_v_px), 1e-6);
+
+        // Radial direction from the mesh's local ring
+        let px_radius = max(camera.pipe_params.x, 0.0);
+        let radial_len = length(model.position.xy);
+        var radial_unit = vec2<f32>(0.0, 0.0);
+        if (radial_len > 1e-6) {
+            radial_unit = model.position.xy / radial_len;
+        }
+        let dir_px = e_u_dir * radial_unit.x + e_v_dir * radial_unit.y;
+        let dir_px_n = dir_px / max(length(dir_px), 1e-6);
+        let offset_px = px_radius * dir_px_n;
+        let ndc_offset = offset_px / ndc_to_px;
+        let new_ndc = p_center_ndc + ndc_offset;
+        let clip_xy = new_ndc * p_center_cs.w;
+        out.clip_position = vec4<f32>(clip_xy.x, clip_xy.y, p_center_cs.z, p_center_cs.w);
+        // Approximate world-space normal for potential shading
+        let dir_ws = normalize(u_ws * radial_unit.x + v_ws * radial_unit.y);
+        out.normal_ws = dir_ws;
+        return out;
+    }
 
     // Two orthonormal radial directions in world space (u,v) perpendicular to the axis
     let axis_world_dir = normalize(instance.model_matrix_2.xyz);
@@ -110,7 +161,12 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
 
     // FOV-based side/cap estimates (analytical fallback)
     let fovy_rad = radians(camera.viewport_fovy_aspect_pipe_px_radius.z);
-    let world_per_pixel = (2.0 * depth * tan(0.5 * fovy_rad)) / viewport_h;
+    var world_per_pixel: f32;
+    if (is_ortho) {
+        world_per_pixel = (2.0 * ortho_half_h) / viewport_h;
+    } else {
+        world_per_pixel = (2.0 * depth * tan(0.5 * fovy_rad)) / viewport_h;
+    }
     let desired_world_r = max(px_radius * world_per_pixel, 1e-6);
     let sin_theta = length(cross(axis_world_dir, vdir));
     let r_world_side = desired_world_r / max(sin_theta, 1e-3);
@@ -224,10 +280,10 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    // Simple lambert shading with a fixed light to reveal roundness
-    // let light_dir = normalize(vec3(0.577, 0.577, 0.577));
+    // Temporary lambert shading with a fixed light to reveal roundness
+    // let light_dir = normalize(vec3<f32>(0.577, 0.577, 0.577));
     // let ndotl = max(dot(normalize(in.normal_ws), light_dir), 0.0);
-    // let lit = in.color * (0.2 + 0.8 * ndotl);¨
-    let lit = in.color;
-    return vec4<f32>(lit, 1.0);
+    // let lit = in.color * (0.2 + 0.8 * ndotl);
+    // return vec4<f32>(lit, 1.0);
+    return vec4<f32>(in.color, 1.0);
 }

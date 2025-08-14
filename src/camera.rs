@@ -48,6 +48,10 @@ pub struct Camera {
     pub fovy: f32,
     pub znear: f32,
     pub zfar: f32,
+    // Projection mode: perspective (default) or orthographic
+    pub is_ortho: bool,
+    // Orthographic half-height of the view volume (world units)
+    pub ortho_half_height: f32,
 }
 
 impl Camera {
@@ -104,6 +108,12 @@ impl Camera {
             fovy: 45.0,
             znear: 0.1,
             zfar: 100.0,
+            // Start in perspective; initialize ortho scale to roughly match current view at target
+            is_ortho: false,
+            ortho_half_height: {
+                let fovy_rad = 0.5f32 * 45.0f32.to_radians();
+                distance * fovy_rad.tan()
+            },
         };
 
         cam.update_position();
@@ -197,7 +207,13 @@ impl Camera {
     // Legacy method for compatibility
     pub fn build_view_projection_matrix(&self) -> Matrix4<f32> {
         let view = Matrix4::look_at_rh(self.position, self.target, self.up);
-        let proj = perspective(Deg(self.fovy), self.aspect, self.znear, self.zfar);
+        let proj = if self.is_ortho {
+            let half_h = self.ortho_half_height.max(1e-6);
+            let half_w = half_h * self.aspect.max(1e-6);
+            ortho(-half_w, half_w, -half_h, half_h, self.znear, self.zfar)
+        } else {
+            perspective(Deg(self.fovy), self.aspect, self.znear, self.zfar)
+        };
         OPENGL_TO_WGPU_MATRIX * proj * view
     }
 
@@ -259,6 +275,8 @@ impl CameraUniform {
         fovy_degrees: f32,
         aspect: f32,
         pipe_px_radius: f32,
+        is_ortho: bool,
+        ortho_half_height: f32,
     ) {
         self.viewport_fovy_aspect_pipe_px_radius = [
             viewport_width,
@@ -266,7 +284,12 @@ impl CameraUniform {
             fovy_degrees,
             aspect,
         ];
-        self.pipe_params = [pipe_px_radius, 0.0, 0.0, 0.0];
+        self.pipe_params = [
+            pipe_px_radius,
+            ortho_half_height,
+            if is_ortho { 1.0 } else { 0.0 },
+            0.0,
+        ];
     }
 
     pub fn set_eye(&mut self, camera: &Camera) {
@@ -493,15 +516,19 @@ impl CameraController {
 
         // Handle zooming with scroll wheel (standard in all 3D software)
         if self.scroll != 0.0 {
-            // Adjust distance with scroll (zoom in/out) with softer effect
-            camera.distance *= 1.0 + self.scroll * self.zoom_speed;
-
-            // Ensure camera doesn't get too close or too far
-            camera.distance = camera.distance.max(MIN_ZOOM_DISTANCE).min(MAX_ZOOM_DISTANCE);
-
-            // Reset scroll and update position
+            if camera.is_ortho {
+                // In orthographic mode, zoom changes the projection scale
+                camera.ortho_half_height *= 1.0 + self.scroll * self.zoom_speed;
+                camera.ortho_half_height = camera.ortho_half_height.max(1e-3).min(1.0e6);
+                // No change to camera.position for ortho zoom; keep it stable
+            } else {
+                // Perspective mode: adjust camera distance
+                camera.distance *= 1.0 + self.scroll * self.zoom_speed;
+                camera.distance = camera.distance.max(MIN_ZOOM_DISTANCE).min(MAX_ZOOM_DISTANCE);
+                camera.update_position();
+            }
+            // Reset scroll accumulator
             self.scroll = 0.0;
-            camera.update_position();
         }
 
         // Handle camera reset (c key)

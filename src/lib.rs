@@ -14,6 +14,7 @@ pub mod instance;
 pub mod shader_color_pipeline;
 pub mod shader_solid_pipeline;
 pub mod shader_pipe_pipeline;
+pub mod shader_sphere_pipeline;
 use vertex::Vertex;
 use camera::{Camera, CameraUniform, CameraController};
 use timing::Instant;
@@ -45,7 +46,7 @@ const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24Plus;
 const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-enum PipelineMode { Solid, Color, Pipe }
+enum PipelineMode { Solid, Color }
 
 #[cfg(target_arch = "wasm32")]
 use std::cell::{Cell, RefCell};
@@ -206,6 +207,7 @@ pub struct State{
     render_pipeline_solid: wgpu::RenderPipeline, // First pipeline (one color)
     render_pipeline_color: wgpu::RenderPipeline, // Second pipeline (vertex colors)
     render_pipeline_pipe: wgpu::RenderPipeline,  // Third pipeline (pipe-specific)
+    render_pipeline_sphere: wgpu::RenderPipeline, // Sphere pipeline (vertex caps)
     pipeline_mode: PipelineMode,                 // Active pipeline selection
     // Pipe rendering controls
     pipe_px_radius: f32,
@@ -345,7 +347,7 @@ impl State{
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
+                    visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
@@ -366,6 +368,10 @@ impl State{
         );
 
         let render_pipeline_pipe = crate::shader_pipe_pipeline::create(
+            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT,
+        );
+
+        let render_pipeline_sphere = crate::shader_sphere_pipeline::create(
             &device, &config, &camera_bind_group_layout, DEPTH_FORMAT,
         );
 
@@ -482,6 +488,8 @@ impl State{
             camera.fovy,
             camera.aspect,
             default_pipe_px_radius,
+            camera.is_ortho,
+            camera.ortho_half_height,
         );
 
         let camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -536,6 +544,7 @@ impl State{
             render_pipeline_solid,
             render_pipeline_color,
             render_pipeline_pipe,
+            render_pipeline_sphere,
             pipeline_mode: PipelineMode::Color,  
             pipe_px_radius: default_pipe_px_radius,
             vertex_buffer,
@@ -764,6 +773,8 @@ impl State{
             self.camera.fovy,
             self.camera.aspect,
             self.pipe_px_radius,
+            self.camera.is_ortho,
+            self.camera.ortho_half_height,
         );
         self.queue.write_buffer(
             &self.camera_buffer,
@@ -855,6 +866,9 @@ impl State{
                             _ => render_pass.set_pipeline(&self.render_pipeline_solid),
                         }
                     }
+                    BatchKind::Sphere => {
+                        render_pass.set_pipeline(&self.render_pipeline_sphere);
+                    }
                 }
                 // Set the camera bind group (after pipeline)
                 render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
@@ -897,6 +911,39 @@ impl State{
                 {
                     log::info!("Pipeline mode: {:?}", self.pipeline_mode);
                 }
+            }
+            // Toggle projection: Perspective <-> Orthographic (O)
+            (KeyCode::KeyO, true) => {
+                // Toggle flag
+                let to_ortho = !self.camera.is_ortho;
+                let fovy_rad = self.camera.fovy.to_radians();
+                let half_tan = (0.5f32 * fovy_rad).tan().max(1e-6);
+                if to_ortho {
+                    // Match current perspective apparent scale at the target distance
+                    self.camera.ortho_half_height = self.camera.distance * half_tan;
+                    self.camera.is_ortho = true;
+                } else {
+                    // Switch to perspective; adjust distance to preserve vertical world span
+                    let target_dist = self.camera.ortho_half_height / half_tan;
+                    if target_dist.is_finite() && target_dist > 1e-4 {
+                        self.camera.distance = target_dist;
+                    }
+                    self.camera.is_ortho = false;
+                    // Update camera position to reflect distance change
+                    self.camera.update_position();
+                }
+                #[cfg(target_arch = "wasm32")]
+                web_sys::console::log_1(&format!(
+                    "Projection mode: {} (ortho_half_height={:.3})",
+                    if self.camera.is_ortho { "Orthographic" } else { "Perspective" },
+                    self.camera.ortho_half_height
+                ).into());
+                #[cfg(not(target_arch = "wasm32"))]
+                log::info!(
+                    "Projection mode: {} (ortho_half_height={:.3})",
+                    if self.camera.is_ortho { "Orthographic" } else { "Perspective" },
+                    self.camera.ortho_half_height
+                );
             }
             // Adjust pipe pixel radius (affects only Pipe shader)
             (KeyCode::BracketLeft, true) => {
@@ -1195,15 +1242,27 @@ pub fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
         }
     }
 
-    // create one big pipe
-
-    let pipe = Mesh::create_pipe(Point::new(0.0, 0.0, 0.0), Point::new(0.0, 0.0, 1.0), 1.0);
+    // create one big pipe as an instanced screen-space pipe (matches spheres/pipes shader behavior)
+    let start = Point::new(0.0, 0.0, 0.0);
+    let end = Point::new(0.0, 0.0, 1.0);
+    let unit_pipe = Mesh::create_unit_pipe_high_res();
     let first_index = indices.len() as u32;
-    append_mesh_as_triangles(&pipe, [0.8, 0.8, 0.8], &mut vertices, &mut indices);
+    append_mesh_as_triangles(&unit_pipe, [0.8, 0.8, 0.8], &mut vertices, &mut indices);
     let index_count = (indices.len() as u32) - first_index;
     if index_count > 0 {
-        // base_vertex must be 0 because indices are global
-        batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![], kind: BatchKind::Surface });
+        // Single instance aligned along +Z from start to end. XY scale is 1.0; Z scale is segment length.
+        let mid = cgmath::Vector3::new(
+            ((start.x + end.x) * 0.5) as f32,
+            ((start.y + end.y) * 0.5) as f32,
+            ((start.z + end.z) * 0.5) as f32,
+        );
+        let len = (((end.x - start.x).powi(2) + (end.y - start.y).powi(2) + (end.z - start.z).powi(2)).sqrt()) as f32;
+        let inst = Instance {
+            position: mid,
+            rotation: cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0)),
+            scale: cgmath::Vector3::new(1.0, 1.0, len), // radius handled in shader; Z = length
+        };
+        batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![inst], kind: BatchKind::Pipe });
     }
 
 
@@ -1216,7 +1275,7 @@ pub fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
         for tf in tfs { edge_instances.push(xform_to_instance(&tf)); }
     }
     if !edge_instances.is_empty() {
-        let unit_pipe = Mesh::create_unit_pipe();
+        let unit_pipe = Mesh::create_unit_pipe_high_res();
         let first_index = indices.len() as u32;
         append_mesh_as_triangles(&unit_pipe, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
         let index_count = (indices.len() as u32) - first_index;
@@ -1224,6 +1283,47 @@ pub fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
             batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: edge_instances, kind: BatchKind::Pipe });
             #[cfg(not(target_arch = "wasm32"))]
             log::info!("Created native pipe batch: instances={}, index_count={}", batches.last().unwrap().instances.len(), index_count);
+        }
+    }
+
+    // End-cap spheres at boundary vertices: collect instances at mesh boundary vertices
+    let mut sphere_instances: Vec<Instance> = Vec::new();
+    for m in &all_geom.meshes {
+        for vk in m.vertex.keys() {
+            if m.is_vertex_on_boundary(*vk) {
+                if let Some(p) = m.vertex_position(*vk) {
+                    sphere_instances.push(Instance {
+                        position: cgmath::Vector3::new(p.x as f32, p.y as f32, p.z as f32),
+                        rotation: cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0)),
+                        scale: cgmath::Vector3::new(1.0, 1.0, 1.0),
+                    });
+                }
+            }
+        }
+    }
+    // If no boundary-derived spheres exist (e.g., no input meshes with boundary edges),
+    // add two debug/test spheres at the ends of the procedural demo pipe so the feature is visible.
+    if sphere_instances.is_empty() {
+        sphere_instances.push(Instance {
+            position: cgmath::Vector3::new(start.x as f32, start.y as f32, start.z as f32),
+            rotation: cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0)),
+            scale: cgmath::Vector3::new(1.0, 1.0, 1.0),
+        });
+        sphere_instances.push(Instance {
+            position: cgmath::Vector3::new(end.x as f32, end.y as f32, end.z as f32),
+            rotation: cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0)),
+            scale: cgmath::Vector3::new(1.0, 1.0, 1.0),
+        });
+    }
+    if !sphere_instances.is_empty() {
+        let unit_sphere = Mesh::create_unit_sphere_high_res();
+        let first_index = indices.len() as u32;
+        append_mesh_as_triangles(&unit_sphere, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
+        let index_count = (indices.len() as u32) - first_index;
+        if index_count > 0 {
+            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: sphere_instances, kind: BatchKind::Sphere });
+            #[cfg(not(target_arch = "wasm32"))]
+            log::info!("Created native sphere batch: instances={}, index_count={}", batches.last().unwrap().instances.len(), index_count);
         }
     }
 
@@ -1297,13 +1397,38 @@ pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
         for tf in tfs { edge_instances.push(xform_to_instance(&tf)); }
     }
     if !edge_instances.is_empty() {
-        let unit_pipe = Mesh::create_unit_pipe();
+        let unit_pipe = Mesh::create_unit_pipe_high_res();
         let first_index = indices.len() as u32;
         append_mesh_as_triangles(&unit_pipe, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
         let index_count = (indices.len() as u32) - first_index;
         if index_count > 0 {
             batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: edge_instances, kind: BatchKind::Pipe });
             web_sys::console::log_1(&format!("Created WASM pipe batch: instances={}, index_count={}", batches.last().unwrap().instances.len(), index_count).into());
+        }
+    }
+    // End-cap spheres at boundary vertices (WASM)
+    let mut sphere_instances: Vec<Instance> = Vec::new();
+    for m in &all_geom.meshes {
+        for vk in m.vertex.keys() {
+            if m.is_vertex_on_boundary(*vk) {
+                if let Some(p) = m.vertex_position(*vk) {
+                    sphere_instances.push(Instance {
+                        position: cgmath::Vector3::new(p.x as f32, p.y as f32, p.z as f32),
+                        rotation: cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0)),
+                        scale: cgmath::Vector3::new(1.0, 1.0, 1.0),
+                    });
+                }
+            }
+        }
+    }
+    if !sphere_instances.is_empty() {
+        let unit_sphere = Mesh::create_unit_sphere_high_res();
+        let first_index = indices.len() as u32;
+        append_mesh_as_triangles(&unit_sphere, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
+        let index_count = (indices.len() as u32) - first_index;
+        if index_count > 0 {
+            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: sphere_instances, kind: BatchKind::Sphere });
+            web_sys::console::log_1(&format!("Created WASM sphere batch: instances={}, index_count={}", batches.last().unwrap().instances.len(), index_count).into());
         }
     }
     // Populate per-mesh instances

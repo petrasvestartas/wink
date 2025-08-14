@@ -23,6 +23,7 @@ impl Instance {
 pub enum BatchKind {
     Surface,
     Pipe,
+    Sphere,
 }
 
 // Since quaternion are not available in shader,

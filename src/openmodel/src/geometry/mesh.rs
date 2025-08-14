@@ -902,8 +902,11 @@ impl Mesh {
     /// Compute per-edge transforms for instancing a unit pipe mesh.
     ///
     /// Returns a transform for each unique edge of the mesh that maps a unit cylinder
-    /// aligned along the +Z axis with length=1 and radius=1 (centered at the origin,
+    /// aligned along the +Z axis with length=1 and radius=0.5 (centered at the origin,
     /// from z = -0.5 to z = +0.5) onto the edge as a pipe of the given radius.
+    ///
+    /// Note: Our shared unit pipe meshes (e.g. `create_unit_pipe_high_res`) use radius=0.5
+    /// so we scale X/Y by 2*radius to achieve the requested world-space radius.
     ///
     /// The transform encodes translation to the edge midpoint, rotation to align +Z with
     /// the edge direction, and non-uniform scale (radius, radius, length).
@@ -955,8 +958,8 @@ impl Mesh {
                 );
                 let translation = Xform::translation(midpoint.x, midpoint.y, midpoint.z);
 
-                // Non-uniform scale: radius in X/Y, edge length in Z
-                let scale = Xform::scaling(radius, radius, len);
+                // Non-uniform scale: 2*radius in X/Y (unit pipe has radius 0.5), edge length in Z
+                let scale = Xform::scaling(2.0 * radius, 2.0 * radius, len);
 
                 // Compose: T * R * S (column-major)
                 transforms.push(translation * rotation * scale);
@@ -1053,6 +1056,65 @@ impl Mesh {
         mesh
     }
 
+    /// Create a low-poly unit sphere mesh centered at the origin.
+    /// Uses hardcoded coordinates and triangle faces, suitable for shader-based spheres.
+    pub fn create_unit_sphere() -> Self {
+        let mut mesh = Mesh::new();
+
+        // Vertex list (26 points)
+        let verts: &[[f64; 3]] = &[
+            [ 0.5,      0.0,      0.0     ], // 0
+            [ 0.353553, 0.353553, 0.0     ], // 1
+            [ 0.353553, 0.0,      0.353553], // 2
+            [ 0.353553, 0.0,     -0.353553], // 3
+            [ 0.353553,-0.353553, 0.0     ], // 4
+            [ 0.288675, 0.288675, 0.288675], // 5
+            [ 0.288675, 0.288675,-0.288675], // 6
+            [ 0.288675,-0.288675, 0.288675], // 7
+            [ 0.288675,-0.288675,-0.288675], // 8
+            [ 0.0,      0.5,      0.0     ], // 9
+            [ 0.0,      0.353553, 0.353553], // 10
+            [ 0.0,      0.353553,-0.353553], // 11
+            [ 0.0,      0.0,      0.5     ], // 12
+            [ 0.0,      0.0,     -0.5     ], // 13
+            [ 0.0,     -0.353553, 0.353553], // 14
+            [ 0.0,     -0.353553,-0.353553], // 15
+            [ 0.0,     -0.5,      0.0     ], // 16
+            [-0.288675, 0.288675, 0.288675], // 17
+            [-0.288675, 0.288675,-0.288675], // 18
+            [-0.288675,-0.288675, 0.288675], // 19
+            [-0.288675,-0.288675,-0.288675], // 20
+            [-0.353553, 0.353553, 0.0     ], // 21
+            [-0.353553, 0.0,      0.353553], // 22
+            [-0.353553, 0.0,     -0.353553], // 23
+            [-0.353553,-0.353553, 0.0     ], // 24
+            [-0.5,      0.0,      0.0     ], // 25
+        ];
+        // Map insertion order to actual vertex keys returned by add_vertex
+        let mut vkeys: Vec<usize> = Vec::with_capacity(verts.len());
+        for v in verts {
+            let k = mesh.add_vertex(Point::new(v[0], v[1], v[2]), None);
+            vkeys.push(k);
+        }
+
+        // Triangle faces (indices into the above vertex list)
+        let tris: &[[usize; 3]] = &[
+            [19,14,12], [14,7,12], [22,12,17], [12,2,5], [7,4,0], [4,8,0], [2,0,5], [0,3,6],
+            [8,15,13], [15,20,13], [3,13,6], [13,23,18], [20,24,25], [24,19,25], [23,25,18], [25,22,17],
+            [8,4,16], [4,7,16], [15,16,20], [16,14,19], [18,21,9], [21,17,9], [11,9,6], [9,10,5],
+            [19,12,22], [7,2,12], [12,10,17], [12,5,10], [7,0,2], [8,3,0], [0,1,5], [0,6,1],
+            [8,13,3], [20,23,13], [13,11,6], [13,18,11], [20,25,23], [19,22,25], [25,21,18], [25,17,21],
+            [8,16,15], [7,14,16], [16,24,20], [16,19,24], [18,9,11], [17,10,9], [9,1,6], [9,5,1],
+        ];
+
+        for t in tris {
+            let a = vkeys[t[0]]; let b = vkeys[t[1]]; let c = vkeys[t[2]];
+            mesh.add_face(vec![a, b, c], None);
+        }
+
+        mesh
+    }
+
 
     /// Create a unit 8-sided cylinder mesh aligned to +Z (radius=0.5, length=1).
     /// Centered at the origin, spanning z in [-0.5, +0.5]. Intended for instancing.
@@ -1073,7 +1135,7 @@ impl Mesh {
         mesh
     }
 
-    /// Shared 8-sided unit pipe geometry (top ring 0..=7 at z=+0.5, bottom ring 8..=15 at z=-0.5)
+    /// Shared 8-sided unit pipe geometry (top ring 0..=7 at z=+0.5, bottom ring 8..=15)
     /// Winding is consistent CCW for fronts with front_face = CCW.
     fn pipe8_unit_vertices_and_faces() -> (Vec<Point>, Vec<Vec<usize>>) {
         // Vertices
@@ -1134,6 +1196,155 @@ impl Mesh {
             vec![15, 0, 7],
         ];
         (unit_vertices, faces)
+    }
+
+
+    /// Shared N-sided unit pipe geometry (radius=0.5, length=1 along Z), with cap centers.
+    /// Returns vertices and triangular faces with CCW winding for front faces.
+    fn pipe_unit_vertices_and_faces(sides: usize) -> (Vec<Point>, Vec<Vec<usize>>) {
+        let n = sides.max(3); // minimum triangle
+        let r = 0.5f64;
+        let mut verts: Vec<Point> = Vec::with_capacity(2 * n + 2);
+        // Top ring (z=+0.5), CCW when viewed from +Z
+        for i in 0..n {
+            let theta = (i as f64) * (2.0 * std::f64::consts::PI / n as f64);
+            verts.push(Point::new(r * theta.cos(), r * theta.sin(), 0.5));
+        }
+        // Bottom ring (z=-0.5)
+        for i in 0..n {
+            let theta = (i as f64) * (2.0 * std::f64::consts::PI / n as f64);
+            verts.push(Point::new(r * theta.cos(), r * theta.sin(), -0.5));
+        }
+        // Cap centers
+        let top_center = verts.len();
+        verts.push(Point::new(0.0, 0.0, 0.5));
+        let bottom_center = verts.len();
+        verts.push(Point::new(0.0, 0.0, -0.5));
+
+        let mut faces: Vec<Vec<usize>> = Vec::with_capacity(4 * n);
+        // Sides: split quads into two triangles per segment
+        for i in 0..n {
+            let it = i;
+            let itn = (i + 1) % n;
+            let ib = i + n;
+            let ibn = ((i + 1) % n) + n;
+            // Match existing 8-sided orientation: [bottom_i, bottom_next, top_next], [bottom_i, top_next, top_i]
+            faces.push(vec![ib, ibn, itn]);
+            faces.push(vec![ib, itn, it]);
+        }
+        // Top cap: CCW when viewed from +Z
+        for i in 0..n {
+            let it = i;
+            let itn = (i + 1) % n;
+            faces.push(vec![top_center, it, itn]);
+        }
+        // Bottom cap: outward normal -Z -> CCW when viewed from -Z
+        for i in 0..n {
+            let ib = i + n;
+            let ibn = ((i + 1) % n) + n;
+            faces.push(vec![bottom_center, ibn, ib]);
+        }
+
+        (verts, faces)
+    }
+
+    /// Create a unit high-resolution cylinder mesh aligned to +Z (radius=0.5, length=1).
+    /// Uses 32 sides for smoother silhouette; includes cap centers and triangular fans.
+    pub fn create_unit_pipe_high_res() -> Self {
+        let mut mesh = Mesh::new();
+        let (unit_vertices, faces) = Mesh::pipe_unit_vertices_and_faces(32);
+        let mut vertex_keys = Vec::with_capacity(unit_vertices.len());
+        for v in unit_vertices { vertex_keys.push(mesh.add_vertex(v, None)); }
+        for face in faces {
+            let face_vertices: Vec<usize> = face.iter().map(|&i| vertex_keys[i]).collect();
+            mesh.add_face(face_vertices, None);
+        }
+        mesh
+    }
+
+    /// Build an icosphere of radius 0.5 with `subdiv` subdivision steps.
+    /// Returns vertices positioned on the sphere and triangular faces (CCW outward).
+    fn icosphere_unit_vertices_and_faces(subdiv: u32) -> (Vec<Point>, Vec<[usize; 3]>) {
+        let r = 0.5f64;
+        let phi = (1.0 + 5.0_f64.sqrt()) * 0.5;
+        let mut verts: Vec<Point> = vec![
+            // 12 vertices of a regular icosahedron
+            Point::new(-1.0,  phi,  0.0),
+            Point::new( 1.0,  phi,  0.0),
+            Point::new(-1.0, -phi,  0.0),
+            Point::new( 1.0, -phi,  0.0),
+            Point::new( 0.0, -1.0,  phi),
+            Point::new( 0.0,  1.0,  phi),
+            Point::new( 0.0, -1.0, -phi),
+            Point::new( 0.0,  1.0, -phi),
+            Point::new( phi,  0.0, -1.0),
+            Point::new( phi,  0.0,  1.0),
+            Point::new(-phi,  0.0, -1.0),
+            Point::new(-phi,  0.0,  1.0),
+        ];
+        // Normalize all to radius r
+        for v in &mut verts {
+            let len = (v.x * v.x + v.y * v.y + v.z * v.z).sqrt();
+            if len > 0.0 {
+                v.x = v.x / len * r;
+                v.y = v.y / len * r;
+                v.z = v.z / len * r;
+            }
+        }
+
+        let mut faces: Vec<[usize; 3]> = vec![
+            [0, 11, 5],  [0, 5, 1],   [0, 1, 7],   [0, 7, 10],  [0, 10, 11],
+            [1, 5, 9],   [5, 11, 4],  [11, 10, 2], [10, 7, 6],  [7, 1, 8],
+            [3, 9, 4],   [3, 4, 2],   [3, 2, 6],   [3, 6, 8],   [3, 8, 9],
+            [4, 9, 5],   [2, 4, 11],  [6, 2, 10],  [8, 6, 7],   [9, 8, 1],
+        ];
+
+        // Edge midpoint cache to avoid duplicate vertices
+        let mut midpoint_cache: std::collections::HashMap<(usize, usize), usize> = std::collections::HashMap::new();
+        let midpoint = |ia: usize, ib: usize, verts: &mut Vec<Point>, cache: &mut std::collections::HashMap<(usize, usize), usize>| -> usize {
+            let key = if ia < ib { (ia, ib) } else { (ib, ia) };
+            if let Some(&idx) = cache.get(&key) { return idx; }
+            let a = &verts[ia];
+            let b = &verts[ib];
+            let mut m = Point::new((a.x + b.x) * 0.5, (a.y + b.y) * 0.5, (a.z + b.z) * 0.5);
+            let len = (m.x * m.x + m.y * m.y + m.z * m.z).sqrt();
+            if len > 0.0 {
+                m.x = m.x / len * r; m.y = m.y / len * r; m.z = m.z / len * r;
+            }
+            let idx = verts.len();
+            verts.push(m);
+            cache.insert(key, idx);
+            idx
+        };
+
+        for _ in 0..subdiv {
+            let mut new_faces: Vec<[usize; 3]> = Vec::with_capacity(faces.len() * 4);
+            for [i0, i1, i2] in faces.iter().copied() {
+                let a = midpoint(i0, i1, &mut verts, &mut midpoint_cache);
+                let b = midpoint(i1, i2, &mut verts, &mut midpoint_cache);
+                let c = midpoint(i2, i0, &mut verts, &mut midpoint_cache);
+                new_faces.push([i0, a, c]);
+                new_faces.push([i1, b, a]);
+                new_faces.push([i2, c, b]);
+                new_faces.push([a, b, c]);
+            }
+            faces = new_faces;
+            midpoint_cache.clear();
+        }
+        (verts, faces)
+    }
+
+    /// High-resolution unit sphere using a procedural icosphere (radius=0.5).
+    /// Subdivision level is tuned for a smooth silhouette while staying under u16 index limits.
+    pub fn create_unit_sphere_high_res() -> Self {
+        let (unit_vertices, faces) = Mesh::icosphere_unit_vertices_and_faces(3); // 642 verts, 1280 faces
+        let mut mesh = Mesh::new();
+        let mut vkeys: Vec<usize> = Vec::with_capacity(unit_vertices.len());
+        for v in unit_vertices { vkeys.push(mesh.add_vertex(v, None)); }
+        for f in faces {
+            mesh.add_face(vec![vkeys[f[0]], vkeys[f[1]], vkeys[f[2]]], None);
+        }
+        mesh
     }
 
 

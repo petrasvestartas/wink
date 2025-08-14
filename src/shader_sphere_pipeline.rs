@@ -8,18 +8,18 @@ pub fn create(
     depth_format: wgpu::TextureFormat,
 ) -> wgpu::RenderPipeline {
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("Pipe Shader"),
-        source: wgpu::ShaderSource::Wgsl(include_str!("shader_pipe.wgsl").into()),
+        label: Some("Sphere Shader"),
+        source: wgpu::ShaderSource::Wgsl(include_str!("shader_sphere.wgsl").into()),
     });
 
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some("Render Pipeline Layout (pipe)"),
+        label: Some("Render Pipeline Layout (sphere)"),
         bind_group_layouts: &[camera_bind_group_layout],
         push_constant_ranges: &[],
     });
 
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some("Pipe Pipeline"),
+        label: Some("Sphere Pipeline"),
         layout: Some(&pipeline_layout),
         vertex: wgpu::VertexState {
             module: &shader,
