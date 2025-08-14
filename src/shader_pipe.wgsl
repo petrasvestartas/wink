@@ -76,7 +76,7 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
     let p_center_ndc = p_center_cs.xy / p_center_cs.w;
 
     // Constant-pixel NDC offset path (geometry-shader-style expansion)
-    let use_ndc_offset: bool = true;
+    let use_ndc_offset: bool = false;
     if (use_ndc_offset) {
         out.color = model.color;
 
@@ -130,9 +130,16 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
     let t_ws = select(up_ws, vec3<f32>(1.0, 0.0, 0.0), abs(dot(axis_world_dir, up_ws)) > 0.99);
     let u_ws = normalize(cross(axis_world_dir, t_ws));
     let v_ws = normalize(cross(axis_world_dir, u_ws));
-    // Step size proportional to the unscaled ring radius for numerical stability
-    let avg_xy_base = 0.5 * (length(c0) + length(c1));
-    let eps = max(0.5 * avg_xy_base, 1e-6);
+    // Step size based on desired world radius for numerical stability (small relative step)
+    var world_per_pixel_eps: f32;
+    let fovy_rad_eps = radians(camera.viewport_fovy_aspect_pipe_px_radius.z);
+    if (is_ortho) {
+        world_per_pixel_eps = (2.0 * ortho_half_h) / viewport_h;
+    } else {
+        world_per_pixel_eps = (2.0 * depth * tan(0.5 * fovy_rad_eps)) / viewport_h;
+    }
+    let desired_world_r_eps = max(px_radius * world_per_pixel_eps, 1e-6);
+    let eps = max(0.1 * desired_world_r_eps, 1e-5);
 
     // Projected pixel delta for small world steps along 4 radial dirs (u, v, u+v, u-v)
     let d1_ws = normalize(u_ws + v_ws);
@@ -236,7 +243,7 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
     let req_world_r_refined2 = mix(req_world_r_refined, r_new_soft, 0.6);
 
     // Tighter clamp to avoid minor spikes while allowing perspective variation
-    let req_world_r_clamped = clamp(req_world_r_refined2, desired_world_r * 0.5, desired_world_r * 4.0);
+    let req_world_r_clamped = clamp(req_world_r_refined2, desired_world_r * 0.75, desired_world_r * 1.5);
 
     out.color = model.color;
     // Direction-specific world extrusion to stabilize large radii
@@ -263,7 +270,7 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
         let px_per_world_dir = length((s1_ndc - s0_ndc) * ndc_to_px) / max(delta_dir, 1e-6);
         let r1 = r0 + (px_radius - px_at_r0) / max(px_per_world_dir, 1e-6);
 
-        let r_final = clamp(r1, desired_world_r * 0.5, desired_world_r * 4.0);
+        let r_final = clamp(r1, desired_world_r * 0.75, desired_world_r * 1.5);
         out.normal_ws = dir_ws;
         world_pos = vec4<f32>(p_center_ws.xyz + dir_ws * r_final, 1.0);
     } else {
@@ -280,10 +287,10 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    // Temporary lambert shading with a fixed light to reveal roundness
-    // let light_dir = normalize(vec3<f32>(0.577, 0.577, 0.577));
-    // let ndotl = max(dot(normalize(in.normal_ws), light_dir), 0.0);
-    // let lit = in.color * (0.2 + 0.8 * ndotl);
-    // return vec4<f32>(lit, 1.0);
-    return vec4<f32>(in.color, 1.0);
+    // Headlight-style lambert shading to reveal seams/corners
+    let N = normalize(in.normal_ws);
+    let L = normalize(-camera.view_dir.xyz);
+    let ndotl = max(dot(N, L), 0.0);
+    let lit = in.color * (0.2 + 0.8 * ndotl);
+    return vec4<f32>(lit, 1.0);
 }
