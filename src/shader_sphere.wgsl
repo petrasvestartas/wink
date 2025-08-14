@@ -130,9 +130,10 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     // Headlight-style lambert shading to reveal seams/corners
-    let N = normalize(in.normal_ws);
-    let L = normalize(-camera.view_dir.xyz);
-    let ndotl = max(dot(N, L), 0.0);
-    let lit = in.color * (0.2 + 0.8 * ndotl);
-    return vec4<f32>(lit, 1.0);
+    // let N = normalize(in.normal_ws);
+    // let L = normalize(-camera.view_dir.xyz);
+    // let ndotl = max(dot(N, L), 0.0);
+    // let lit = in.color * (0.2 + 0.8 * ndotl);
+    // return vec4<f32>(lit, 1.0);
+    return vec4<f32>(0.03, 0.03, 0.03, 1.0);
 }
