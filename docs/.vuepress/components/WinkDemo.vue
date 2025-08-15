@@ -30,7 +30,7 @@
     props: { 
       autoLoad: {
         type: Boolean,
-        default: false
+        default: true
       }
     },
     data() {
@@ -38,8 +38,8 @@
         demoStarted: false,
         loading: false,
         error: "",
-        autoLoad: true, // Auto-load the demo on page load
         resizeTimeout: null,
+        ro: null,
       };
     },
     methods: {
@@ -51,18 +51,33 @@
           // Set canvas size to be responsive before loading WASM
           this.setupCanvas();
           
-          // Load the demo.js file using script tag approach since it's in /public
-          const script = document.createElement('script');
-          script.type = 'module';
-          script.src = '/wasm/demo.js';
-          
-          // Wait for script to load
+          // Load and initialize the WASM module built by wasm-pack using a runtime module script.
+          // This avoids importing files from /public in source code, which Vite disallows.
           await new Promise((resolve, reject) => {
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
+            const winkJsUrl = '/wasm/wink.js';
+            const wasmUrl = '/wasm/wink_bg.wasm';
+            // Setup a one-shot global to signal when init finishes
+            const doneKey = '__wink_on_init';
+            const timeout = setTimeout(() => {
+              // Fail if init never signaled within 15s
+              reject(new Error('WASM init timeout'));
+            }, 15000);
+            window[doneKey] = () => {
+              clearTimeout(timeout);
+              try { delete window[doneKey]; } catch (_) {}
+              resolve();
+            };
+            const code = `import init from '${winkJsUrl}';\n` +
+                         `init('${wasmUrl}')\n` +
+                         `  .then(() => window.${doneKey} && window.${doneKey}())\n` +
+                         `  .catch(e => { console.error('WASM init error:', e); });`;
+            const s = document.createElement('script');
+            s.type = 'module';
+            s.textContent = code;
+            s.onerror = () => reject(new Error('Failed to load module script'));
+            document.head.appendChild(s);
           });
-          
+
           this.demoStarted = true;
         } catch (e) {
           this.error = `Failed to load WASM demo: ${e.message}`;
@@ -78,23 +93,38 @@
         const wrapper = canvas?.parentElement;
         
         if (canvas && wrapper) {
-          // Get the wrapper's dimensions
+          // Measure the actual rendered size of the wrapper/canvas (CSS pixels)
           const rect = wrapper.getBoundingClientRect();
-          const containerWidth = wrapper.clientWidth;
-          
-          // Calculate optimal size with some padding
-          const padding = 20;
-          const maxWidth = Math.min(containerWidth - padding, 800);
-          const width = Math.max(400, maxWidth); // Minimum 400px width
-          const height = Math.round((width * 3) / 4); // 4:3 aspect ratio
-          
-          // Set both canvas internal resolution and display size
-          canvas.width = width;
-          canvas.height = height;
-          canvas.style.width = width + 'px';
-          canvas.style.height = height + 'px';
-          
-          console.log(`Canvas resized to: ${width}x${height}`);
+          const cssWidth = Math.max(1, Math.round(rect.width));
+          const cssHeight = Math.max(1, Math.round(rect.height));
+          const dprDevice = window.devicePixelRatio || 1;
+          let targetW = cssWidth * dprDevice;
+          let targetH = cssHeight * dprDevice;
+
+          // WebGL2 minimum guaranteed max texture size is 2048. Since we use the GL backend on Web,
+          // cap the internal canvas resolution to avoid wgpu validation errors when creating textures.
+          const MAX_DIM_GL = 2048;
+          if (targetW > MAX_DIM_GL || targetH > MAX_DIM_GL) {
+            const scale = Math.min(MAX_DIM_GL / targetW, MAX_DIM_GL / targetH);
+            targetW = Math.floor(targetW * scale);
+            targetH = Math.floor(targetH * scale);
+          } else {
+            targetW = Math.floor(targetW);
+            targetH = Math.floor(targetH);
+          }
+
+          // Do NOT set inline CSS width/height; CSS already uses 100% and will scale fluidly with the window.
+          // Only update the internal resolution if it actually changed.
+          if (canvas.width !== targetW || canvas.height !== targetH) {
+            canvas.width = targetW;
+            canvas.height = targetH;
+            console.log(`Canvas resized to: ${cssWidth}x${cssHeight} -> internal ${targetW}x${targetH}`);
+            // Notify listeners (e.g., WASM) of the new internal size
+            const event = new CustomEvent('canvasResize', {
+              detail: { width: canvas.width, height: canvas.height }
+            });
+            canvas.dispatchEvent(event);
+          }
         }
       },
       
@@ -103,20 +133,8 @@
         if (this.resizeTimeout) {
           clearTimeout(this.resizeTimeout);
         }
-        
         this.resizeTimeout = setTimeout(() => {
-          if (this.demoStarted) {
-            this.setupCanvas();
-            
-            // Trigger a custom event that the WASM code can listen to
-            const canvas = document.getElementById('canvas');
-            if (canvas) {
-              const event = new CustomEvent('canvasResize', {
-                detail: { width: canvas.width, height: canvas.height }
-              });
-              canvas.dispatchEvent(event);
-            }
-          }
+          this.setupCanvas();
         }, 100); // 100ms debounce
       }
     },
@@ -125,6 +143,13 @@
       
       // Setup responsive canvas on window resize with debouncing
       window.addEventListener('resize', this.handleResize);
+      // Also observe the wrapper element for size changes (more reliable on some browsers/layouts)
+      const canvas = document.getElementById('canvas');
+      const wrapper = canvas?.parentElement;
+      if (wrapper && 'ResizeObserver' in window) {
+        this.ro = new ResizeObserver(() => this.handleResize());
+        this.ro.observe(wrapper);
+      }
       
       if (this.autoLoad) {
         await this.loadDemo();
@@ -137,37 +162,44 @@
       if (this.resizeTimeout) {
         clearTimeout(this.resizeTimeout);
       }
+      if (this.ro) {
+        try { this.ro.disconnect(); } catch (_) {}
+        this.ro = null;
+      }
     }
   };
   </script>
   
   <style scoped>
   .demo-container {
-    text-align: center;
-    margin: 20px auto;
-    width: 100%;
-    max-width: 900px;
-    padding: 0 20px;
+    position: fixed;
+    inset: 0; /* top:0; right:0; bottom:0; left:0 */
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
     box-sizing: border-box;
+    overflow: hidden;
+    /* Match renderer clear color (0.9,0.9,0.9,1.0) to hide buffer reallocation flash */
+    background-color: #e6e6e6;
   }
-  
+
   .canvas-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 20px 0;
+    position: absolute;
+    inset: 0;
     width: 100%;
-    min-height: 300px;
+    height: 100%;
+    margin: 0;
   }
-  
+
   #canvas {
-    border: 2px solid #333;
-    background-color: #000;
+    /* Transparent so container color shows while the drawing buffer is being reallocated */
+    background-color: transparent;
     display: block;
-    border-radius: 4px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    height: 100%;
   }
-  
+
   .error {
     color: #d63384;
     background-color: #f8d7da;

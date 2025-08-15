@@ -3,10 +3,6 @@ home: true
 title: Wink Demo
 heroText: Wink Demo
 tagline: A Rust application using winit and wgpu compiled to WebAssembly
-actions:
-  - text: About Wink
-    link: /about/
-    type: primary
 ---
 
 # Wink Demo

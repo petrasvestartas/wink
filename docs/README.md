@@ -11,6 +11,3 @@ actions:
 
 <wink-demo />
 
-## About
-
-Wink is a Rust library for wgpu viewer that runs natively and in the browser via WebAssembly.

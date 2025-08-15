@@ -213,6 +213,41 @@ impl State{
     pub async fn new(window: Arc<Window>, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch]) -> anyhow::Result<Self> {
 
         let size = window.inner_size();
+        // Clamp initial surface size on Web (WebGL2 backend) to avoid exceeding max texture limit.
+        // On Web, prefer the canvas's actual internal resolution (width/height attributes)
+        // so surface configuration matches the true backing store size set by JS.
+        #[allow(unused_variables)]
+        let (init_width, init_height) = {
+            #[cfg(target_arch = "wasm32")]
+            {
+                let mut w = size.width.max(1);
+                let mut h = size.height.max(1);
+                if let Some(win) = web_sys::window() {
+                    if let Some(doc) = win.document() {
+                        if let Some(el) = doc.get_element_by_id("canvas") {
+                            if let Ok(canvas) = el.dyn_into::<web_sys::HtmlCanvasElement>() {
+                                let cw = canvas.width();
+                                let ch = canvas.height();
+                                if cw > 0 && ch > 0 { w = cw; h = ch; }
+                            }
+                        }
+                    }
+                }
+                const MAX_DIM_GL: u32 = 2048; // conservative safe minimum for WebGL2
+                if w > MAX_DIM_GL || h > MAX_DIM_GL {
+                    let scale_w = MAX_DIM_GL as f32 / w as f32;
+                    let scale_h = MAX_DIM_GL as f32 / h as f32;
+                    let s = scale_w.min(scale_h);
+                    w = ((w as f32) * s).floor().max(1.0) as u32;
+                    h = ((h as f32) * s).floor().max(1.0) as u32;
+                }
+                (w, h)
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                (size.width, size.height)
+            }
+        };
        
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -295,8 +330,8 @@ impl State{
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface_format,
-            width: size.width,
-            height: size.height,
+            width: init_width,
+            height: init_height,
             present_mode,
             alpha_mode: surface_caps.alpha_modes[0],
             view_formats: vec![],
@@ -440,7 +475,7 @@ impl State{
         });
 
         // Initialize camera system
-        let camera = Camera::new(size.width as f32, size.height as f32);
+        let camera = Camera::new(init_width as f32, init_height as f32);
         let mut camera_uniform = CameraUniform::new();
         camera_uniform.update_view_proj(&camera);
         // Initialize extended view/pipe parameters
@@ -665,8 +700,26 @@ impl State{
         // every time we resize the window.
         // This was the reason we store size and config to configure the surface.
         if width > 0 && height > 0 {
-            self.config.width = width;
-            self.config.height = height;
+            // Clamp for WebGL2 backend to avoid creating oversized textures on high-DPR/fullscreen
+            #[cfg(target_arch = "wasm32")]
+            let (w_clamped, h_clamped) = {
+                let mut w = width;
+                let mut h = height;
+                const MAX_DIM_GL: u32 = 2048; // conservative safe minimum across WebGL2
+                if w > MAX_DIM_GL || h > MAX_DIM_GL {
+                    let scale_w = MAX_DIM_GL as f32 / w as f32;
+                    let scale_h = MAX_DIM_GL as f32 / h as f32;
+                    let s = scale_w.min(scale_h);
+                    w = ((w as f32) * s).floor().max(1.0) as u32;
+                    h = ((h as f32) * s).floor().max(1.0) as u32;
+                }
+                (w, h)
+            };
+            #[cfg(not(target_arch = "wasm32"))]
+            let (w_clamped, h_clamped) = (width, height);
+
+            self.config.width = w_clamped;
+            self.config.height = h_clamped;
             self.surface.configure(&self.device, &self.config);
             // Keep camera projection in sync with the surface size (important on Web)
             self.camera.aspect = self.config.width as f32 / self.config.height as f32;
@@ -720,6 +773,23 @@ impl State{
     fn update(&mut self) {
         // Poll for geometry changes periodically and hot-reload buffers if needed
         self.poll_geometry_changes();
+        // WASM: keep surface config synced with actual canvas backing size set by JS
+        #[cfg(target_arch = "wasm32")]
+        {
+            if let Some(win) = web_sys::window() {
+                if let Some(doc) = win.document() {
+                    if let Some(el) = doc.get_element_by_id("canvas") {
+                        if let Ok(canvas) = el.dyn_into::<web_sys::HtmlCanvasElement>() {
+                            let cw = canvas.width();
+                            let ch = canvas.height();
+                            if cw > 0 && ch > 0 && (cw != self.config.width || ch != self.config.height) {
+                                self.resize(cw, ch);
+                            }
+                        }
+                    }
+                }
+            }
+        }
         let now = Instant::now();
         let dt = now - self.last_render_time;
         self.last_render_time = now;
@@ -1079,7 +1149,11 @@ impl ApplicationHandler<State> for App {
 
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
-            WindowEvent::Resized(size) => state.resize(size.width, size.height),
+            WindowEvent::Resized(size) => {
+                state.resize(size.width, size.height);
+                // Ensure a new frame is scheduled after resize (important on Web)
+                state.window.request_redraw();
+            }
             // Redraw method to render the geometry
             WindowEvent::RedrawRequested => {
                 state.update();
@@ -1089,9 +1163,13 @@ impl ApplicationHandler<State> for App {
                     Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
                         let size = state.window.inner_size();
                         state.resize(size.width, size.height);
+                        // Schedule another frame so rendering continues after reconfig
+                        state.window.request_redraw();
                     }
                     Err(e) => {
                         log::error!("Unable to render {}", e);
+                        // Try to continue rendering next frame on transient errors
+                        state.window.request_redraw();
                     }
                 }
             }
