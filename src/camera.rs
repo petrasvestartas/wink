@@ -4,6 +4,8 @@ use winit::dpi::PhysicalPosition;
 use winit::event::*;
 use winit::keyboard::KeyCode;
 
+use openmodel::primitives::Xform;
+
 #[rustfmt::skip]
 pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
     1.0, 0.0, 0.0, 0.0,
@@ -11,6 +13,25 @@ pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
     0.0, 0.0, 0.5, 0.5,
     0.0, 0.0, 0.0, 1.0,
 );
+
+// Helpers: convert between cgmath::Matrix4<f32> and openmodel::primitives::Xform (column-major)
+fn mat4f32_to_xform(m: &Matrix4<f32>) -> Xform {
+    let mut out = [0.0f64; 16];
+    // Column-major: index = col * 4 + row
+    out[0] = m[0][0] as f64; out[1] = m[0][1] as f64; out[2] = m[0][2] as f64; out[3] = m[0][3] as f64;
+    out[4] = m[1][0] as f64; out[5] = m[1][1] as f64; out[6] = m[1][2] as f64; out[7] = m[1][3] as f64;
+    out[8] = m[2][0] as f64; out[9] = m[2][1] as f64; out[10] = m[2][2] as f64; out[11] = m[2][3] as f64;
+    out[12] = m[3][0] as f64; out[13] = m[3][1] as f64; out[14] = m[3][2] as f64; out[15] = m[3][3] as f64;
+    Xform { m: out }
+}
+
+fn xform_to_mat4f32(xf: &Xform) -> Matrix4<f32> {
+    let c0 = Vector4::new(xf.m[0] as f32, xf.m[1] as f32, xf.m[2] as f32, xf.m[3] as f32);
+    let c1 = Vector4::new(xf.m[4] as f32, xf.m[5] as f32, xf.m[6] as f32, xf.m[7] as f32);
+    let c2 = Vector4::new(xf.m[8] as f32, xf.m[9] as f32, xf.m[10] as f32, xf.m[11] as f32);
+    let c3 = Vector4::new(xf.m[12] as f32, xf.m[13] as f32, xf.m[14] as f32, xf.m[15] as f32);
+    Matrix4::from_cols(c0, c1, c2, c3)
+}
 
 // Camera constraints
 const MIN_ZOOM_DISTANCE: f32 = 0.5;
@@ -52,6 +73,9 @@ pub struct Camera {
     pub is_ortho: bool,
     // Orthographic half-height of the view volume (world units)
     pub ortho_half_height: f32,
+
+    // OpenModel camera pose: world_from_camera transform kept in sync with the camera state
+    pub om_world_from_camera: Xform,
 }
 
 impl Camera {
@@ -114,9 +138,13 @@ impl Camera {
                 let fovy_rad = 0.5f32 * 45.0f32.to_radians();
                 distance * fovy_rad.tan()
             },
+
+            // OpenModel camera pose (initialized to identity; updated below)
+            om_world_from_camera: Xform::identity(),
         };
 
         cam.update_position();
+        cam.update_om_xform();
         cam
     }
 
@@ -184,6 +212,16 @@ impl Camera {
             self.position = self.target + final_offset;
             self.up = self.orientation.rotate_vector(Vector3::unit_y());
         }
+
+        // Keep OpenModel camera pose in sync with the current camera state
+        self.update_om_xform();
+    }
+
+    /// Update the OpenModel world_from_camera transform from the current position/target/up
+    fn update_om_xform(&mut self) {
+        let view = Matrix4::look_at_rh(self.position, self.target, self.up);
+        let world_from_cam = view.invert().unwrap_or(Matrix4::identity());
+        self.om_world_from_camera = mat4f32_to_xform(&world_from_cam);
     }
 
     // Reset the camera to its initial position and orientation
@@ -202,11 +240,16 @@ impl Camera {
         self.last_right = right;
 
         self.update_position();
+        self.update_om_xform();
     }
 
     // Legacy method for compatibility
     pub fn build_view_projection_matrix(&self) -> Matrix4<f32> {
-        let view = Matrix4::look_at_rh(self.position, self.target, self.up);
+        // Prefer OpenModel world_from_camera for view; fall back to look_at if non-invertible
+        let view = {
+            let w_from_c = xform_to_mat4f32(&self.om_world_from_camera);
+            if let Some(inv) = w_from_c.invert() { inv } else { Matrix4::look_at_rh(self.position, self.target, self.up) }
+        };
         let proj = if self.is_ortho {
             let half_h = self.ortho_half_height.max(1e-6);
             let half_w = half_h * self.aspect.max(1e-6);
@@ -215,6 +258,35 @@ impl Camera {
             perspective(Deg(self.fovy), self.aspect, self.znear, self.zfar)
         };
         OPENGL_TO_WGPU_MATRIX * proj * view
+    }
+
+    /// Apply an external OpenModel world_from_camera transform to this camera.
+    /// This updates internal position/target/up/orientation/reference frame to match the transform
+    /// and stores the OpenModel transform for view construction.
+    pub fn set_om_world_from_camera(&mut self, xf: Xform) {
+        // Extract basis vectors and translation from column-major matrix
+        let right_ws = Vector3::new(xf.m[0] as f32, xf.m[1] as f32, xf.m[2] as f32).normalize();
+        let up_ws    = Vector3::new(xf.m[4] as f32, xf.m[5] as f32, xf.m[6] as f32).normalize();
+        let cam_z_ws = Vector3::new(xf.m[8] as f32, xf.m[9] as f32, xf.m[10] as f32).normalize();
+        let pos_ws   = Point3::new(xf.m[12] as f32, xf.m[13] as f32, xf.m[14] as f32);
+
+        // Camera looks along -Z in its local space; world forward is therefore -cam_z column
+        let forward_ws = (-cam_z_ws).normalize();
+
+        // Update OM transform first (authoritative for view)
+        self.om_world_from_camera = xf;
+
+        // Update camera spatial fields
+        self.position = pos_ws;
+        self.up = up_ws;
+        self.target = self.position + forward_ws * self.distance;
+
+        // Update reference frame and cached right for stability
+        self.reference_frame = Matrix3::from_cols(right_ws, up_ws, forward_ws);
+        self.last_right = right_ws;
+
+        // Update orientation to roughly match the view direction
+        self.orientation = Quaternion::look_at(forward_ws, self.world_up).normalize();
     }
 
     // Pan camera in view plane (right and up vectors)
@@ -231,6 +303,9 @@ impl Camera {
         // Update initial target for reset functionality
         self.initial_target += pan_offset;
         self.initial_position += pan_offset;
+
+        // Update OM transform after panning
+        self.update_om_xform();
     }
 
     // Legacy compatibility - map position to eye

@@ -24,7 +24,6 @@ use instance::InstanceRaw;
 use instance::DrawBatch;
 use instance::BatchDraw;
 use instance::BatchKind;
-use cgmath::prelude::*;
 // OpenModel: JSON geometry + mesh utilities
 use openmodel::AllGeometryData;
 use openmodel::geometry::{Mesh, Point};
@@ -141,40 +140,9 @@ fn append_mesh_as_triangles(
     }
 }
 
-// Helper: convert openmodel Xform (column-major) to Instance
+// Helper: convert openmodel Xform (column-major) to Instance (matrix pass-through)
 fn xform_to_instance(xf: &openmodel::primitives::Xform) -> Instance {
-    let t = cgmath::Vector3::new(xf.m[12] as f32, xf.m[13] as f32, xf.m[14] as f32);
-    let c0 = cgmath::Vector3::new(xf.m[0] as f32, xf.m[1] as f32, xf.m[2] as f32);
-    let c1 = cgmath::Vector3::new(xf.m[4] as f32, xf.m[5] as f32, xf.m[6] as f32);
-    let c2 = cgmath::Vector3::new(xf.m[8] as f32, xf.m[9] as f32, xf.m[10] as f32);
-    // Extract non-uniform scale as column lengths
-    let mut sx = c0.magnitude();
-    let mut sy = c1.magnitude();
-    let mut sz = c2.magnitude();
-    // Avoid division by zero
-    if sx == 0.0 { sx = 1.0; }
-    if sy == 0.0 { sy = 1.0; }
-    if sz == 0.0 { sz = 1.0; }
-
-    let n0 = c0 / sx;
-    let n1 = c1 / sy;
-    let mut n2 = c2 / sz;
-
-    // Ensure proper rotation (determinant > 0). If it's a reflection, fold sign into Z scale.
-    let mut rot3 = cgmath::Matrix3::from_cols(n0, n1, n2);
-    if rot3.determinant() < 0.0 {
-        // Flip one axis in rotation and bake the sign into scale to preserve the transform
-        n2 = -n2;
-        sz = -sz;
-        rot3 = cgmath::Matrix3::from_cols(n0, n1, n2);
-    }
-
-    let q = cgmath::Quaternion::from(rot3);
-    Instance {
-        position: t,
-        rotation: q,
-        scale: cgmath::Vector3::new(sx, sy, sz),
-    }
+    Instance::from_xform(xf)
 }
 
 // Helper: 10x10 grid (11 lines per direction) + 1-unit Z axis as pipes
@@ -445,11 +413,7 @@ impl State{
         for b in batches_in {
             // default: one identity if no transforms provided
             let insts: Vec<Instance> = if b.instances.is_empty() {
-                vec![Instance {
-                    position: cgmath::Vector3::new(0.0, 0.0, 0.0),
-                    rotation: cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0)),
-                    scale: cgmath::Vector3::new(1.0, 1.0, 1.0),
-                }]
+                vec![Instance::identity()]
             } else {
                 b.instances.clone()
             };
@@ -604,11 +568,7 @@ impl State{
         for b in batches_in {
             // default: one identity if no transforms provided
             let insts: Vec<Instance> = if b.instances.is_empty() {
-                vec![Instance {
-                    position: cgmath::Vector3::new(0.0, 0.0, 0.0),
-                    rotation: cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0)),
-                    scale: cgmath::Vector3::new(1.0, 1.0, 1.0),
-                }]
+                vec![Instance::identity()]
             } else {
                 b.instances.clone()
             };
@@ -776,6 +736,30 @@ impl State{
             self.camera.is_ortho,
             self.camera.ortho_half_height,
         );
+        self.queue.write_buffer(
+            &self.camera_buffer,
+            0,
+            bytemuck::cast_slice(&[self.camera_uniform]),
+        );
+    }
+
+    /// Apply an external OpenModel world_from_camera transform to the camera
+    /// and refresh the uniform buffer immediately.
+    pub fn apply_camera_om_xform(&mut self, xf: openmodel::primitives::Xform) {
+        self.camera.set_om_world_from_camera(xf);
+        // Rebuild view-projection and extended fields from the updated camera
+        self.camera_uniform.update_view_proj(&self.camera);
+        self.camera_uniform.set_eye_dir(&self.camera);
+        self.camera_uniform.set_view_params(
+            self.config.width as f32,
+            self.config.height as f32,
+            self.camera.fovy,
+            self.camera.aspect,
+            self.pipe_px_radius,
+            self.camera.is_ortho,
+            self.camera.ortho_half_height,
+        );
+        // Write updated uniform to GPU so the effect is visible this frame
         self.queue.write_buffer(
             &self.camera_buffer,
             0,
@@ -1195,8 +1179,6 @@ pub fn run_web() -> Result<(), wasm_bindgen::JsValue> {
     Ok(())
 }
 
-// Geometry building merged into get_geometry()
-
 // Geometry loading: minimal single function using local-or-embedded JSON
 pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
     // Prefer local (native file or WASM fetch); fall back to embedded JSON.
@@ -1261,8 +1243,6 @@ pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
             });
         }
     }
-
-    // (Demo pipe removed)
 
     // Pipe instancing from augmented mesh_instances (if any)
     if let Some(pipe_idx) = all_geom.pipe_mesh_index {
