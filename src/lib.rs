@@ -409,7 +409,7 @@ impl State{
                     }
 
                     if changed {
-                        let (vertices, indices, batches) = get_geometry();
+                        let (vertices, indices, batches) = pollster::block_on(get_geometry());
                         let _ = tx_geom.send((vertices, indices, batches));
                     }
                     std::thread::sleep(StdDuration::from_millis(GEOMETRY_POLL_INTERVAL_MS));
@@ -1162,7 +1162,7 @@ pub fn run() -> anyhow::Result<()> {
 
 
     #[cfg(not(target_arch = "wasm32"))]
-    let (vertices, indices, batches) = get_geometry();
+    let (vertices, indices, batches) = pollster::block_on(get_geometry());
 
     #[cfg(not(target_arch = "wasm32"))]
     let mut app = App::new(
@@ -1195,251 +1195,148 @@ pub fn run_web() -> Result<(), wasm_bindgen::JsValue> {
     Ok(())
 }
 
+// Geometry building merged into get_geometry()
 
-// Geometry: load JSON meshes, add grid + Z-axis pipes, convert to buffers
-#[cfg(not(target_arch = "wasm32"))]
-pub fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
-    // 1) Load JSON geometry from disk if available (fast mtime check), fallback to embedded
-    let json_str = std::fs::read_to_string(LOCAL_GEOMETRY_PATH)
-        .unwrap_or_else(|_| include_str!("openmodel/all_geometry.json").to_string());
-    let all_geom: AllGeometryData = serde_json::from_str(&json_str).unwrap_or(AllGeometryData {
-        points: vec![],
-        vectors: vec![],
-        lines: vec![],
-        planes: vec![],
-        colors: vec![],
-        point_clouds: vec![],
-        line_clouds: vec![],
-        plines: vec![],
-        xforms: vec![],
-        meshes: vec![],
-        mesh_instances: vec![],
-    });
+// Geometry loading: minimal single function using local-or-embedded JSON
+pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
+    // Prefer local (native file or WASM fetch); fall back to embedded JSON.
+    let local: Option<String> = {
+        #[cfg(not(target_arch = "wasm32"))]
+        { std::fs::read_to_string(LOCAL_GEOMETRY_PATH).ok() }
+        #[cfg(target_arch = "wasm32")]
+        { fetch_text(LOCAL_GEOMETRY_HTTP_PATH).await }
+    };
 
-    // 2) Aggregate meshes: loaded + procedural grid/axis
+    let mut all_geom: AllGeometryData = match local {
+        Some(ref s) => serde_json::from_str::<AllGeometryData>(s).unwrap_or_else(|_| {
+            serde_json::from_str(include_str!("openmodel/all_geometry.json"))
+                .expect("embedded geometry JSON must be valid")
+        }),
+        None => serde_json::from_str(include_str!("openmodel/all_geometry.json"))
+            .expect("embedded geometry JSON must be valid"),
+    };
+
+    // Augment with procedural unit pipe/sphere meshes and corresponding mesh_instances.
+    // augment_with_procedural() also records their mesh indices for convenience.
+    all_geom.augment_with_procedural();
+
+    // Build vertices, indices, and batches from parsed geometry
+
     let mut vertices: Vec<Vertex> = Vec::new();
     let mut indices: Vec<u16> = Vec::new();
     let mut batches: Vec<DrawBatch> = Vec::new();
 
-    // Track which batch corresponds to which source mesh index
+    // Track which batch corresponds to which source mesh index (skip procedural unit pipe/sphere meshes)
     let mut mesh_to_batch: Vec<Option<usize>> = vec![None; all_geom.meshes.len()];
     for (i, m) in all_geom.meshes.iter().enumerate() {
+        if Some(i) == all_geom.pipe_mesh_index || Some(i) == all_geom.sphere_mesh_index { continue; }
         let first_index = indices.len() as u32;
         append_mesh_as_triangles(m, [0.8, 0.8, 0.8], &mut vertices, &mut indices);
         let index_count = (indices.len() as u32) - first_index;
         if index_count > 0 {
             // base_vertex must be 0 because indices are global
-            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![], kind: BatchKind::Surface });
+            batches.push(DrawBatch {
+                first_index,
+                index_count,
+                base_vertex: 0,
+                instances: vec![],
+                kind: BatchKind::Surface,
+            });
             mesh_to_batch[i] = Some(batches.len() - 1);
         }
     }
+
+    // Add procedural grid and axis once
     for (m, color) in make_grid_and_axis_meshes() {
         let first_index = indices.len() as u32;
         append_mesh_as_triangles(&m, color, &mut vertices, &mut indices);
         let index_count = (indices.len() as u32) - first_index;
         if index_count > 0 {
-            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![], kind: BatchKind::Surface });
+            batches.push(DrawBatch {
+                first_index,
+                index_count,
+                base_vertex: 0,
+                instances: vec![],
+                kind: BatchKind::Surface,
+            });
         }
     }
 
-    // create one big pipe as an instanced screen-space pipe (matches spheres/pipes shader behavior)
-    let start = Point::new(0.0, 0.0, 0.0);
-    let end = Point::new(0.0, 0.0, 1.0);
-    let unit_pipe = Mesh::create_unit_pipe_high_res();
-    let first_index = indices.len() as u32;
-    append_mesh_as_triangles(&unit_pipe, [0.8, 0.8, 0.8], &mut vertices, &mut indices);
-    let index_count = (indices.len() as u32) - first_index;
-    if index_count > 0 {
-        // Single instance aligned along +Z from start to end. XY scale is 1.0; Z scale is segment length.
-        let mid = cgmath::Vector3::new(
-            ((start.x + end.x) * 0.5) as f32,
-            ((start.y + end.y) * 0.5) as f32,
-            ((start.z + end.z) * 0.5) as f32,
-        );
-        let len = (((end.x - start.x).powi(2) + (end.y - start.y).powi(2) + (end.z - start.z).powi(2)).sqrt()) as f32;
-        let inst = Instance {
-            position: mid,
-            rotation: cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0)),
-            scale: cgmath::Vector3::new(1.0, 1.0, len), // radius handled in shader; Z = length
-        };
-        batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![inst], kind: BatchKind::Pipe });
-    }
+    // (Demo pipe removed)
 
-
-
-    // Edge pipe instancing: use a single unit pipe mesh and per-edge transforms
-    let mut edge_instances: Vec<Instance> = Vec::new();
-    let edge_radius: f64 = 0.02;
-    for m in &all_geom.meshes {
-        let tfs = m.extract_edge_pipe_transforms(edge_radius);
-        for tf in tfs { edge_instances.push(xform_to_instance(&tf)); }
-    }
-    if !edge_instances.is_empty() {
-        let unit_pipe = Mesh::create_unit_pipe_high_res();
-        let first_index = indices.len() as u32;
-        append_mesh_as_triangles(&unit_pipe, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
-        let index_count = (indices.len() as u32) - first_index;
-        if index_count > 0 {
-            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: edge_instances, kind: BatchKind::Pipe });
-            #[cfg(not(target_arch = "wasm32"))]
-            log::info!("Created native pipe batch: instances={}, index_count={}", batches.last().unwrap().instances.len(), index_count);
-        }
-    }
-
-    // End-cap spheres at boundary vertices: collect instances at mesh boundary vertices
-    let mut sphere_instances: Vec<Instance> = Vec::new();
-    for m in &all_geom.meshes {
-        for vk in m.vertex.keys() {
-            if m.is_vertex_on_boundary(*vk) {
-                if let Some(p) = m.vertex_position(*vk) {
-                    sphere_instances.push(Instance {
-                        position: cgmath::Vector3::new(p.x as f32, p.y as f32, p.z as f32),
-                        rotation: cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0)),
-                        scale: cgmath::Vector3::new(1.0, 1.0, 1.0),
+    // Pipe instancing from augmented mesh_instances (if any)
+    if let Some(pipe_idx) = all_geom.pipe_mesh_index {
+        if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == pipe_idx) {
+            let mut pipe_instances: Vec<Instance> = mi
+                .transforms
+                .iter()
+                .map(|xf| xform_to_instance(xf))
+                .collect();
+            if !pipe_instances.is_empty() {
+                let unit_pipe = Mesh::create_unit_pipe_high_res();
+                let first_index = indices.len() as u32;
+                append_mesh_as_triangles(&unit_pipe, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
+                let index_count = (indices.len() as u32) - first_index;
+                if index_count > 0 {
+                    batches.push(DrawBatch {
+                        first_index,
+                        index_count,
+                        base_vertex: 0,
+                        instances: pipe_instances.drain(..).collect(),
+                        kind: BatchKind::Pipe,
                     });
+                    log::info!(
+                        "Created pipe batch (augmented): instances={}, index_count={}",
+                        batches.last().unwrap().instances.len(),
+                        index_count
+                    );
                 }
             }
         }
     }
-    // If no boundary-derived spheres exist (e.g., no input meshes with boundary edges),
-    // add two debug/test spheres at the ends of the procedural demo pipe so the feature is visible.
-    if sphere_instances.is_empty() {
-        sphere_instances.push(Instance {
-            position: cgmath::Vector3::new(start.x as f32, start.y as f32, start.z as f32),
-            rotation: cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0)),
-            scale: cgmath::Vector3::new(1.0, 1.0, 1.0),
-        });
-        sphere_instances.push(Instance {
-            position: cgmath::Vector3::new(end.x as f32, end.y as f32, end.z as f32),
-            rotation: cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0)),
-            scale: cgmath::Vector3::new(1.0, 1.0, 1.0),
-        });
-    }
-    if !sphere_instances.is_empty() {
-        let unit_sphere = Mesh::create_unit_sphere_high_res();
-        let first_index = indices.len() as u32;
-        append_mesh_as_triangles(&unit_sphere, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
-        let index_count = (indices.len() as u32) - first_index;
-        if index_count > 0 {
-            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: sphere_instances, kind: BatchKind::Sphere });
-            #[cfg(not(target_arch = "wasm32"))]
-            log::info!("Created native sphere batch: instances={}, index_count={}", batches.last().unwrap().instances.len(), index_count);
+
+    // Sphere instancing from augmented mesh_instances (if any)
+    if let Some(sphere_idx) = all_geom.sphere_mesh_index {
+        if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == sphere_idx) {
+            let sphere_instances: Vec<Instance> = mi
+                .transforms
+                .iter()
+                .map(|xf| xform_to_instance(xf))
+                .collect();
+            if !sphere_instances.is_empty() {
+                let unit_sphere = Mesh::create_unit_sphere_high_res();
+                let first_index = indices.len() as u32;
+                append_mesh_as_triangles(&unit_sphere, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
+                let index_count = (indices.len() as u32) - first_index;
+                if index_count > 0 {
+                    batches.push(DrawBatch {
+                        first_index,
+                        index_count,
+                        base_vertex: 0,
+                        instances: sphere_instances,
+                        kind: BatchKind::Sphere,
+                    });
+                    log::info!(
+                        "Created sphere batch (augmented): instances={}, index_count={}",
+                        batches.last().unwrap().instances.len(),
+                        index_count
+                    );
+                }
+            }
         }
     }
 
     // Populate per-mesh instances into batches
     for mi in &all_geom.mesh_instances {
         if let Some(Some(bi)) = mesh_to_batch.get(mi.mesh_index) {
-            let insts = mi.transforms.iter().map(|xf| xform_to_instance(xf)).collect::<Vec<_>>();
+            let insts = mi
+                .transforms
+                .iter()
+                .map(|xf| xform_to_instance(xf))
+                .collect::<Vec<_>>();
             batches[*bi].instances = insts;
         }
     }
-    (vertices, indices, batches)
-}
-
-// WASM: fetch local JSON and merge with embedded + procedural meshes
-#[cfg(target_arch = "wasm32")]
-pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
-    // Build geometry from local file; fallback to embedded. Always add grid/axis once.
-    let mut vertices: Vec<Vertex> = Vec::new();
-    let mut indices: Vec<u16> = Vec::new();
-    let mut batches: Vec<DrawBatch> = Vec::new();
-
-    let local_text = fetch_text(LOCAL_GEOMETRY_HTTP_PATH).await;
-    let mut used_sources: Vec<&str> = Vec::new();
-
-    // Choose primary geometry source
-    let all_geom: AllGeometryData = if let Some(t) = &local_text {
-        match serde_json::from_str::<AllGeometryData>(t) {
-            Ok(g) => { used_sources.push("local"); g },
-            Err(err) => { web_sys::console::warn_1(&format!("Initial: failed to parse local JSON: {}", err).into());
-                let json_str = include_str!("openmodel/all_geometry.json");
-                serde_json::from_str(json_str).unwrap_or(AllGeometryData {
-                    points: vec![], vectors: vec![], lines: vec![], planes: vec![], colors: vec![],
-                    point_clouds: vec![], line_clouds: vec![], plines: vec![], xforms: vec![], meshes: vec![], mesh_instances: vec![],
-                })
-            }
-        }
-    } else {
-        let json_str = include_str!("openmodel/all_geometry.json");
-        serde_json::from_str(json_str).unwrap_or(AllGeometryData {
-            points: vec![], vectors: vec![], lines: vec![], planes: vec![], colors: vec![],
-            point_clouds: vec![], line_clouds: vec![], plines: vec![], xforms: vec![], meshes: vec![], mesh_instances: vec![],
-        })
-    };
-    if used_sources.is_empty() { used_sources.push("embedded"); }
-
-    // Build batches for primary meshes
-    let mut mesh_to_batch: Vec<Option<usize>> = vec![None; all_geom.meshes.len()];
-    for (i, m) in all_geom.meshes.iter().enumerate() {
-        let first_index = indices.len() as u32;
-        append_mesh_as_triangles(m, [0.8,0.8,0.8], &mut vertices, &mut indices);
-        let index_count = (indices.len() as u32) - first_index;
-        if index_count > 0 {
-            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![], kind: BatchKind::Surface });
-            mesh_to_batch[i] = Some(batches.len() - 1);
-        }
-    }
-    // Procedural grid/axis once
-    for (m, color) in make_grid_and_axis_meshes() {
-        let first_index = indices.len() as u32;
-        append_mesh_as_triangles(&m, color, &mut vertices, &mut indices);
-        let index_count = (indices.len() as u32) - first_index;
-        if index_count > 0 {
-            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: vec![], kind: BatchKind::Surface });
-        }
-    }
-    // Edge pipe instancing: use a single unit pipe mesh and per-edge transforms
-    let mut edge_instances: Vec<Instance> = Vec::new();
-    let edge_radius: f64 = 0.02;
-    for m in &all_geom.meshes {
-        let tfs = m.extract_edge_pipe_transforms(edge_radius);
-        for tf in tfs { edge_instances.push(xform_to_instance(&tf)); }
-    }
-    if !edge_instances.is_empty() {
-        let unit_pipe = Mesh::create_unit_pipe_high_res();
-        let first_index = indices.len() as u32;
-        append_mesh_as_triangles(&unit_pipe, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
-        let index_count = (indices.len() as u32) - first_index;
-        if index_count > 0 {
-            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: edge_instances, kind: BatchKind::Pipe });
-            web_sys::console::log_1(&format!("Created WASM pipe batch: instances={}, index_count={}", batches.last().unwrap().instances.len(), index_count).into());
-        }
-    }
-    // End-cap spheres at boundary vertices (WASM)
-    let mut sphere_instances: Vec<Instance> = Vec::new();
-    for m in &all_geom.meshes {
-        for vk in m.vertex.keys() {
-            if m.is_vertex_on_boundary(*vk) {
-                if let Some(p) = m.vertex_position(*vk) {
-                    sphere_instances.push(Instance {
-                        position: cgmath::Vector3::new(p.x as f32, p.y as f32, p.z as f32),
-                        rotation: cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0)),
-                        scale: cgmath::Vector3::new(1.0, 1.0, 1.0),
-                    });
-                }
-            }
-        }
-    }
-    if !sphere_instances.is_empty() {
-        let unit_sphere = Mesh::create_unit_sphere_high_res();
-        let first_index = indices.len() as u32;
-        append_mesh_as_triangles(&unit_sphere, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
-        let index_count = (indices.len() as u32) - first_index;
-        if index_count > 0 {
-            batches.push(DrawBatch { first_index, index_count, base_vertex: 0, instances: sphere_instances, kind: BatchKind::Sphere });
-            web_sys::console::log_1(&format!("Created WASM sphere batch: instances={}, index_count={}", batches.last().unwrap().instances.len(), index_count).into());
-        }
-    }
-    // Populate per-mesh instances
-    for mi in &all_geom.mesh_instances {
-        if let Some(Some(bi)) = mesh_to_batch.get(mi.mesh_index) {
-            let insts = mi.transforms.iter().map(|xf| xform_to_instance(xf)).collect::<Vec<_>>();
-            batches[*bi].instances = insts;
-        }
-    }
-
-    web_sys::console::log_1(&format!("Initial geometry source: {}", used_sources.join("+")).into());
 
     (vertices, indices, batches)
 }
