@@ -80,8 +80,8 @@ async fn fetch_text(url: &str) -> Option<String> {
 
     // Prefer no-store to bypass intermediary caches in dev
     let mut init = RequestInit::new();
-    init.method("GET");
-    init.cache(RequestCache::NoStore);
+    init.set_method("GET");
+    init.set_cache(RequestCache::NoStore);
     let req = Request::new_with_str_and_init(&bust, &init).ok()?;
 
     let resp_value = JsFuture::from(window.fetch_with_request(&req)).await.ok()?;
@@ -322,20 +322,45 @@ impl State{
         // Or use other options: https://docs.rs/wgpu/latest/wgpu/enum.PresentMode.html
         // The alpha_mode field defines how the alpha channel of the surface will be handled.
         // view_formats is a list of TextureForms that you can use when creating TextureViews.
-        let present_mode = if surface_caps.present_modes.contains(&wgpu::PresentMode::Fifo) {
-            wgpu::PresentMode::Fifo
-        } else {
-            surface_caps.present_modes[0]
+        let present_mode = {
+            #[cfg(target_arch = "wasm32")]
+            {
+                if surface_caps.present_modes.contains(&wgpu::PresentMode::AutoVsync) {
+                    wgpu::PresentMode::AutoVsync
+                } else if surface_caps.present_modes.contains(&wgpu::PresentMode::Fifo) {
+                    wgpu::PresentMode::Fifo
+                } else {
+                    surface_caps.present_modes[0]
+                }
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                if surface_caps.present_modes.contains(&wgpu::PresentMode::Fifo) {
+                    wgpu::PresentMode::Fifo
+                } else {
+                    surface_caps.present_modes[0]
+                }
+            }
         };
+        // Prefer opaque alpha to prevent page background showing through during resize, when supported
+        let alpha_mode = if surface_caps
+            .alpha_modes
+            .contains(&wgpu::CompositeAlphaMode::Opaque)
+        {
+            wgpu::CompositeAlphaMode::Opaque
+        } else {
+            surface_caps.alpha_modes[0]
+        };
+        let desired_latency = if cfg!(target_arch = "wasm32") { 1 } else { 2 };
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface_format,
             width: init_width,
             height: init_height,
             present_mode,
-            alpha_mode: surface_caps.alpha_modes[0],
+            alpha_mode,
             view_formats: vec![],
-            desired_maximum_frame_latency: 2,
+            desired_maximum_frame_latency: desired_latency,
         };
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -865,18 +890,15 @@ impl State{
         // The RenderPass has all the methods for the actual drawing.
         // The render method via shaders will draw the geometry.
         {
+            // Always clear to a stable gray to avoid undefined loads during rapid resize
+            let color_load_op = wgpu::LoadOp::Clear(wgpu::Color { r: 0.9, g: 0.9, b: 0.9, a: 1.0 });
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &view,
                     resolve_target: None,
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.9,
-                            g: 0.9,
-                            b: 0.9,
-                            a: 1.0,
-                        }),
+                        load: color_load_op,
                         store: wgpu::StoreOp::Store,
                     },
                 })],
@@ -1149,8 +1171,16 @@ impl ApplicationHandler<State> for App {
 
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
-            WindowEvent::Resized(size) => {
-                state.resize(size.width, size.height);
+            WindowEvent::Resized(new_size) => {
+                // Native: resize immediately from OS event. WASM: skip, we poll canvas size in update().
+                #[cfg(not(target_arch = "wasm32"))]
+                {
+                    state.resize(new_size.width, new_size.height);
+                }
+                #[cfg(target_arch = "wasm32")]
+                {
+                    let _ = new_size; // suppress unused variable warning on wasm
+                }
                 // Ensure a new frame is scheduled after resize (important on Web)
                 state.window.request_redraw();
             }
@@ -1161,8 +1191,27 @@ impl ApplicationHandler<State> for App {
                     Ok(_) => {}
                     // Reconfigure the surface if it's lost or outdated
                     Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
-                        let size = state.window.inner_size();
-                        state.resize(size.width, size.height);
+                        #[cfg(not(target_arch = "wasm32"))]
+                        {
+                            let size = state.window.inner_size();
+                            state.resize(size.width, size.height);
+                        }
+                        #[cfg(target_arch = "wasm32")]
+                        {
+                            if let Some(win) = web_sys::window() {
+                                if let Some(doc) = win.document() {
+                                    if let Some(el) = doc.get_element_by_id("canvas") {
+                                        if let Ok(canvas) = el.dyn_into::<web_sys::HtmlCanvasElement>() {
+                                            let cw = canvas.width();
+                                            let ch = canvas.height();
+                                            if cw > 0 && ch > 0 {
+                                                state.resize(cw, ch);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         // Schedule another frame so rendering continues after reconfig
                         state.window.request_redraw();
                     }

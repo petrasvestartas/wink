@@ -38,7 +38,7 @@
         demoStarted: false,
         loading: false,
         error: "",
-        resizeTimeout: null,
+        resizeRaf: 0,
         ro: null,
       };
     },
@@ -79,6 +79,8 @@
           });
 
           this.demoStarted = true;
+          // Start real-time canvas resize loop (every frame)
+          this.startCanvasResizeLoop();
         } catch (e) {
           this.error = `Failed to load WASM demo: ${e.message}`;
           console.error('WASM loading error:', e);
@@ -95,11 +97,10 @@
         if (canvas && wrapper) {
           // Measure the actual rendered size of the wrapper/canvas (CSS pixels)
           const rect = wrapper.getBoundingClientRect();
-          const cssWidth = Math.max(1, Math.round(rect.width));
-          const cssHeight = Math.max(1, Math.round(rect.height));
-          const dprDevice = window.devicePixelRatio || 1;
-          let targetW = cssWidth * dprDevice;
-          let targetH = cssHeight * dprDevice;
+          const dprDevice = Math.max(1, window.devicePixelRatio || 1);
+          // Round after multiplying by DPR to avoid 1px oscillation
+          let targetW = Math.round(rect.width * dprDevice);
+          let targetH = Math.round(rect.height * dprDevice);
 
           // WebGL2 minimum guaranteed max texture size is 2048. Since we use the GL backend on Web,
           // cap the internal canvas resolution to avoid wgpu validation errors when creating textures.
@@ -113,12 +114,16 @@
             targetH = Math.floor(targetH);
           }
 
+          // Quantize to reduce rapid reconfigure thrash (helps reduce flicker while dragging)
+          const Q = 2; // multiple of pixels in internal backing store
+          targetW = Math.max(1, Math.round(targetW / Q) * Q);
+          targetH = Math.max(1, Math.round(targetH / Q) * Q);
+
           // Do NOT set inline CSS width/height; CSS already uses 100% and will scale fluidly with the window.
           // Only update the internal resolution if it actually changed.
           if (canvas.width !== targetW || canvas.height !== targetH) {
             canvas.width = targetW;
             canvas.height = targetH;
-            console.log(`Canvas resized to: ${cssWidth}x${cssHeight} -> internal ${targetW}x${targetH}`);
             // Notify listeners (e.g., WASM) of the new internal size
             const event = new CustomEvent('canvasResize', {
               detail: { width: canvas.width, height: canvas.height }
@@ -128,14 +133,19 @@
         }
       },
       
-      handleResize() {
-        // Debounce resize events to avoid excessive calls
-        if (this.resizeTimeout) {
-          clearTimeout(this.resizeTimeout);
-        }
-        this.resizeTimeout = setTimeout(() => {
+      startCanvasResizeLoop() {
+        const tick = () => {
           this.setupCanvas();
-        }, 100); // 100ms debounce
+          this.resizeRaf = requestAnimationFrame(tick);
+        };
+        if (!this.resizeRaf) {
+          this.resizeRaf = requestAnimationFrame(tick);
+        }
+      },
+      
+      handleResize() {
+        // Immediate resize on event; continuous RAF loop ensures real-time updates
+        this.setupCanvas();
       }
     },
     async mounted() {
@@ -159,8 +169,9 @@
     beforeUnmount() {
       // Clean up event listeners and timeouts
       window.removeEventListener('resize', this.handleResize);
-      if (this.resizeTimeout) {
-        clearTimeout(this.resizeTimeout);
+      if (this.resizeRaf) {
+        try { cancelAnimationFrame(this.resizeRaf); } catch (_) {}
+        this.resizeRaf = 0;
       }
       if (this.ro) {
         try { this.ro.disconnect(); } catch (_) {}
@@ -193,8 +204,8 @@
   }
 
   #canvas {
-    /* Transparent so container color shows while the drawing buffer is being reallocated */
-    background-color: transparent;
+    /* Match renderer clear color to hide any transient clears during resize */
+    background-color: #e6e6e6;
     display: block;
     width: 100%;
     height: 100%;
