@@ -6,6 +6,7 @@ pub fn create(
     config: &wgpu::SurfaceConfiguration,
     camera_bind_group_layout: &wgpu::BindGroupLayout,
     depth_format: wgpu::TextureFormat,
+    sample_count: u32,
 ) -> wgpu::RenderPipeline {
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("Color Shader"),
@@ -57,7 +58,7 @@ pub fn create(
             bias: wgpu::DepthBiasState::default(),
         }),
         multisample: wgpu::MultisampleState {
-            count: 1,
+            count: sample_count,
             mask: !0,
             alpha_to_coverage_enabled: false,
         },

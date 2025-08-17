@@ -764,6 +764,47 @@ impl Mesh {
         self.vertex_normal_weighted(vertex_key, NormalWeighting::Area)
     }
 
+    /// Resolve a vertex normal with preference for stored per-vertex attributes.
+    ///
+    /// Fallback order:
+    /// 1) Stored per-vertex normal (attributes nx, ny, nz) if present.
+    /// 2) Area-weighted vertex normal computed from incident faces (`vertex_normal`).
+    /// 3) Face normal for the provided `face_key_hint`, if supplied.
+    /// 4) Default +Z vector.
+    pub fn vertex_normal_resolved(&self, vertex_key: usize, face_key_hint: Option<usize>) -> Vector {
+        // 1) Authored per-vertex normal from attributes
+        if let Some(vd) = self.vertex.get(&vertex_key) {
+            if let Some([nx, ny, nz]) = vd.normal() {
+                let mut v = Vector::new(nx, ny, nz);
+                v.unitize();
+                if v.length() > 0.0 {
+                    return v;
+                }
+            }
+        }
+
+        // 2) Computed smooth vertex normal
+        if let Some(mut v) = self.vertex_normal(vertex_key) {
+            v.unitize();
+            if v.length() > 0.0 {
+                return v;
+            }
+        }
+
+        // 3) Face normal hint
+        if let Some(fk) = face_key_hint {
+            if let Some(mut v) = self.face_normal(fk) {
+                v.unitize();
+                if v.length() > 0.0 {
+                    return v;
+                }
+            }
+        }
+
+        // 4) Default +Z
+        Vector::new(0.0, 0.0, 1.0)
+    }
+
     /// Compute the area of a face.
     /// 
     /// For faces with more than 3 vertices, the area is computed by triangulating

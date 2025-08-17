@@ -2,6 +2,8 @@ use crate::geometry::{Point, Mesh};
 use crate::geometry::Vector;
 use crate::common::Data;
 use crate::common::{JsonSerializable, FromJsonData};
+use crate::primitives::Xform;
+
 use serde::{Deserialize, Serialize};
 use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign};
 use std::fmt;
@@ -200,6 +202,51 @@ impl Line{
         }
         
         self.mesh.as_ref()
+    }
+
+    /// Returns a transform that maps the canonical unit pipe (aligned to +Z, length=1, radius=0.5,
+    /// centered at the origin with z in [-0.5, +0.5]) onto this line segment with the given radius.
+    pub fn to_pipe_transform(&self, radius: f64) -> Option<Xform> {
+        // Endpoints
+        let p0 = Point::new(self.x0, self.y0, self.z0);
+        let p1 = Point::new(self.x1, self.y1, self.z1);
+
+        // Direction and length
+        let dir = Vector::new(p1.x - p0.x, p1.y - p0.y, p1.z - p0.z);
+        let len = dir.length();
+        let eps = 1e-9;
+        if len < eps { return None; }
+
+        let axis = dir.normalize();
+        let z_axis = Vector::new(0.0, 0.0, 1.0);
+
+        // Rotation aligning +Z to the line direction
+        let mut dot = axis.dot(&z_axis);
+        if dot > 1.0 { dot = 1.0; } else if dot < -1.0 { dot = -1.0; }
+        let rotation = if (dot - 1.0).abs() < eps {
+            Xform::identity()
+        } else if (dot + 1.0).abs() < eps {
+            // +Z to -Z: 180° around any axis perpendicular to Z (choose X)
+            Xform::rotation_x(std::f64::consts::PI)
+        } else {
+            let rot_axis = z_axis.cross(&axis).normalize();
+            let angle = dot.acos();
+            Xform::rotation(&rot_axis, angle)
+        };
+
+        // Midpoint translation
+        let midpoint = Point::new(
+            (p0.x + p1.x) * 0.5,
+            (p0.y + p1.y) * 0.5,
+            (p0.z + p1.z) * 0.5,
+        );
+        let translation = Xform::translation(midpoint.x, midpoint.y, midpoint.z);
+
+        // Non-uniform scale: 2*radius in X/Y (unit pipe radius = 0.5), length in Z
+        let scale = Xform::scaling(2.0 * radius, 2.0 * radius, len);
+
+        // Compose T * R * S (scale → rotate → translate)
+        Some(translation * rotation * scale)
     }
 }
 

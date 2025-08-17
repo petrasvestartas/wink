@@ -15,6 +15,7 @@ pub mod shader_color_pipeline;
 pub mod shader_solid_pipeline;
 pub mod shader_pipe_pipeline;
 pub mod shader_sphere_pipeline;
+pub mod shader_lights_pipeline;
 use vertex::Vertex;
 use camera::{Camera, CameraUniform, CameraController};
 use timing::Instant;
@@ -26,7 +27,7 @@ use instance::BatchDraw;
 use instance::BatchKind;
 // OpenModel: JSON geometry + mesh utilities
 use openmodel::AllGeometryData;
-use openmodel::geometry::{Mesh, Point};
+use openmodel::geometry::{Mesh};
 
 #[cfg(target_arch = "wasm32")]
 const LOCAL_GEOMETRY_HTTP_PATH: &str = "/geometry/all_geometry.json"; // served by docs dev server
@@ -44,8 +45,14 @@ const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24Plus;
 #[cfg(not(target_arch = "wasm32"))]
 const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 
+// MSAA sample count (disable on WebGL path)
+#[cfg(target_arch = "wasm32")]
+const MSAA_SAMPLE_COUNT: u32 = 1;
+#[cfg(not(target_arch = "wasm32"))]
+const MSAA_SAMPLE_COUNT: u32 = 4;
+
 #[derive(Copy, Clone, Debug, PartialEq)]
-enum PipelineMode { Solid, Color }
+enum PipelineMode { Solid, Color, Lights }
 
 #[cfg(target_arch = "wasm32")]
 use std::cell::{Cell, RefCell};
@@ -115,7 +122,7 @@ fn append_mesh_as_triangles(
     vertices: &mut Vec<Vertex>,
     indices: &mut Vec<u16>,
 ) {
-    for (_face_key, face_vertices) in mesh.get_face_data() {
+    for (face_key, face_vertices) in mesh.get_face_data() {
         if face_vertices.len() < 3 { continue; }
         for i in 1..(face_vertices.len() - 1) {
             let tri = [face_vertices[0], face_vertices[i], face_vertices[i + 1]];
@@ -131,8 +138,12 @@ fn append_mesh_as_triangles(
                         [c[0] as f32, c[1] as f32, c[2] as f32]
                     } else { default_color };
 
+                    // Resolve vertex normal via OpenModel (authored -> computed -> face -> +Z)
+                    let n = mesh.vertex_normal_resolved(vk, Some(*face_key));
+                    let normal = [n.x as f32, n.y as f32, n.z as f32];
+
                     if vertices.len() >= u16::MAX as usize { break; }
-                    vertices.push(Vertex { position: [pos.x as f32, pos.y as f32, pos.z as f32], color });
+                    vertices.push(Vertex { position: [pos.x as f32, pos.y as f32, pos.z as f32], color, normal });
                     indices.push((vertices.len() - 1) as u16);
                 }
             }
@@ -145,25 +156,25 @@ fn xform_to_instance(xf: &openmodel::primitives::Xform) -> Instance {
     Instance::from_xform(xf)
 }
 
-// Helper: 10x10 grid (11 lines per direction) + 1-unit Z axis as pipes
-fn make_grid_and_axis_meshes() -> Vec<(Mesh, [f32; 3])> {
-    let mut out = Vec::new();
-    let size: i32 = 5; // -5..=5 => 11 lines => 10x10 cells
-    let radius: f64 = 0.02;
-    let grid_color: [f32; 3] = [0.3, 0.3, 0.3];
-    let axis_color: [f32; 3] = [0.0, 0.0, 1.0];
+// // Helper: 10x10 grid (11 lines per direction) + 1-unit Z axis as pipes
+// fn make_grid_and_axis_meshes() -> Vec<(Mesh, [f32; 3])> {
+//     let mut out = Vec::new();
+//     let size: i32 = 5; // -5..=5 => 11 lines => 10x10 cells
+//     let radius: f64 = 0.02;
+//     let grid_color: [f32; 3] = [0.3, 0.3, 0.3];
+//     let axis_color: [f32; 3] = [0.0, 0.0, 1.0];
 
-    for i in -size..=size {
-        let y = i as f64;
-        out.push((Mesh::create_pipe(Point::new(-(size as f64), y, 0.0), Point::new(size as f64, y, 0.0), radius), grid_color));
-    }
-    for i in -size..=size {
-        let x = i as f64;
-        out.push((Mesh::create_pipe(Point::new(x, -(size as f64), 0.0), Point::new(x, size as f64, 0.0), radius), grid_color));
-    }
-    out.push((Mesh::create_pipe(Point::new(0.0, 0.0, 0.0), Point::new(0.0, 0.0, 1.0), 0.03), axis_color));
-    out
-}
+//     for i in -size..=size {
+//         let y = i as f64;
+//         out.push((Mesh::create_pipe(Point::new(-(size as f64), y, 0.0), Point::new(size as f64, y, 0.0), radius), grid_color));
+//     }
+//     for i in -size..=size {
+//         let x = i as f64;
+//         out.push((Mesh::create_pipe(Point::new(x, -(size as f64), 0.0), Point::new(x, size as f64, 0.0), radius), grid_color));
+//     }
+//     out.push((Mesh::create_pipe(Point::new(0.0, 0.0, 0.0), Point::new(0.0, 0.0, 1.0), 0.03), axis_color));
+//     out
+// }
 
 pub struct State{
     surface: wgpu::Surface<'static>,
@@ -176,6 +187,7 @@ pub struct State{
     render_pipeline_color: wgpu::RenderPipeline, // Second pipeline (vertex colors)
     render_pipeline_pipe: wgpu::RenderPipeline,  // Third pipeline (pipe-specific)
     render_pipeline_sphere: wgpu::RenderPipeline, // Sphere pipeline (vertex caps)
+    render_pipeline_lights: wgpu::RenderPipeline, // Lights pipeline (lit surfaces)
     pipeline_mode: PipelineMode,                 // Active pipeline selection
     // Pipe rendering controls
     pipe_px_radius: f32,
@@ -206,6 +218,10 @@ pub struct State{
     // ADDED (depth): Depth buffer
     depth_texture: wgpu::Texture,
     depth_view: wgpu::TextureView,
+    // ADDED (MSAA): Multisampled color buffer (resolved to surface) and sample count
+    msaa_sample_count: u32,
+    msaa_color_texture: wgpu::Texture,
+    msaa_color_view: wgpu::TextureView,
 }
 
 impl State{
@@ -388,19 +404,23 @@ impl State{
 
         // Pipelines via modules (unified instancing preserved)
         let render_pipeline_solid = crate::shader_solid_pipeline::create(
-            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT,
+            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, MSAA_SAMPLE_COUNT,
         );
 
         let render_pipeline_color = crate::shader_color_pipeline::create(
-            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT,
+            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, MSAA_SAMPLE_COUNT,
         );
 
         let render_pipeline_pipe = crate::shader_pipe_pipeline::create(
-            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT,
+            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, MSAA_SAMPLE_COUNT,
         );
 
         let render_pipeline_sphere = crate::shader_sphere_pipeline::create(
-            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT,
+            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, MSAA_SAMPLE_COUNT,
+        );
+
+        let render_pipeline_lights = crate::shader_lights_pipeline::create(
+            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, MSAA_SAMPLE_COUNT,
         );
 
         // Pop and log any validation errors that might have occurred during pipeline creation
@@ -504,7 +524,7 @@ impl State{
         let mut camera_uniform = CameraUniform::new();
         camera_uniform.update_view_proj(&camera);
         // Initialize extended view/pipe parameters
-        let default_pipe_px_radius: f32 = 2.0;
+        let default_pipe_px_radius: f32 = 0.5;
         camera_uniform.set_eye_dir(&camera);
         camera_uniform.set_view_params(
             config.width as f32,
@@ -539,7 +559,7 @@ impl State{
 
         let camera_controller = CameraController::new(4.0, 0.4);
 
-        // ADDED (depth): Create depth texture matching the surface size
+        // ADDED (depth): Create depth texture matching the surface size, with MSAA
         let depth_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("Depth Texture"),
             size: wgpu::Extent3d {
@@ -548,13 +568,30 @@ impl State{
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,
-            sample_count: 1,
+            sample_count: MSAA_SAMPLE_COUNT,
             dimension: wgpu::TextureDimension::D2,
             format: DEPTH_FORMAT,
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
         });
         let depth_view = depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+        // ADDED (MSAA): Create multisampled color target (resolved to surface each frame)
+        let msaa_color_texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("MSAA Color Texture"),
+            size: wgpu::Extent3d {
+                width: config.width,
+                height: config.height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: MSAA_SAMPLE_COUNT,
+            dimension: wgpu::TextureDimension::D2,
+            format: config.format,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        });
+        let msaa_color_view = msaa_color_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         // Now that we configured our render surface.
         // We can create the struct State with its arguments.
@@ -569,6 +606,7 @@ impl State{
             render_pipeline_color,
             render_pipeline_pipe,
             render_pipeline_sphere,
+            render_pipeline_lights,
             pipeline_mode: PipelineMode::Color,  
             pipe_px_radius: default_pipe_px_radius,
             vertex_buffer,
@@ -598,6 +636,10 @@ impl State{
             // ADDED (depth): Depth buffer fields (texture + view)
             depth_texture,
             depth_view,
+            // ADDED (MSAA)
+            msaa_sample_count: MSAA_SAMPLE_COUNT,
+            msaa_color_texture,
+            msaa_color_view,
         };
         // Configure surface immediately to avoid first-frame issues
         state.resize(size.width, size.height);
@@ -748,7 +790,7 @@ impl State{
             self.surface.configure(&self.device, &self.config);
             // Keep camera projection in sync with the surface size (important on Web)
             self.camera.aspect = self.config.width as f32 / self.config.height as f32;
-            // ADDED (depth): Recreate depth texture to match new size
+            // ADDED (depth): Recreate depth texture to match new size (respect MSAA)
             self.depth_texture = self.device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("Depth Texture"),
                 size: wgpu::Extent3d {
@@ -757,13 +799,30 @@ impl State{
                     depth_or_array_layers: 1,
                 },
                 mip_level_count: 1,
-                sample_count: 1,
+                sample_count: self.msaa_sample_count,
                 dimension: wgpu::TextureDimension::D2,
                 format: DEPTH_FORMAT,
                 usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
                 view_formats: &[],
             });
             self.depth_view = self.depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+            // ADDED (MSAA): Recreate multisampled color target
+            self.msaa_color_texture = self.device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("MSAA Color Texture"),
+                size: wgpu::Extent3d {
+                    width: self.config.width,
+                    height: self.config.height,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: self.msaa_sample_count,
+                dimension: wgpu::TextureDimension::D2,
+                format: self.config.format,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            });
+            self.msaa_color_view = self.msaa_color_texture.create_view(&wgpu::TextureViewDescriptor::default());
             self.is_surface_configured = true;
         }
     }
@@ -892,11 +951,18 @@ impl State{
         {
             // Always clear to a stable gray to avoid undefined loads during rapid resize
             let color_load_op = wgpu::LoadOp::Clear(wgpu::Color { r: 0.9, g: 0.9, b: 0.9, a: 1.0 });
+            // Choose color attachment and optional resolve target based on MSAA
+            let (color_view, resolve_target): (&wgpu::TextureView, Option<&wgpu::TextureView>) = if self.msaa_sample_count > 1 {
+                (&self.msaa_color_view, Some(&view))
+            } else {
+                (&view, None)
+            };
+
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    resolve_target: None,
+                    view: color_view,
+                    resolve_target,
                     ops: wgpu::Operations {
                         load: color_load_op,
                         store: wgpu::StoreOp::Store,
@@ -939,7 +1005,8 @@ impl State{
                     BatchKind::Surface => {
                         match self.pipeline_mode {
                             PipelineMode::Color => render_pass.set_pipeline(&self.render_pipeline_color),
-                            _ => render_pass.set_pipeline(&self.render_pipeline_solid),
+                            PipelineMode::Lights => render_pass.set_pipeline(&self.render_pipeline_lights),
+                            PipelineMode::Solid => render_pass.set_pipeline(&self.render_pipeline_solid),
                         }
                     }
                     BatchKind::Sphere => {
@@ -970,14 +1037,15 @@ impl State{
 
     // Handle key events.
     // Escape - to exit the app
-    // Space - toggle pipeline (Solid <-> Color)
+    // Space - cycle pipeline (Color -> Solid -> Lights)
     fn handle_key(&mut self, event_loop: &ActiveEventLoop, code: KeyCode, is_pressed: bool) {
         match (code, is_pressed) {
             (KeyCode::Escape, true) => event_loop.exit(),
             (KeyCode::Space, true) => {
                 self.pipeline_mode = match self.pipeline_mode {
-                    PipelineMode::Solid => PipelineMode::Color,
-                    _ => PipelineMode::Solid,
+                    PipelineMode::Solid => PipelineMode::Lights,
+                    PipelineMode::Color => PipelineMode::Solid,
+                    PipelineMode::Lights => PipelineMode::Color,
                 };
                 #[cfg(target_arch = "wasm32")]
                 {
@@ -1355,21 +1423,21 @@ pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
         }
     }
 
-    // Add procedural grid and axis once
-    for (m, color) in make_grid_and_axis_meshes() {
-        let first_index = indices.len() as u32;
-        append_mesh_as_triangles(&m, color, &mut vertices, &mut indices);
-        let index_count = (indices.len() as u32) - first_index;
-        if index_count > 0 {
-            batches.push(DrawBatch {
-                first_index,
-                index_count,
-                base_vertex: 0,
-                instances: vec![],
-                kind: BatchKind::Surface,
-            });
-        }
-    }
+    // // Add procedural grid and axis once
+    // for (m, color) in make_grid_and_axis_meshes() {
+    //     let first_index = indices.len() as u32;
+    //     append_mesh_as_triangles(&m, color, &mut vertices, &mut indices);
+    //     let index_count = (indices.len() as u32) - first_index;
+    //     if index_count > 0 {
+    //         batches.push(DrawBatch {
+    //             first_index,
+    //             index_count,
+    //             base_vertex: 0,
+    //             instances: vec![],
+    //             kind: BatchKind::Surface,
+    //         });
+    //     }
+    // }
 
     // Pipe instancing from augmented mesh_instances (if any)
     if let Some(pipe_idx) = all_geom.pipe_mesh_index {
