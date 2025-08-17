@@ -205,8 +205,9 @@ impl Line{
     }
 
     /// Returns a transform that maps the canonical unit pipe (aligned to +Z, length=1, radius=0.5,
-    /// centered at the origin with z in [-0.5, +0.5]) onto this line segment with the given radius.
-    pub fn to_pipe_transform(&self, radius: f64) -> Option<Xform> {
+    /// centered at the origin with z in [-0.5, +0.5]) onto this line segment.
+    /// XY scale is kept at 1.0; Z is scaled by the segment length. Thickness is handled in the shader.
+    pub fn to_pipe_transform(&self) -> Option<Xform> {
         // Endpoints
         let p0 = Point::new(self.x0, self.y0, self.z0);
         let p1 = Point::new(self.x1, self.y1, self.z1);
@@ -242,8 +243,8 @@ impl Line{
         );
         let translation = Xform::translation(midpoint.x, midpoint.y, midpoint.z);
 
-        // Non-uniform scale: 2*radius in X/Y (unit pipe radius = 0.5), length in Z
-        let scale = Xform::scaling(2.0 * radius, 2.0 * radius, len);
+        // Non-uniform scale: XY = 1.0 (unit pipe geometry radius is unused for thickness), Z = length
+        let scale = Xform::scaling(1.0, 1.0, len);
 
         // Compose T * R * S (scale → rotate → translate)
         Some(translation * rotation * scale)

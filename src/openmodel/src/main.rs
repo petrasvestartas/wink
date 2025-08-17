@@ -118,7 +118,6 @@ fn main() {
     // Unit cube translated +2 along X (x in [2,3], y in [0,1], z in [0,1])
     let cube = make_cube_mesh();
 
-
     let all_geometry = AllGeometryData {
         points: vec![],
         vectors: vec![],

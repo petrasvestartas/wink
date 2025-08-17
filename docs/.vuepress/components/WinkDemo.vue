@@ -31,6 +31,12 @@
       autoLoad: {
         type: Boolean,
         default: true
+      },
+      // Quality scale multiplier for internal canvas resolution (supersampling)
+      // 1.0 = devicePixelRatio, 1.5 = 1.5x DPR, 2.0 = 2x DPR (GPU cost increases with scale)
+      qualityScale: {
+        type: Number,
+        default: 1.5,
       }
     },
     data() {
@@ -68,7 +74,7 @@
               resolve();
             };
             const code = `import init from '${winkJsUrl}';\n` +
-                         `init('${wasmUrl}')\n` +
+                         `init({ module_or_path: '${wasmUrl}' })\n` +
                          `  .then(() => window.${doneKey} && window.${doneKey}())\n` +
                          `  .catch(e => { console.error('WASM init error:', e); });`;
             const s = document.createElement('script');
@@ -98,9 +104,12 @@
           // Measure the actual rendered size of the wrapper/canvas (CSS pixels)
           const rect = wrapper.getBoundingClientRect();
           const dprDevice = Math.max(1, window.devicePixelRatio || 1);
+          // Supersample factor to reduce aliasing on WebGL (no MSAA). Can be tuned via prop.
+          const q = (typeof this.qualityScale === 'number' && this.qualityScale > 0) ? this.qualityScale : 1.0;
+          const dpr = dprDevice * q;
           // Round after multiplying by DPR to avoid 1px oscillation
-          let targetW = Math.round(rect.width * dprDevice);
-          let targetH = Math.round(rect.height * dprDevice);
+          let targetW = Math.round(rect.width * dpr);
+          let targetH = Math.round(rect.height * dpr);
 
           // WebGL2 minimum guaranteed max texture size is 2048. Since we use the GL backend on Web,
           // cap the internal canvas resolution to avoid wgpu validation errors when creating textures.

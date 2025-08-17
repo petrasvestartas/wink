@@ -3,7 +3,7 @@ use crate::geometry::{Line, LineCloud, Pline, Mesh, Point};
 
 /// Trait to generalize extraction of pipe transforms from any segment source.
 /// Returns transforms mapping the canonical unit pipe (aligned +Z, length=1, radius=0.5)
-/// onto the source's segments with the requested world-space radius.
+/// onto the source's segments. XY scale is fixed at 1.0; the shader controls thickness in pixel space.
 pub trait PipeFromSegments {
     fn pipe_transforms(&self) -> Vec<Xform>;
 }
@@ -11,7 +11,7 @@ pub trait PipeFromSegments {
 impl PipeFromSegments for Line {
     fn pipe_transforms(&self) -> Vec<Xform> {
         let mut out = Vec::new();
-        if let Some(tf) = self.to_pipe_transform(1.0) { out.push(tf); }
+        if let Some(tf) = self.to_pipe_transform() { out.push(tf); }
         out
     }
 }
@@ -21,7 +21,7 @@ impl PipeFromSegments for Vec<Line> {
         let mut out = Vec::new();
         out.reserve(self.len());
         for ln in self {
-            if let Some(tf) = ln.to_pipe_transform(1.0) { out.push(tf); }
+            if let Some(tf) = ln.to_pipe_transform() { out.push(tf); }
         }
         out
     }
@@ -32,7 +32,7 @@ impl PipeFromSegments for LineCloud {
         let mut out = Vec::new();
         out.reserve(self.lines.len());
         for ln in &self.lines {
-            if let Some(tf) = ln.to_pipe_transform(0.5) { out.push(tf); }
+            if let Some(tf) = ln.to_pipe_transform() { out.push(tf); }
         }
         out
     }
@@ -46,7 +46,7 @@ impl PipeFromSegments for Pline {
             let a = &self.points[i];
             let b = &self.points[i + 1];
             let seg = Line::new(a.x, a.y, a.z, b.x, b.y, b.z);
-            if let Some(tf) = seg.to_pipe_transform(0.5) { out.push(tf); }
+            if let Some(tf) = seg.to_pipe_transform() { out.push(tf); }
         }
         out
     }
@@ -54,7 +54,7 @@ impl PipeFromSegments for Pline {
 
 impl PipeFromSegments for Mesh {
     fn pipe_transforms(&self) -> Vec<Xform> {
-        self.extract_edge_pipe_transforms(0.5)
+        self.extract_edge_pipe_transforms()
     }
 }
 

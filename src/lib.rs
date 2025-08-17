@@ -47,7 +47,7 @@ const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 
 // MSAA sample count (disable on WebGL path)
 #[cfg(target_arch = "wasm32")]
-const MSAA_SAMPLE_COUNT: u32 = 1;
+const MSAA_SAMPLE_COUNT: u32 = 4;
 #[cfg(not(target_arch = "wasm32"))]
 const MSAA_SAMPLE_COUNT: u32 = 4;
 
@@ -278,7 +278,7 @@ impl State{
             #[cfg(not(target_arch = "wasm32"))]
             backends: wgpu::Backends::PRIMARY,
             #[cfg(target_arch = "wasm32")]
-            backends: wgpu::Backends::GL,
+            backends: wgpu::Backends::BROWSER_WEBGPU | wgpu::Backends::GL,
             ..Default::default()
         });
 
@@ -293,23 +293,53 @@ impl State{
             force_fallback_adapter: false,
         }).await?;
 
+        // Inspect chosen adapter and decide limits/MSAA based on backend
+        let adapter_info = adapter.get_info();
+        #[cfg(target_arch = "wasm32")]
+        {
+            web_sys::console::log_1(
+                &format!("wgpu adapter backend: {:?}, name: {}", adapter_info.backend, adapter_info.name).into(),
+            );
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            log::info!("wgpu adapter backend: {:?}, name: {}", adapter_info.backend, adapter_info.name);
+        }
+
+        let is_webgl_backend = adapter_info.backend == wgpu::Backend::Gl;
+        // Decide MSAA sample count dynamically (WebGPU: 4x, WebGL: 1x)
+        let msaa_sample_count: u32 = if cfg!(target_arch = "wasm32") {
+            if is_webgl_backend { 1 } else { 4 }
+        } else {
+            4
+        };
+        #[cfg(target_arch = "wasm32")]
+        web_sys::console::log_1(&format!("MSAA sample count: {}", msaa_sample_count).into());
+        #[cfg(not(target_arch = "wasm32"))]
+        log::info!("MSAA sample count: {}", msaa_sample_count);
+
+        // Choose appropriate limits per backend
+        let required_limits = if cfg!(target_arch = "wasm32") {
+            if is_webgl_backend {
+                wgpu::Limits::downlevel_webgl2_defaults()
+            } else {
+                wgpu::Limits::default()
+            }
+        } else {
+            wgpu::Limits::default()
+        };
+
         // Use adapter to create device and queue
         // This current example doesn't use any features.
         // Full list of features: https://docs.rs/wgpu/latest/wgpu/struct.Features.html
         // Full list of limits: https://docs.rs/wgpu/latest/wgpu/struct.Limits.html
-        // The mmemory_hints field provides the adapter with a preferred memory allocation strategy.
+        // The memory_hints field provides the adapter with a preferred memory allocation strategy.
         // Memory hints options: https://wgpu.rs/doc/wgpu/enum.MemoryHints.html
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
                 label: None,
                 required_features: wgpu::Features::empty(),
-                // WebGL doesn't support all of wgpu's features, so if
-                // we're building for the web we'll have to disable some.
-                required_limits: if cfg!(target_arch = "wasm32") {
-                    wgpu::Limits::downlevel_webgl2_defaults()
-                } else {
-                    wgpu::Limits::default()
-                },
+                required_limits,
                 memory_hints: Default::default(),
                 trace: wgpu::Trace::Off,
             })
@@ -404,23 +434,23 @@ impl State{
 
         // Pipelines via modules (unified instancing preserved)
         let render_pipeline_solid = crate::shader_solid_pipeline::create(
-            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, MSAA_SAMPLE_COUNT,
+            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, msaa_sample_count,
         );
 
         let render_pipeline_color = crate::shader_color_pipeline::create(
-            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, MSAA_SAMPLE_COUNT,
+            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, msaa_sample_count,
         );
 
         let render_pipeline_pipe = crate::shader_pipe_pipeline::create(
-            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, MSAA_SAMPLE_COUNT,
+            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, msaa_sample_count,
         );
 
         let render_pipeline_sphere = crate::shader_sphere_pipeline::create(
-            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, MSAA_SAMPLE_COUNT,
+            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, msaa_sample_count,
         );
 
         let render_pipeline_lights = crate::shader_lights_pipeline::create(
-            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, MSAA_SAMPLE_COUNT,
+            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, msaa_sample_count,
         );
 
         // Pop and log any validation errors that might have occurred during pipeline creation
@@ -568,7 +598,7 @@ impl State{
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,
-            sample_count: MSAA_SAMPLE_COUNT,
+            sample_count: msaa_sample_count,
             dimension: wgpu::TextureDimension::D2,
             format: DEPTH_FORMAT,
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
@@ -585,7 +615,7 @@ impl State{
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,
-            sample_count: MSAA_SAMPLE_COUNT,
+            sample_count: msaa_sample_count,
             dimension: wgpu::TextureDimension::D2,
             format: config.format,
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -637,7 +667,7 @@ impl State{
             depth_texture,
             depth_view,
             // ADDED (MSAA)
-            msaa_sample_count: MSAA_SAMPLE_COUNT,
+            msaa_sample_count: msaa_sample_count,
             msaa_color_texture,
             msaa_color_view,
         };

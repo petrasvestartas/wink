@@ -42,6 +42,11 @@ pub struct Mesh {
     pub default_face_attributes: HashMap<String, f64>,
     /// Default edge attributes
     pub default_edge_attributes: HashMap<String, f64>,
+    /// Optional cached triangulations per face for viewer rendering (triangles only).
+    /// Keyed by face key; each triangle stores vertex keys into `self.vertex`.
+    /// Skipped in serialization to keep storage minimal; can be recomputed.
+    #[serde(skip)]
+    pub triangulation: HashMap<usize, Vec<[usize; 3]>>, 
     /// Next available vertex key
     max_vertex: usize,
     /// Next available face key
@@ -168,6 +173,7 @@ impl Mesh {
             default_vertex_attributes,
             default_face_attributes: HashMap::new(),
             default_edge_attributes: HashMap::new(),
+            triangulation: HashMap::new(),
             max_vertex: 0,
             max_face: 0,
             data: Data::with_name("Mesh"),
@@ -208,6 +214,7 @@ impl Mesh {
         self.face.clear();
         self.facedata.clear();
         self.edgedata.clear();
+        self.triangulation.clear();
         self.max_vertex = 0;
         self.max_face = 0;
     }
@@ -396,6 +403,8 @@ impl Mesh {
         
         // Add the face
         self.face.insert(face_key, vertices.clone());
+        // Invalidate cached triangulation for this face if any
+        self.triangulation.remove(&face_key);
         
         // Update halfedge connectivity
         for i in 0..vertices.len() {
@@ -416,6 +425,139 @@ impl Mesh {
         }
         
         Some(face_key)
+    }
+
+    /// Invalidate triangulation cache for all faces.
+    pub fn invalidate_all_triangulation(&mut self) {
+        self.triangulation.clear();
+    }
+
+    /// Invalidate triangulation cache for a specific face.
+    pub fn invalidate_face_triangulation(&mut self, face_key: usize) {
+        self.triangulation.remove(&face_key);
+    }
+
+    /// Get cached triangulation for a face if present.
+    pub fn face_triangulation_cached(&self, face_key: usize) -> Option<&Vec<[usize; 3]>> {
+        self.triangulation.get(&face_key)
+    }
+
+    /// Compute and cache triangulation for the given face (simple polygon, no holes).
+    /// Returns None if the face key is invalid or has fewer than 3 vertices.
+    pub fn triangulate_face(&mut self, face_key: usize) -> Option<&Vec<[usize; 3]>> {
+        if let Some(vkeys) = self.face.get(&face_key) {
+            if vkeys.len() < 3 { return None; }
+            let tris = self.ear_clip_triangulate_vertices(vkeys);
+            self.triangulation.insert(face_key, tris);
+            return self.triangulation.get(&face_key);
+        }
+        None
+    }
+
+    /// Compute triangulation for a face without mutating cache. Useful from immutable context.
+    pub fn triangulate_face_vertices(&self, face_vertices: &Vec<usize>) -> Vec<[usize; 3]> {
+        if face_vertices.len() < 3 { return Vec::new(); }
+        self.ear_clip_triangulate_vertices(face_vertices)
+    }
+
+    /// Ear clipping triangulation of a simple 3D polygon (projected to a dominant plane).
+    /// No holes supported. Returns triangles as vertex keys in original order.
+    fn ear_clip_triangulate_vertices(&self, vkeys: &Vec<usize>) -> Vec<[usize; 3]> {
+        // Gather points
+        let mut pts: Vec<Point> = Vec::with_capacity(vkeys.len());
+        for &vk in vkeys.iter() {
+            if let Some(p) = self.vertex_position(vk) { pts.push(p); } else { return Vec::new(); }
+        }
+
+        // Compute face normal using Newell's method
+        let (nx, ny, nz) = newell_normal(&pts);
+        let ax = nx.abs(); let ay = ny.abs(); let az = nz.abs();
+        // Choose projection plane by dropping the dominant axis
+        enum Plane { XY, XZ, YZ }
+        let plane = if ax >= ay && ax >= az { Plane::YZ } else if ay >= ax && ay >= az { Plane::XZ } else { Plane::XY };
+
+        // Project to 2D
+        let mut p2: Vec<[f64;2]> = Vec::with_capacity(pts.len());
+        for p in &pts {
+            let q = match plane {
+                Plane::XY => [p.x, p.y],
+                Plane::XZ => [p.x, p.z],
+                Plane::YZ => [p.y, p.z],
+            };
+            p2.push(q);
+        }
+
+        // Determine polygon orientation (CCW positive area)
+        let area = signed_area_2d(&p2);
+        let ccw = area > 0.0;
+
+        // Indices into vkeys/pts
+        let mut idx: Vec<usize> = (0..vkeys.len()).collect();
+        let mut tris: Vec<[usize;3]> = Vec::with_capacity(vkeys.len().saturating_sub(2));
+        let n = idx.len();
+        if n < 3 { return tris; }
+
+        // Helper closures
+        let is_convex = |a: usize, b: usize, c: usize| -> bool {
+            let abx = p2[b][0] - p2[a][0];
+            let aby = p2[b][1] - p2[a][1];
+            let bcx = p2[c][0] - p2[b][0];
+            let bcy = p2[c][1] - p2[b][1];
+            let cross = abx * bcy - aby * bcx;
+            if ccw { cross > 1e-12 } else { cross < -1e-12 }
+        };
+        let point_in_tri = |a: usize, b: usize, c: usize, p: usize| -> bool {
+            // Barycentric sign method respecting orientation
+            let (ax2, ay2) = (p2[a][0], p2[a][1]);
+            let (bx2, by2) = (p2[b][0], p2[b][1]);
+            let (cx2, cy2) = (p2[c][0], p2[c][1]);
+            let (px2, py2) = (p2[p][0], p2[p][1]);
+            let sign = |x1: f64, y1: f64, x2: f64, y2: f64, x3: f64, y3: f64| -> f64 {
+                (x1 - x3) * (y2 - y3) - (x2 - x3) * (y1 - y3)
+            };
+            let s1 = sign(px2, py2, ax2, ay2, bx2, by2);
+            let s2 = sign(px2, py2, bx2, by2, cx2, cy2);
+            let s3 = sign(px2, py2, cx2, cy2, ax2, ay2);
+            let has_neg = (s1 < -1e-12) || (s2 < -1e-12) || (s3 < -1e-12);
+            let has_pos = (s1 > 1e-12) || (s2 > 1e-12) || (s3 > 1e-12);
+            !(has_neg && has_pos)
+        };
+
+        // If orientation is CW, reverse to make it CCW for ear clipping test simplicity
+        if !ccw { idx.reverse(); }
+
+        let mut guard = 0usize; // prevent infinite loops
+        while idx.len() > 3 && guard < n * n {
+            let m = idx.len();
+            let mut ear_found = false;
+            for j in 0..m {
+                let i0 = idx[(j + m - 1) % m];
+                let i1 = idx[j];
+                let i2 = idx[(j + 1) % m];
+
+                if !is_convex(i0, i1, i2) { continue; }
+
+                // Check if any other vertex lies in triangle (i0,i1,i2)
+                let mut contains = false;
+                for &k in idx.iter() {
+                    if k == i0 || k == i1 || k == i2 { continue; }
+                    if point_in_tri(i0, i1, i2, k) { contains = true; break; }
+                }
+                if contains { continue; }
+
+                // It's an ear: emit triangle in original vertex-key space
+                tris.push([vkeys[i0], vkeys[i1], vkeys[i2]]);
+                idx.remove(j);
+                ear_found = true;
+                break;
+            }
+            if !ear_found { break; }
+            guard += 1;
+        }
+        if idx.len() == 3 {
+            tris.push([vkeys[idx[0]], vkeys[idx[1]], vkeys[idx[2]]]);
+        }
+        tris
     }
 
     /// Get the position of a vertex.
@@ -942,16 +1084,14 @@ impl Mesh {
     
     /// Compute per-edge transforms for instancing a unit pipe mesh.
     ///
-    /// Returns a transform for each unique edge of the mesh that maps a unit cylinder
+    /// Returns a transform for each unique boundary edge of the mesh that maps a unit cylinder
     /// aligned along the +Z axis with length=1 and radius=0.5 (centered at the origin,
-    /// from z = -0.5 to z = +0.5) onto the edge as a pipe of the given radius.
-    ///
-    /// Note: Our shared unit pipe meshes (e.g. `create_unit_pipe_high_res`) use radius=0.5
-    /// so we scale X/Y by 2*radius to achieve the requested world-space radius.
+    /// from z = -0.5 to z = +0.5) onto the edge. XY scale is fixed at 1.0; Z is scaled by edge length.
+    /// Thickness is handled entirely in the pipe shader using a pixel-space radius.
     ///
     /// The transform encodes translation to the edge midpoint, rotation to align +Z with
-    /// the edge direction, and non-uniform scale (radius, radius, length).
-    pub fn extract_edge_pipe_transforms(&self, radius: f64) -> Vec<Xform> {
+    /// the edge direction, and scale (1, 1, length).
+    pub fn extract_edge_pipe_transforms(&self) -> Vec<Xform> {
         use std::collections::HashMap;
         let mut transforms: Vec<Xform> = Vec::new();
 
@@ -999,8 +1139,8 @@ impl Mesh {
                 );
                 let translation = Xform::translation(midpoint.x, midpoint.y, midpoint.z);
 
-                // Non-uniform scale: 2*radius in X/Y (unit pipe has radius 0.5), edge length in Z
-                let scale = Xform::scaling(2.0 * radius, 2.0 * radius, len);
+                // Scale: XY = 1.0 (unit pipe XY is used only for direction), Z = edge length
+                let scale = Xform::scaling(1.0, 1.0, len);
 
                 // Compose: T * R * S (column-major)
                 transforms.push(translation * rotation * scale);

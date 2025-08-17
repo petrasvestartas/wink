@@ -67,8 +67,9 @@ impl AllGeometryData {
     ///
     /// Notes:
     /// - The shared unit pipe mesh is aligned to +Z with radius=0.5 and length=1.0.
-    ///   Transforms are generated via the `PipeFromSegments` trait for each segment source
-    ///   using the requested world-space radius.
+    ///   Transforms are generated via the `PipeFromSegments` trait with XY scale fixed at 1.0
+    ///   and Z scaled by segment length. Pipe thickness is controlled in the shader by a
+    ///   pixel-space radius uniform, not by instance XY scaling.
     /// - The shared unit sphere mesh has radius=0.5; sphere instances use translation-only
     ///   transforms so the final world-space radius stays 0.5 unless further scaled by the user.
     pub fn augment_with_procedural(&mut self) {
