@@ -940,6 +940,26 @@ impl Mesh {
         false
     }
 
+    /// Extract all unique edges of the mesh as Line objects.
+    /// This includes both boundary and interior edges.
+    pub fn extract_edges_as_lines(&self) -> Vec<Line> {
+        let mut out: Vec<Line> = Vec::new();
+        let mut seen: std::collections::HashSet<(usize, usize)> = std::collections::HashSet::new();
+
+        for (u, neigh) in &self.halfedge {
+            for (v, _face_opt) in neigh {
+                let a = *u;
+                let b = *v;
+                let key = if a < b { (a, b) } else { (b, a) };
+                if !seen.insert(key) { continue; }
+                if let (Some(p0), Some(p1)) = (self.vertex_position(a), self.vertex_position(b)) {
+                    out.push(Line::new(p0.x, p0.y, p0.z, p1.x, p1.y, p1.z));
+                }
+            }
+        }
+        out
+    }
+
     /// Extract transforms for pipes along unique boundary edges of the mesh.
     /// Uses the canonical unit pipe definition (aligned +Z, length=1, radius=0.5).
     pub fn extract_edge_pipe_transforms(&self) -> Vec<Xform> {

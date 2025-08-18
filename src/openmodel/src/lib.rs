@@ -85,9 +85,10 @@ impl AllGeometryData {
         // 1) Pipes from multiple segment sources (meshes, plines, line clouds, lines)
         let mut pipe_transforms: Vec<Xform> = Vec::new();
 
-        // Mesh boundary edges (only original meshes)
+        // All mesh edges (only original meshes) - use extract_edges_as_lines for complete wireframe
         for i in 0..original_mesh_count {
-            pipe_transforms.extend(self.meshes[i].pipe_transforms());
+            let lines = self.meshes[i].extract_edges_as_lines();
+            pipe_transforms.extend(lines.pipe_transforms());
         }
 
         // Polyline segments

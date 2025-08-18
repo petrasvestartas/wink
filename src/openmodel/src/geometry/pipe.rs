@@ -105,10 +105,8 @@ impl SphereFromSegments for Mesh {
     fn sphere_points(&self) -> Vec<Point> {
         let mut out = Vec::new();
         for vk in self.vertex.keys() {
-            if self.is_vertex_on_boundary(*vk) {
-                if let Some(p) = self.vertex_position(*vk) {
-                    out.push(p);
-                }
+            if let Some(p) = self.vertex_position(*vk) {
+                out.push(p);
             }
         }
         out
