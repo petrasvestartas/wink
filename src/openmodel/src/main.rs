@@ -16,7 +16,7 @@ fn make_star_mesh() -> Mesh {
         Point::new(0.538228, 0.0605, 3.0),
         Point::new(0.246482, 0.209046, 3.0),
     ];
-    let mut mesh = Mesh::from_polygon_earclip(polygon);
+    let mut mesh = Mesh::from_polygons(vec![polygon], None);
     // Assign per-vertex colors so the renderer uses them (golden yellow)
     for vd in mesh.vertex.values_mut() {
         vd.set_color(1.0, 0.84, 0.0);
@@ -26,69 +26,110 @@ fn make_star_mesh() -> Mesh {
 
 fn make_cube_mesh() -> Mesh{
     let cube_faces = vec![
-        // Bottom face (z=0)
+        // Bottom face (z=0) - CCW when viewed from below (outward normal -Z)
         vec![
+            Point::new(2.0, 0.0, 0.0),
             Point::new(2.0, 1.0, 0.0),
             Point::new(3.0, 1.0, 0.0),
             Point::new(3.0, 0.0, 0.0),
-            Point::new(2.0, 0.0, 0.0),
-            
-            
-            
         ],
-        // Top face (z=1)
+        // Top face (z=1) - CCW when viewed from above (outward normal +Z)
         vec![
+            Point::new(2.0, 0.0, 1.0),
             Point::new(3.0, 0.0, 1.0),
             Point::new(3.0, 1.0, 1.0),
             Point::new(2.0, 1.0, 1.0),
-            Point::new(2.0, 0.0, 1.0),
-            
-            
-            
         ],
-        // Front face (y=0)
+        // Front face (y=0) - CCW when viewed from front (outward normal -Y)
         vec![
+            Point::new(2.0, 0.0, 0.0),
             Point::new(3.0, 0.0, 0.0),
             Point::new(3.0, 0.0, 1.0),
             Point::new(2.0, 0.0, 1.0),
-            Point::new(2.0, 0.0, 0.0),
-            
-            
-            
         ],
-        // Back face (y=1)
+        // Back face (y=1) - CCW when viewed from back (outward normal +Y)
         vec![
-            Point::new(2.0, 1.0, 1.0),
-            Point::new(3.0, 1.0, 1.0),
             Point::new(3.0, 1.0, 0.0),
             Point::new(2.0, 1.0, 0.0),
-            
-            
-            
-        ],
-        // Left face (x=2)
-        vec![
-            Point::new(2.0, 0.0, 1.0),
             Point::new(2.0, 1.0, 1.0),
+            Point::new(3.0, 1.0, 1.0),
+        ],
+        // Left face (x=2) - CCW when viewed from left (outward normal -X)
+        vec![
             Point::new(2.0, 1.0, 0.0),
             Point::new(2.0, 0.0, 0.0),
-            
-            
-            
+            Point::new(2.0, 0.0, 1.0),
+            Point::new(2.0, 1.0, 1.0),
         ],
-        // Right face (x=3)
+        // Right face (x=3) - CCW when viewed from right (outward normal +X)
         vec![
+            Point::new(3.0, 0.0, 0.0),
             Point::new(3.0, 1.0, 0.0),
             Point::new(3.0, 1.0, 1.0),
             Point::new(3.0, 0.0, 1.0),
-            Point::new(3.0, 0.0, 0.0),
-            
-            
-            
         ],
     ];
     let cube = Mesh::from_polygons(cube_faces, None);
     cube
+}
+
+fn make_dodecahedron_mesh() -> Mesh {
+    // Golden ratio
+    let phi = (1.0 + 5.0_f64.sqrt()) / 2.0;
+    let edge_length = 1.0; // L = 2.0
+    let a = edge_length / 2.0;
+    let b = a * phi;
+    let c = a + b;
+    
+    // 20 vertices of regular dodecahedron (moved +3 units on Y axis)
+    let vertices = vec![
+        Point::new(-b, -b + 3.0, -b), // 0
+        Point::new( b, -b + 3.0, -b), // 1
+        Point::new(-b,  b + 3.0, -b), // 2
+        Point::new( b,  b + 3.0, -b), // 3
+        Point::new(-b, -b + 3.0,  b), // 4
+        Point::new( b, -b + 3.0,  b), // 5
+        Point::new(-b,  b + 3.0,  b), // 6
+        Point::new( b,  b + 3.0,  b), // 7
+        Point::new( c, -a + 3.0,  0.0), // 8
+        Point::new( c,  a + 3.0,  0.0), // 9
+        Point::new(-c, -a + 3.0,  0.0), // 10
+        Point::new(-c,  a + 3.0,  0.0), // 11
+        Point::new( a,  0.0 + 3.0, -c), // 12
+        Point::new(-a,  0.0 + 3.0, -c), // 13
+        Point::new( a,  0.0 + 3.0,  c), // 14
+        Point::new(-a,  0.0 + 3.0,  c), // 15
+        Point::new( 0.0, -c + 3.0, -a), // 16
+        Point::new( 0.0, -c + 3.0,  a), // 17
+        Point::new( 0.0,  c + 3.0, -a), // 18
+        Point::new( 0.0,  c + 3.0,  a), // 19
+    ];
+    
+    // 12 pentagonal faces (counterclockwise when viewed from outside)
+    let faces = vec![
+        vec![vertices[1].clone(), vertices[12].clone(), vertices[3].clone(), vertices[9].clone(), vertices[8].clone()],   // Face 0
+        vec![vertices[5].clone(), vertices[8].clone(), vertices[9].clone(), vertices[7].clone(), vertices[14].clone()],   // Face 1
+        vec![vertices[0].clone(), vertices[10].clone(), vertices[11].clone(), vertices[2].clone(), vertices[13].clone()], // Face 2
+        vec![vertices[4].clone(), vertices[15].clone(), vertices[6].clone(), vertices[11].clone(), vertices[10].clone()], // Face 3
+        vec![vertices[1].clone(), vertices[16].clone(), vertices[0].clone(), vertices[13].clone(), vertices[12].clone()], // Face 4
+        vec![vertices[3].clone(), vertices[12].clone(), vertices[13].clone(), vertices[2].clone(), vertices[18].clone()], // Face 5
+        vec![vertices[5].clone(), vertices[14].clone(), vertices[15].clone(), vertices[4].clone(), vertices[17].clone()], // Face 6
+        vec![vertices[7].clone(), vertices[19].clone(), vertices[6].clone(), vertices[15].clone(), vertices[14].clone()], // Face 7
+        vec![vertices[1].clone(), vertices[8].clone(), vertices[5].clone(), vertices[17].clone(), vertices[16].clone()],  // Face 8
+        vec![vertices[0].clone(), vertices[16].clone(), vertices[17].clone(), vertices[4].clone(), vertices[10].clone()], // Face 9
+        vec![vertices[3].clone(), vertices[18].clone(), vertices[19].clone(), vertices[7].clone(), vertices[9].clone()],  // Face 10
+        vec![vertices[2].clone(), vertices[11].clone(), vertices[6].clone(), vertices[19].clone(), vertices[18].clone()], // Face 11
+    ];
+    
+    let dodecahedron = Mesh::from_polygons(faces, None);
+    
+    // Debug dodecahedron faces
+    println!("Dodecahedron face details:");
+    for (fkey, vertices) in dodecahedron.get_face_data() {
+        println!("  Face {}: {} vertices", fkey, vertices.len());
+    }
+    
+    dodecahedron
 }
 
 fn main() {
@@ -118,6 +159,15 @@ fn main() {
     // Unit cube translated +2 along X (x in [2,3], y in [0,1], z in [0,1])
     let cube = make_cube_mesh();
 
+    // Dodecahedron positioned at y+3
+    let dodecahedron = make_dodecahedron_mesh();
+
+    println!("Created {} meshes:", 4);
+    println!("  Star: {} vertices, {} faces", star.number_of_vertices(), star.number_of_faces());
+    println!("  Sphere: {} vertices, {} faces", sphere.number_of_vertices(), sphere.number_of_faces());
+    println!("  Cube: {} vertices, {} faces", cube.number_of_vertices(), cube.number_of_faces());
+    println!("  Dodecahedron: {} vertices, {} faces", dodecahedron.number_of_vertices(), dodecahedron.number_of_faces());
+
     let all_geometry = AllGeometryData {
         points: vec![],
         vectors: vec![],
@@ -128,7 +178,7 @@ fn main() {
         line_clouds: vec![],
         plines: vec![],
         xforms: vec![],
-        meshes: vec![star, sphere, cube],
+        meshes: vec![star, sphere, cube, dodecahedron],
         mesh_instances: vec![],
         pipe_mesh_index: None,
         sphere_mesh_index: None,

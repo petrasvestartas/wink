@@ -115,17 +115,25 @@ fn fnv1a64(bytes: &[u8]) -> u64 {
     }
     hash
 }
-// Helper: push mesh faces as triangles (fan) with per-vertex or default color
+// Helper: push mesh faces as triangles using cached triangulation with per-vertex or default color
 fn append_mesh_as_triangles(
-    mesh: &Mesh,
+    mesh: &mut Mesh,
     default_color: [f32; 3],
     vertices: &mut Vec<Vertex>,
     indices: &mut Vec<u16>,
 ) {
-    for (face_key, face_vertices) in mesh.get_face_data() {
-        if face_vertices.len() < 3 { continue; }
-        for i in 1..(face_vertices.len() - 1) {
-            let tri = [face_vertices[0], face_vertices[i], face_vertices[i + 1]];
+    // Collect face keys first to avoid holding an immutable borrow while mutably triangulating
+    let face_keys: Vec<usize> = mesh.get_face_data().map(|(fk, _)| fk).collect();
+    for face_key in face_keys {
+        let triangles: Vec<[usize; 3]> = if let Some(tri_ref) = mesh.triangulate_face(face_key) {
+            tri_ref.clone()
+        } else {
+            Vec::new()
+        };
+
+        log::debug!("Face {} triangulated into {} triangles", face_key, triangles.len());
+
+        for tri in triangles {
             for &vk in &tri {
                 if let Some(pos) = mesh.vertex_position(vk) {
                     let use_default = if let Some(vd) = mesh.vertex.get(&vk) {
@@ -1409,7 +1417,32 @@ pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
     // Prefer local (native file or WASM fetch); fall back to embedded JSON.
     let local: Option<String> = {
         #[cfg(not(target_arch = "wasm32"))]
-        { std::fs::read_to_string(LOCAL_GEOMETRY_PATH).ok() }
+        {
+            // Try top-level all_geometry.json first, then src/openmodel/all_geometry.json
+            let base = env!("CARGO_MANIFEST_DIR");
+            let primary = format!("{}/all_geometry.json", base);
+            let openmodel_path = format!("{}/src/openmodel/all_geometry.json", base);
+            
+            // Try to copy from openmodel directory if it's newer
+            if let (Ok(openmodel_meta), Ok(primary_meta)) = (
+                std::fs::metadata(&openmodel_path),
+                std::fs::metadata(&primary)
+            ) {
+                if openmodel_meta.modified().unwrap_or(std::time::UNIX_EPOCH) > 
+                   primary_meta.modified().unwrap_or(std::time::UNIX_EPOCH) {
+                    let _ = std::fs::copy(&openmodel_path, &primary);
+                    log::info!("Auto-copied newer geometry from {}", openmodel_path);
+                }
+            } else if std::fs::metadata(&openmodel_path).is_ok() {
+                // Primary doesn't exist but openmodel does, copy it
+                let _ = std::fs::copy(&openmodel_path, &primary);
+                log::info!("Auto-copied geometry from {}", openmodel_path);
+            }
+            
+            std::fs::read_to_string(&primary)
+                .or_else(|_| std::fs::read_to_string(LOCAL_GEOMETRY_PATH))
+                .ok()
+        }
         #[cfg(target_arch = "wasm32")]
         { fetch_text(LOCAL_GEOMETRY_HTTP_PATH).await }
     };
@@ -1435,8 +1468,11 @@ pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
 
     // Track which batch corresponds to which source mesh index (skip procedural unit pipe/sphere meshes)
     let mut mesh_to_batch: Vec<Option<usize>> = vec![None; all_geom.meshes.len()];
-    for (i, m) in all_geom.meshes.iter().enumerate() {
-        if Some(i) == all_geom.pipe_mesh_index || Some(i) == all_geom.sphere_mesh_index { continue; }
+    // Cache procedural indices before borrowing meshes mutably
+    let pipe_idx = all_geom.pipe_mesh_index;
+    let sphere_idx = all_geom.sphere_mesh_index;
+    for (i, m) in all_geom.meshes.iter_mut().enumerate() {
+        if Some(i) == pipe_idx || Some(i) == sphere_idx { continue; }
         let first_index = indices.len() as u32;
         append_mesh_as_triangles(m, [0.8, 0.8, 0.8], &mut vertices, &mut indices);
         let index_count = (indices.len() as u32) - first_index;
@@ -1450,6 +1486,12 @@ pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
                 kind: BatchKind::Surface,
             });
             mesh_to_batch[i] = Some(batches.len() - 1);
+            log::info!(
+                "Created surface batch for mesh {}: vertices={}, faces={}, index_count={}",
+                i, m.number_of_vertices(), m.number_of_faces(), index_count
+            );
+        } else {
+            log::warn!("Mesh {} produced no triangles (vertices={}, faces={})", i, m.number_of_vertices(), m.number_of_faces());
         }
     }
 
@@ -1478,9 +1520,9 @@ pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
                 .map(|xf| xform_to_instance(xf))
                 .collect();
             if !pipe_instances.is_empty() {
-                let unit_pipe = Mesh::create_unit_pipe_high_res();
+                let mut unit_pipe = Mesh::create_unit_pipe_high_res();
                 let first_index = indices.len() as u32;
-                append_mesh_as_triangles(&unit_pipe, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
+                append_mesh_as_triangles(&mut unit_pipe, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
                 let index_count = (indices.len() as u32) - first_index;
                 if index_count > 0 {
                     batches.push(DrawBatch {
@@ -1509,9 +1551,9 @@ pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
                 .map(|xf| xform_to_instance(xf))
                 .collect();
             if !sphere_instances.is_empty() {
-                let unit_sphere = Mesh::create_unit_sphere_high_res();
+                let mut unit_sphere = Mesh::create_unit_sphere_high_res();
                 let first_index = indices.len() as u32;
-                append_mesh_as_triangles(&unit_sphere, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
+                append_mesh_as_triangles(&mut unit_sphere, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
                 let index_count = (indices.len() as u32) - first_index;
                 if index_count > 0 {
                     batches.push(DrawBatch {

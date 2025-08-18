@@ -463,6 +463,94 @@ impl Mesh {
     /// Ear clipping triangulation of a simple 3D polygon (projected to a dominant plane).
     /// No holes supported. Returns triangles as vertex keys in original order.
     fn ear_clip_triangulate_vertices(&self, vkeys: &Vec<usize>) -> Vec<[usize; 3]> {
+        if vkeys.len() < 3 { return Vec::new(); }
+        if vkeys.len() == 3 {
+            return vec![[vkeys[0], vkeys[1], vkeys[2]]];
+        }
+        
+        // Gather points
+        let mut pts: Vec<Point> = Vec::with_capacity(vkeys.len());
+        for &vk in vkeys.iter() {
+            if let Some(p) = self.vertex_position(vk) { pts.push(p); } else { return Vec::new(); }
+        }
+
+        // Compute face normal using Newell's method to determine projection plane
+        let (nx, ny, nz) = newell_normal(&pts);
+        let ax = nx.abs(); let ay = ny.abs(); let az = nz.abs();
+        
+        // Project to 2D - choose plane by dropping dominant normal axis
+        let mut p2d: Vec<[f64; 2]> = Vec::with_capacity(pts.len());
+        for p in &pts {
+            let proj = if ax >= ay && ax >= az {
+                [p.y, p.z]  // Drop X, use YZ plane
+            } else if ay >= ax && ay >= az {
+                [p.x, p.z]  // Drop Y, use XZ plane  
+            } else {
+                [p.x, p.y]  // Drop Z, use XY plane
+            };
+            p2d.push(proj);
+        }
+        
+        // Determine CCW orientation using standard signed area (shoelace)
+        let area = signed_area_2d(&p2d);
+        let mut idx: Vec<usize> = (0..vkeys.len()).collect();
+        if area < 0.0 { idx.reverse(); }
+
+        // Reindex 2D points to CCW order for convexity test
+        let p2_ccw: Vec<[f64; 2]> = idx.iter().map(|&i| p2d[i]).collect();
+
+        // Convexity test in 2D (CCW): all consecutive turns must be left turns
+        let is_convex_polygon = |pts2: &Vec<[f64; 2]>| -> bool {
+            let m = pts2.len();
+            if m < 3 { return false; }
+            let eps = 1e-12;
+            for i in 0..m {
+                let a = pts2[i];
+                let b = pts2[(i + 1) % m];
+                let c = pts2[(i + 2) % m];
+                let abx = b[0] - a[0];
+                let aby = b[1] - a[1];
+                let bcx = c[0] - b[0];
+                let bcy = c[1] - b[1];
+                let cross = abx * bcy - aby * bcx;
+                if cross < -eps { return false; }
+            }
+            true
+        };
+
+        if is_convex_polygon(&p2_ccw) {
+            // Fan triangulation for convex polygons; enforce triangle winding matching 3D face normal
+            let mut triangles: Vec<[usize; 3]> = Vec::new();
+            for i in 1..(idx.len() - 1) {
+                let i0 = idx[0];
+                let i1 = idx[i];
+                let i2 = idx[i + 1];
+
+                // Enforce triangle winding to match the face normal
+                let a3 = &pts[i0];
+                let b3 = &pts[i1];
+                let c3 = &pts[i2];
+                let ux = b3.x - a3.x; let uy = b3.y - a3.y; let uz = b3.z - a3.z;
+                let vx = c3.x - a3.x; let vy = c3.y - a3.y; let vz = c3.z - a3.z;
+                let cx = uy * vz - uz * vy;
+                let cy = uz * vx - ux * vz;
+                let cz = ux * vy - uy * vx;
+                let dot = cx * nx + cy * ny + cz * nz;
+                if dot >= 0.0 {
+                    triangles.push([vkeys[i0], vkeys[i1], vkeys[i2]]);
+                } else {
+                    triangles.push([vkeys[i0], vkeys[i2], vkeys[i1]]);
+                }
+            }
+            return triangles;
+        }
+
+        // Fallback to full ear clipping for concave polygons (e.g., star polygon)
+        return self.full_ear_clip_triangulate(vkeys);
+    }
+
+    // For complex polygons, fall back to full ear clipping
+    fn full_ear_clip_triangulate(&self, vkeys: &Vec<usize>) -> Vec<[usize; 3]> {
         // Gather points
         let mut pts: Vec<Point> = Vec::with_capacity(vkeys.len());
         for &vk in vkeys.iter() {
@@ -472,6 +560,7 @@ impl Mesh {
         // Compute face normal using Newell's method
         let (nx, ny, nz) = newell_normal(&pts);
         let ax = nx.abs(); let ay = ny.abs(); let az = nz.abs();
+        
         // Choose projection plane by dropping the dominant axis
         enum Plane { XY, XZ, YZ }
         let plane = if ax >= ay && ax >= az { Plane::YZ } else if ay >= ax && ay >= az { Plane::XZ } else { Plane::XY };
@@ -546,7 +635,21 @@ impl Mesh {
                 if contains { continue; }
 
                 // It's an ear: emit triangle in original vertex-key space
-                tris.push([vkeys[i0], vkeys[i1], vkeys[i2]]);
+                // Enforce triangle winding to match the face normal (Newell)
+                let a3 = &pts[i0];
+                let b3 = &pts[i1];
+                let c3 = &pts[i2];
+                let ux = b3.x - a3.x; let uy = b3.y - a3.y; let uz = b3.z - a3.z;
+                let vx = c3.x - a3.x; let vy = c3.y - a3.y; let vz = c3.z - a3.z;
+                let cx = uy * vz - uz * vy;
+                let cy = uz * vx - ux * vz;
+                let cz = ux * vy - uy * vx;
+                let dot = cx * nx + cy * ny + cz * nz;
+                if dot >= 0.0 {
+                    tris.push([vkeys[i0], vkeys[i1], vkeys[i2]]);
+                } else {
+                    tris.push([vkeys[i0], vkeys[i2], vkeys[i1]]);
+                }
                 idx.remove(j);
                 ear_found = true;
                 break;
@@ -555,7 +658,21 @@ impl Mesh {
             guard += 1;
         }
         if idx.len() == 3 {
-            tris.push([vkeys[idx[0]], vkeys[idx[1]], vkeys[idx[2]]]);
+            let i0 = idx[0]; let i1 = idx[1]; let i2 = idx[2];
+            let a3 = &pts[i0];
+            let b3 = &pts[i1];
+            let c3 = &pts[i2];
+            let ux = b3.x - a3.x; let uy = b3.y - a3.y; let uz = b3.z - a3.z;
+            let vx = c3.x - a3.x; let vy = c3.y - a3.y; let vz = c3.z - a3.z;
+            let cx = uy * vz - uz * vy;
+            let cy = uz * vx - ux * vz;
+            let cz = ux * vy - uy * vx;
+            let dot = cx * nx + cy * ny + cz * nz;
+            if dot >= 0.0 {
+                tris.push([vkeys[i0], vkeys[i1], vkeys[i2]]);
+            } else {
+                tris.push([vkeys[i0], vkeys[i2], vkeys[i1]]);
+            }
         }
         tris
     }
@@ -688,7 +805,7 @@ impl Mesh {
 
     /// Export mesh as separate buffers compatible with `ModelMesh`.
     /// Returns (positions, indices, normals, colors, vertex_count, triangle_count).
-    pub fn to_model_mesh_buffers(&self) -> (Vec<f32>, Vec<u32>, Vec<f32>, Vec<f32>, usize, usize) {
+    pub fn to_model_mesh_buffers(&mut self) -> (Vec<f32>, Vec<u32>, Vec<f32>, Vec<f32>, usize, usize) {
         // 1) Collect all unique vertex keys used by faces, in insertion order
         let mut vkey_to_index: HashMap<usize, usize> = HashMap::new();
         let mut unique_vkeys: Vec<usize> = Vec::new();
@@ -728,35 +845,42 @@ impl Mesh {
             }
         }
 
-        // 3) Triangulate faces and build index buffer; accumulate normals per vertex (area-weighted)
+        // 3) Triangulate faces using cached triangulation and build indices
         let mut indices: Vec<u32> = Vec::new();
-        let mut tri_count = 0usize;
-        for (_f, vlist) in self.get_face_data() {
-            if vlist.len() < 3 { continue; }
-            let tris = self.triangulate_face_vertices(vlist);
-            for tri in tris {
-                // Map vertex keys to output indices
-                let a = *vkey_to_index.get(&tri[0]).unwrap();
-                let b = *vkey_to_index.get(&tri[1]).unwrap();
-                let c = *vkey_to_index.get(&tri[2]).unwrap();
-                indices.push(a as u32);
-                indices.push(b as u32);
-                indices.push(c as u32);
-                tri_count += 1;
-
-                // Accumulate area-weighted normals
-                let p0 = self.vertex_position(tri[0]).unwrap();
-                let p1 = self.vertex_position(tri[1]).unwrap();
-                let p2 = self.vertex_position(tri[2]).unwrap();
-                let ux = p1.x - p0.x; let uy = p1.y - p0.y; let uz = p1.z - p0.z;
-                let vx = p2.x - p0.x; let vy = p2.y - p0.y; let vz = p2.z - p0.z;
-                let nx = uy * vz - uz * vy;
-                let ny = uz * vx - ux * vz;
-                let nz = ux * vy - uy * vx;
-                normals_acc[a][0] += nx; normals_acc[a][1] += ny; normals_acc[a][2] += nz;
-                normals_acc[b][0] += nx; normals_acc[b][1] += ny; normals_acc[b][2] += nz;
-                normals_acc[c][0] += nx; normals_acc[c][1] += ny; normals_acc[c][2] += nz;
+        let mut tri_count = 0;
+        
+        // First, collect all triangulations to avoid borrowing conflicts
+        let face_keys: Vec<usize> = self.face.keys().copied().collect();
+        let mut all_triangles: Vec<[usize; 3]> = Vec::new();
+        
+        for face_key in face_keys {
+            if let Some(triangles) = self.triangulate_face(face_key) {
+                all_triangles.extend_from_slice(triangles);
             }
+        }
+        
+        // Now process triangles without borrowing conflicts
+        for tri in all_triangles {
+            let a = *vkey_to_index.get(&tri[0]).unwrap();
+            let b = *vkey_to_index.get(&tri[1]).unwrap();
+            let c = *vkey_to_index.get(&tri[2]).unwrap();
+            indices.push(a as u32);
+            indices.push(b as u32);
+            indices.push(c as u32);
+            tri_count += 1;
+
+            // Accumulate area-weighted normals
+            let p0 = self.vertex_position(tri[0]).unwrap();
+            let p1 = self.vertex_position(tri[1]).unwrap();
+            let p2 = self.vertex_position(tri[2]).unwrap();
+            let ux = p1.x - p0.x; let uy = p1.y - p0.y; let uz = p1.z - p0.z;
+            let vx = p2.x - p0.x; let vy = p2.y - p0.y; let vz = p2.z - p0.z;
+            let nx = uy * vz - uz * vy;
+            let ny = uz * vx - ux * vz;
+            let nz = ux * vy - uy * vx;
+            normals_acc[a][0] += nx; normals_acc[a][1] += ny; normals_acc[a][2] += nz;
+            normals_acc[b][0] += nx; normals_acc[b][1] += ny; normals_acc[b][2] += nz;
+            normals_acc[c][0] += nx; normals_acc[c][1] += ny; normals_acc[c][2] += nz;
         }
 
         // 4) Normalize accumulated normals
@@ -778,7 +902,7 @@ impl Mesh {
 
     /// Export mesh as interleaved [x,y,z, nx,ny,nz, r,g,b] with separate indices.
     /// Returns (interleaved, indices, vertex_count, triangle_count).
-    pub fn to_model_mesh_interleaved(&self) -> (Vec<f32>, Vec<u32>, usize, usize) {
+    pub fn to_model_mesh_interleaved(&mut self) -> (Vec<f32>, Vec<u32>, usize, usize) {
         let (positions, indices, normals, colors, v_count, tri_count) = self.to_model_mesh_buffers();
         let mut interleaved: Vec<f32> = Vec::with_capacity(v_count * 9);
         for i in 0..v_count {
@@ -956,8 +1080,23 @@ impl Mesh {
             let vk = m.add_vertex(p, None);
             vmap.push(vk);
         }
+        // Enforce consistent outward winding per triangle
         for [a, b, c] in faces {
-            let _ = m.add_face(vec![vmap[a], vmap[b], vmap[c]], None);
+            let pa = m.vertex_position(vmap[a]).unwrap();
+            let pb = m.vertex_position(vmap[b]).unwrap();
+            let pc = m.vertex_position(vmap[c]).unwrap();
+            let ux = pb.x - pa.x; let uy = pb.y - pa.y; let uz = pb.z - pa.z;
+            let vx = pc.x - pa.x; let vy = pc.y - pa.y; let vz = pc.z - pa.z;
+            let nx = uy * vz - uz * vy;
+            let ny = uz * vx - ux * vz;
+            let nz = ux * vy - uy * vx;
+            // Outward if normal roughly agrees with radial direction (use pa)
+            let dot = nx * pa.x + ny * pa.y + nz * pa.z;
+            if dot >= 0.0 {
+                let _ = m.add_face(vec![vmap[a], vmap[b], vmap[c]], None);
+            } else {
+                let _ = m.add_face(vec![vmap[a], vmap[c], vmap[b]], None);
+            }
         }
 
         m
@@ -1119,6 +1258,28 @@ impl Mesh {
         }
     }
 
+    
+    /// Get cached triangulation for a face, computing if needed
+    pub fn get_face_triangulation(&mut self, face_key: usize) -> Option<&Vec<[usize; 3]>> {
+        self.triangulate_face(face_key)
+    }
+    
+    /// Clear triangulation cache (call when mesh topology changes)
+    pub fn clear_triangulation_cache(&mut self) {
+        self.triangulation.clear();
+    }
+    
+    /// Get all triangulated faces for rendering. Returns iterator of (face_key, triangles).
+    pub fn get_all_triangulations(&mut self) -> impl Iterator<Item = (usize, &Vec<[usize; 3]>)> {
+        // Ensure all faces are triangulated
+        let face_keys: Vec<usize> = self.face.keys().copied().collect();
+        for face_key in face_keys {
+            self.triangulate_face(face_key);
+        }
+        
+        self.triangulation.iter().map(|(&k, v)| (k, v))
+    }
+
 }
 
     impl Mesh {
@@ -1177,6 +1338,187 @@ impl Mesh {
     }
 }
 
+#[allow(dead_code)]
+/// Project a 3D polygon to 2D for triangulation.
+fn project_polygon_to_2d(polygon: &[Point]) -> Vec<[f64; 2]> {
+    use crate::primitives::Vector;
+    
+    if polygon.len() < 3 {
+        return Vec::new();
+    }
+    
+    // Calculate polygon normal using Newell's method for robustness
+    let mut normal = Vector::new(0.0, 0.0, 0.0);
+    for i in 0..polygon.len() {
+        let current = &polygon[i];
+        let next = &polygon[(i + 1) % polygon.len()];
+        
+        normal.x += (current.y - next.y) * (current.z + next.z);
+        normal.y += (current.z - next.z) * (current.x + next.x);
+        normal.z += (current.x - next.x) * (current.y + next.y);
+    }
+    
+    // Normalize the normal vector
+    let length = (normal.x * normal.x + normal.y * normal.y + normal.z * normal.z).sqrt();
+    if length > 1e-10 {
+        normal.x /= length;
+        normal.y /= length;
+        normal.z /= length;
+    } else {
+        // Degenerate polygon, use XY plane
+        normal = Vector::new(0.0, 0.0, 1.0);
+    }
+    
+    // Choose the projection plane based on the largest component of the normal
+    let abs_x = normal.x.abs();
+    let abs_y = normal.y.abs();
+    let abs_z = normal.z.abs();
+    
+    let points_2d: Vec<[f64; 2]> = if abs_z >= abs_x && abs_z >= abs_y {
+        // Project to XY plane (drop Z)
+        polygon.iter().map(|p| [p.x, p.y]).collect()
+    } else if abs_y >= abs_x && abs_y >= abs_z {
+        // Project to XZ plane (drop Y)
+        polygon.iter().map(|p| [p.x, p.z]).collect()
+    } else {
+        // Project to YZ plane (drop X)
+        polygon.iter().map(|p| [p.y, p.z]).collect()
+    };
+    
+    points_2d
+}
+
+#[allow(dead_code)]
+/// Triangulate a polygon using the ear clipping algorithm
+fn earclip_triangulate(points: &[[f64; 2]]) -> Result<Vec<[usize; 3]>, &'static str> {
+    if points.len() < 3 {
+        return Err("Polygon must have at least 3 vertices");
+    }
+    
+    if points.len() == 3 {
+        return Ok(vec![[0, 1, 2]]);
+    }
+    
+    // Check winding order and reverse if clockwise
+    let mut polygon_points = points.to_vec();
+    let signed_area = compute_signed_area(&polygon_points);
+    let was_reversed = signed_area > 0.0;
+    
+    if was_reversed {
+        polygon_points.reverse();
+    }
+    
+    // Simple ear clipping implementation
+    let mut triangles = Vec::new();
+    let mut indices: Vec<usize> = (0..polygon_points.len()).collect();
+    
+    while indices.len() > 3 {
+        let mut ear_found = false;
+        
+        for i in 0..indices.len() {
+            let prev_idx = if i == 0 { indices.len() - 1 } else { i - 1 };
+            let next_idx = (i + 1) % indices.len();
+            
+            let prev = indices[prev_idx];
+            let curr = indices[i];
+            let next = indices[next_idx];
+            
+            // Check if this forms a valid ear
+            if is_ear(&polygon_points, &indices, prev, curr, next) {
+                // Add triangle
+                triangles.push([prev, curr, next]);
+                
+                // Remove the ear vertex
+                indices.remove(i);
+                ear_found = true;
+                break;
+            }
+        }
+        
+        if !ear_found {
+            return Err("Unable to find valid ear for triangulation");
+        }
+    }
+    
+    // Add the final triangle
+    if indices.len() == 3 {
+        triangles.push([indices[0], indices[1], indices[2]]);
+    }
+    
+    // If we reversed the points, adjust triangle indices back
+    if was_reversed {
+        let n = points.len();
+        for triangle in &mut triangles {
+            triangle[0] = n - 1 - triangle[0];
+            triangle[1] = n - 1 - triangle[1];
+            triangle[2] = n - 1 - triangle[2];
+        }
+    }
+    
+    Ok(triangles)
+}
+
+#[allow(dead_code)]
+/// Check if three consecutive vertices form a valid ear
+fn is_ear(points: &[[f64; 2]], indices: &[usize], prev: usize, curr: usize, next: usize) -> bool {
+    let a = points[prev];
+    let b = points[curr];
+    let c = points[next];
+    
+    // Check if the angle at curr is convex (less than 180 degrees)
+    let ab = [b[0] - a[0], b[1] - a[1]];
+    let bc = [c[0] - b[0], c[1] - b[1]];
+    let cross = ab[0] * bc[1] - ab[1] * bc[0];
+    
+    if cross <= 0.0 {
+        return false; // Not convex
+    }
+    
+    // Check if any other vertex lies inside the triangle
+    for &idx in indices {
+        if idx != prev && idx != curr && idx != next {
+            if point_in_triangle(points[idx], a, b, c) {
+                return false;
+            }
+        }
+    }
+    
+    true
+}
+
+#[allow(dead_code)]
+/// Check if a point is inside a triangle using barycentric coordinates
+fn point_in_triangle(p: [f64; 2], a: [f64; 2], b: [f64; 2], c: [f64; 2]) -> bool {
+    let d1 = sign(p, a, b);
+    let d2 = sign(p, b, c);
+    let d3 = sign(p, c, a);
+    
+    let has_neg = (d1 < 0.0) || (d2 < 0.0) || (d3 < 0.0);
+    let has_pos = (d1 > 0.0) || (d2 > 0.0) || (d3 > 0.0);
+    
+    !(has_neg && has_pos)
+}
+
+#[allow(dead_code)]
+/// Helper function for point-in-triangle test
+fn sign(p1: [f64; 2], p2: [f64; 2], p3: [f64; 2]) -> f64 {
+    (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
+}
+
+#[allow(dead_code)]
+/// Compute the signed area of a 2D polygon
+fn compute_signed_area(points: &[[f64; 2]]) -> f64 {
+    let mut sum = 0.0;
+    let n = points.len();
+    
+    for i in 0..n {
+        let p0 = points[i];
+        let p1 = points[(i + 1) % n];
+        sum += (p1[0] - p0[0]) * (p1[1] + p0[1]);
+    }
+    
+    sum * 0.5
+}
 
 /// Compute Newell's normal for a 3D polygon. Returns a (nx, ny, nz) tuple.
 fn newell_normal(points: &[Point]) -> (f64, f64, f64) {
