@@ -5,7 +5,7 @@ mod macros;
 pub mod common;
 pub mod geometry;
 pub mod primitives;
-pub mod model_mesh;
+
 
 use geometry::{Point, Vector, Line, Plane, Color, PointCloud, LineCloud, Pline, Mesh, PipeFromSegments, SphereFromSegments, dedupe_sphere_transforms};
 use primitives::Xform;

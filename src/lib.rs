@@ -47,9 +47,9 @@ const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 
 // MSAA sample count (disable on WebGL path)
 #[cfg(target_arch = "wasm32")]
-const MSAA_SAMPLE_COUNT: u32 = 4;
+const _MSAA_SAMPLE_COUNT: u32 = 4;
 #[cfg(not(target_arch = "wasm32"))]
-const MSAA_SAMPLE_COUNT: u32 = 4;
+const _MSAA_SAMPLE_COUNT: u32 = 4;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum PipelineMode { Solid, Color, Lights }
@@ -139,7 +139,7 @@ fn append_mesh_as_triangles(
                     } else { default_color };
 
                     // Resolve vertex normal via OpenModel (authored -> computed -> face -> +Z)
-                    let n = mesh.vertex_normal_resolved(vk, Some(*face_key));
+                    let n = mesh.vertex_normal_resolved(vk, Some(face_key));
                     let normal = [n.x as f32, n.y as f32, n.z as f32];
 
                     if vertices.len() >= u16::MAX as usize { break; }

@@ -16,13 +16,13 @@ fn test_line_pipe_visualization() {
     let mesh = line.get_mesh().unwrap();
     
     // Check that the mesh has the expected number of vertices and faces
-    // For a pipe with 8 sides (fixed number), we expect:
-    // - 2 center points (one at each end)
-    // - 12 vertices for the rim at each end (24 total)
-    // - 12 triangular faces at each end (24 total)
-    // Check mesh structure - pipe should have vertices and faces
-    assert_eq!(mesh.number_of_vertices(), 2 + 12 * 2);  // 2 centers + 12*2 rim vertices
-    assert_eq!(mesh.number_of_faces(), 12 + 12 + 12*2);   // Bottom cap + top cap + sides
+    // Current pipe uses an 8-sided unit cylinder without cap centers:
+    // - 8 vertices per ring, 2 rings -> 16 vertices total
+    // - Caps: each 8-gon triangulated into (n-2)=6 triangles -> 12 total for both caps
+    // - Sides: 8 quads split into 2 triangles each -> 16 triangles
+    // Total faces = 12 + 16 = 28
+    assert_eq!(mesh.number_of_vertices(), 16);
+    assert_eq!(mesh.number_of_faces(), 28);
     
     // Test setting color in data
     let color = Color::new(255, 0, 0, 255); // Red
@@ -59,13 +59,11 @@ fn test_linecloud_pipe_visualization() {
     
     // Check that each mesh has the expected properties
     for mesh in meshes {
-        // For a pipe with 12 sides (fixed number), we expect:
-        // - 2 center points (one at each end)
-        // - 12 vertices for the rim at each end (24 total)
-        // - 12 triangular faces at each end (24 total)
-        // - 12*2 triangular side faces
-        assert_eq!(mesh.number_of_vertices(), 2 + 12 * 2);  // 2 centers + 12*2 rim vertices
-        assert_eq!(mesh.number_of_faces(), 12 + 12 + 12*2); // Bottom cap + top cap + sides
+        // Current pipe uses an 8-sided unit cylinder without cap centers:
+        // - 16 vertices total (8 per ring)
+        // - 28 faces total (6+6 caps, 16 sides)
+        assert_eq!(mesh.number_of_vertices(), 16);
+        assert_eq!(mesh.number_of_faces(), 28);
         
         // Check that the mesh has color data from the colors array
         // We know it should have either red or green color

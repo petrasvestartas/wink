@@ -1,5 +1,4 @@
 use openmodel::geometry::{Mesh, Point};
-use openmodel::model_mesh::ModelMesh;
 
 #[test]
 fn test_mesh_from_polygons_cube() {
@@ -112,7 +111,7 @@ fn test_mesh_from_polygons_precision() {
 }
 
 #[test]
-fn test_model_mesh_from_polygons() {
+fn test_mesh_export_from_polygons() {
     // Create a simple triangle
     let polygons = vec![
         vec![
@@ -122,29 +121,22 @@ fn test_model_mesh_from_polygons() {
         ],
     ];
 
-    let model_mesh = ModelMesh::from_polygons(polygons, None);
+    let mesh = Mesh::from_polygons_with_merge(polygons, None);
+    let (v, i, n, c, vc, tc) = mesh.to_model_mesh_buffers();
 
-    // Check vertex count
-    assert_eq!(model_mesh.vertex_count, 3);
-    
-    // Check triangle count
-    assert_eq!(model_mesh.triangle_count, 1);
-    
-    // Check vertex data length (3 vertices * 3 coordinates)
-    assert_eq!(model_mesh.vertices.len(), 9);
-    
-    // Check index data length (1 triangle * 3 indices)
-    assert_eq!(model_mesh.indices.len(), 3);
-    
-    // Check normals length (3 vertices * 3 components)
-    assert_eq!(model_mesh.normals.len(), 9);
-    
-    // Check colors length (3 vertices * 3 components)
-    assert_eq!(model_mesh.colors.len(), 9);
+    // Check vertex/triangle counts
+    assert_eq!(vc, 3);
+    assert_eq!(tc, 1);
+
+    // Check buffer lengths
+    assert_eq!(v.len(), 9);
+    assert_eq!(i.len(), 3);
+    assert_eq!(n.len(), 9);
+    assert_eq!(c.len(), 9);
 }
 
 #[test]
-fn test_model_mesh_interleaved_data() {
+fn test_mesh_interleaved_data() {
     // Create a simple triangle
     let polygons = vec![
         vec![
@@ -154,17 +146,22 @@ fn test_model_mesh_interleaved_data() {
         ],
     ];
 
-    let model_mesh = ModelMesh::from_polygons(polygons, None);
-    let interleaved = model_mesh.get_interleaved_data();
+    let mesh = Mesh::from_polygons_with_merge(polygons, None);
+    let interleaved = mesh.to_model_mesh_interleaved().0;
 
     // Should have 3 vertices * 9 components (3 pos + 3 normal + 3 color)
     assert_eq!(interleaved.len(), 27);
-    
-    // First vertex should start with position (0, 0, 0)
-    assert_eq!(interleaved[0], 0.0); // x
-    assert_eq!(interleaved[1], 0.0); // y
-    assert_eq!(interleaved[2], 0.0); // z
-    // Followed by normal (3 components) and color (3 components)
+
+    // Ensure one of the vertices is (0,0,0)
+    let mut has_origin = false;
+    for i in 0..3 {
+        let b = i * 9;
+        if interleaved[b] == 0.0 && interleaved[b + 1] == 0.0 && interleaved[b + 2] == 0.0 {
+            has_origin = true;
+            break;
+        }
+    }
+    assert!(has_origin, "No vertex at the origin found in interleaved positions");
 }
 
 #[test]

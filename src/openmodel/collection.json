@@ -1,0 +1,95 @@
+[
+  {
+    "adjacency_indices": [],
+    "adjacency_types": [],
+    "data": {
+      "x": 1.0,
+      "y": 2.0,
+      "z": 3.0
+    },
+    "dtype": "openmodel.geometry/Point",
+    "guid": "88a2ac75-9940-45de-8827-d945c363c56a",
+    "name": "Point",
+    "parent": null,
+    "transformation": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  },
+  {
+    "adjacency_indices": [],
+    "adjacency_types": [],
+    "data": {
+      "x": 4.0,
+      "y": 5.0,
+      "z": 6.0
+    },
+    "dtype": "openmodel.geometry/Point",
+    "guid": "186af9f6-5e1f-488b-a1f3-ef8e6b8ab179",
+    "name": "Point",
+    "parent": null,
+    "transformation": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  },
+  {
+    "adjacency_indices": [],
+    "adjacency_types": [],
+    "data": {
+      "x": 7.0,
+      "y": 8.0,
+      "z": 9.0
+    },
+    "dtype": "openmodel.geometry/Point",
+    "guid": "fe8ba653-d3e7-491e-b127-b338e086eaef",
+    "name": "Point",
+    "parent": null,
+    "transformation": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  }
+]

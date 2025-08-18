@@ -1,4 +1,4 @@
-use crate::geometry::{Point, Vector};
+use crate::geometry::{Point, Line};
 use crate::common::Data;
 use crate::common::{JsonSerializable, FromJsonData};
 use crate::primitives::Xform;
@@ -623,856 +623,293 @@ impl Mesh {
     /// let v0 = mesh.add_vertex(Point::new(0.0, 0.0, 0.0), None);
     /// let v1 = mesh.add_vertex(Point::new(1.0, 0.0, 0.0), None);
     /// let v2 = mesh.add_vertex(Point::new(0.0, 1.0, 0.0), None);
-    /// mesh.add_face(vec![v0, v1, v2], None);
-    /// 
-    /// for (face_key, face_vertices) in mesh.get_face_data() {
-    ///     println!("Face {}: {:?}", face_key, face_vertices);
-    /// }
-    /// ```
-    pub fn get_face_data(&self) -> impl Iterator<Item = (&usize, &Vec<usize>)> {
-        self.face.iter()
+    ///
+    /// Iterate over faces and their vertex-key lists.
+    ///
+    /// Returns an iterator of `(face_key, &Vec<usize>)`.
+    pub fn get_face_data(&self) -> impl Iterator<Item = (usize, &Vec<usize>)> {
+        self.face.iter().map(|(k, v)| (*k, v))
     }
 
-    /// Check if a vertex is on the boundary of the mesh.
-    /// 
-    /// A vertex is on the boundary if it has at least one incident halfedge
-    /// that points to None (no face), indicating a boundary edge.
-    /// 
-    /// # Arguments
-    /// * `vertex_key` - The key of the vertex
-    /// 
-    /// # Returns
-    /// True if the vertex is on the boundary
-    /// 
-    /// # Example
-    /// 
-    /// ```
-    /// use openmodel::geometry::{Mesh, Point};
-    /// let mut mesh = Mesh::new();
-    /// let v0 = mesh.add_vertex(Point::new(0.0, 0.0, 0.0), None);
-    /// let v1 = mesh.add_vertex(Point::new(1.0, 0.0, 0.0), None);
-    /// let v2 = mesh.add_vertex(Point::new(0.0, 1.0, 0.0), None);
-    /// mesh.add_face(vec![v0, v1, v2], None);
-    /// assert!(mesh.is_vertex_on_boundary(v0)); // All vertices of a single triangle are on boundary
-    /// ```
+    /// Build a mesh from polygons, merging vertices within an optional precision.
+    ///
+    /// - If `precision` is Some(eps), vertices whose coordinates are within eps are merged
+    ///   using integer grid quantization (round(x/eps)).
+    /// - If `precision` is None, only exactly equal coordinates are merged (bitwise equality).
+    pub fn from_polygons_with_merge(polygons: Vec<Vec<Point>>, precision: Option<f64>) -> Self {
+        use std::collections::HashMap;
+
+        let mut mesh = Mesh::new();
+
+        // Maps for vertex deduplication
+        let mut map_eps: HashMap<(i64, i64, i64), usize> = HashMap::new();
+        let mut map_exact: HashMap<(u64, u64, u64), usize> = HashMap::new();
+        let eps = precision.unwrap_or(0.0);
+        let use_eps = eps > 0.0;
+
+        // Helper to get or create a vertex key for a given point
+        let mut get_vkey = |p: &Point, mesh: &mut Mesh| -> usize {
+            if use_eps {
+                let kx = (p.x / eps).round() as i64;
+                let ky = (p.y / eps).round() as i64;
+                let kz = (p.z / eps).round() as i64;
+                let key = (kx, ky, kz);
+                if let Some(&vk) = map_eps.get(&key) { return vk; }
+                let vk = mesh.add_vertex(p.clone(), None);
+                map_eps.insert(key, vk);
+                vk
+            } else {
+                let key = (p.x.to_bits(), p.y.to_bits(), p.z.to_bits());
+                if let Some(&vk) = map_exact.get(&key) { return vk; }
+                let vk = mesh.add_vertex(p.clone(), None);
+                map_exact.insert(key, vk);
+                vk
+            }
+        };
+
+        for poly in polygons.into_iter() {
+            if poly.len() < 3 { continue; }
+            let mut vkeys: Vec<usize> = Vec::with_capacity(poly.len());
+            for p in &poly {
+                let vk = get_vkey(p, &mut mesh);
+                vkeys.push(vk);
+            }
+            // Attempt to add face; invalid (duplicates) are skipped by returning None
+            let _ = mesh.add_face(vkeys, None);
+        }
+
+        mesh
+    }
+
+    /// Convenience wrapper that forwards to `from_polygons_with_merge`.
+    pub fn from_polygons(polygons: Vec<Vec<Point>>, precision: Option<f64>) -> Self {
+        Self::from_polygons_with_merge(polygons, precision)
+    }
+
+    /// Export mesh as separate buffers compatible with `ModelMesh`.
+    /// Returns (positions, indices, normals, colors, vertex_count, triangle_count).
+    pub fn to_model_mesh_buffers(&self) -> (Vec<f32>, Vec<u32>, Vec<f32>, Vec<f32>, usize, usize) {
+        // 1) Collect all unique vertex keys used by faces, in insertion order
+        let mut vkey_to_index: HashMap<usize, usize> = HashMap::new();
+        let mut unique_vkeys: Vec<usize> = Vec::new();
+        for (_f, vlist) in self.get_face_data() {
+            for &vk in vlist {
+                if !vkey_to_index.contains_key(&vk) {
+                    let idx = unique_vkeys.len();
+                    vkey_to_index.insert(vk, idx);
+                    unique_vkeys.push(vk);
+                }
+            }
+        }
+
+        let v_count = unique_vkeys.len();
+        let mut positions: Vec<f32> = Vec::with_capacity(v_count * 3);
+        let mut normals_acc: Vec<[f64; 3]> = vec![[0.0, 0.0, 0.0]; v_count];
+        let mut colors: Vec<f32> = Vec::with_capacity(v_count * 3);
+
+        // 2) Fill positions and colors
+        for &vk in &unique_vkeys {
+            if let Some(p) = self.vertex_position(vk) {
+                positions.push(p.x as f32);
+                positions.push(p.y as f32);
+                positions.push(p.z as f32);
+            } else {
+                positions.extend_from_slice(&[0.0, 0.0, 0.0]);
+            }
+
+            // Use stored vertex color if present, else default white
+            if let Some(vd) = self.vertex.get(&vk) {
+                let c = vd.color();
+                colors.push(c[0] as f32);
+                colors.push(c[1] as f32);
+                colors.push(c[2] as f32);
+            } else {
+                colors.extend_from_slice(&[1.0, 1.0, 1.0]);
+            }
+        }
+
+        // 3) Triangulate faces and build index buffer; accumulate normals per vertex (area-weighted)
+        let mut indices: Vec<u32> = Vec::new();
+        let mut tri_count = 0usize;
+        for (_f, vlist) in self.get_face_data() {
+            if vlist.len() < 3 { continue; }
+            let tris = self.triangulate_face_vertices(vlist);
+            for tri in tris {
+                // Map vertex keys to output indices
+                let a = *vkey_to_index.get(&tri[0]).unwrap();
+                let b = *vkey_to_index.get(&tri[1]).unwrap();
+                let c = *vkey_to_index.get(&tri[2]).unwrap();
+                indices.push(a as u32);
+                indices.push(b as u32);
+                indices.push(c as u32);
+                tri_count += 1;
+
+                // Accumulate area-weighted normals
+                let p0 = self.vertex_position(tri[0]).unwrap();
+                let p1 = self.vertex_position(tri[1]).unwrap();
+                let p2 = self.vertex_position(tri[2]).unwrap();
+                let ux = p1.x - p0.x; let uy = p1.y - p0.y; let uz = p1.z - p0.z;
+                let vx = p2.x - p0.x; let vy = p2.y - p0.y; let vz = p2.z - p0.z;
+                let nx = uy * vz - uz * vy;
+                let ny = uz * vx - ux * vz;
+                let nz = ux * vy - uy * vx;
+                normals_acc[a][0] += nx; normals_acc[a][1] += ny; normals_acc[a][2] += nz;
+                normals_acc[b][0] += nx; normals_acc[b][1] += ny; normals_acc[b][2] += nz;
+                normals_acc[c][0] += nx; normals_acc[c][1] += ny; normals_acc[c][2] += nz;
+            }
+        }
+
+        // 4) Normalize accumulated normals
+        let mut normals: Vec<f32> = Vec::with_capacity(v_count * 3);
+        for i in 0..v_count {
+            let (nx, ny, nz) = (normals_acc[i][0], normals_acc[i][1], normals_acc[i][2]);
+            let len = (nx * nx + ny * ny + nz * nz).sqrt();
+            if len > 0.0 {
+                normals.push((nx / len) as f32);
+                normals.push((ny / len) as f32);
+                normals.push((nz / len) as f32);
+            } else {
+                normals.extend_from_slice(&[0.0, 0.0, 1.0]);
+            }
+        }
+
+        (positions, indices, normals, colors, v_count, tri_count)
+    }
+
+    /// Export mesh as interleaved [x,y,z, nx,ny,nz, r,g,b] with separate indices.
+    /// Returns (interleaved, indices, vertex_count, triangle_count).
+    pub fn to_model_mesh_interleaved(&self) -> (Vec<f32>, Vec<u32>, usize, usize) {
+        let (positions, indices, normals, colors, v_count, tri_count) = self.to_model_mesh_buffers();
+        let mut interleaved: Vec<f32> = Vec::with_capacity(v_count * 9);
+        for i in 0..v_count {
+            interleaved.push(positions[i * 3 + 0]);
+            interleaved.push(positions[i * 3 + 1]);
+            interleaved.push(positions[i * 3 + 2]);
+            interleaved.push(normals[i * 3 + 0]);
+            interleaved.push(normals[i * 3 + 1]);
+            interleaved.push(normals[i * 3 + 2]);
+            interleaved.push(colors[i * 3 + 0]);
+            interleaved.push(colors[i * 3 + 1]);
+            interleaved.push(colors[i * 3 + 2]);
+        }
+        (interleaved, indices, v_count, tri_count)
+    }
+
+    /// Return true if the vertex is on a boundary (i.e., participates in at least one boundary halfedge).
     pub fn is_vertex_on_boundary(&self, vertex_key: usize) -> bool {
-        if let Some(neighbors) = self.halfedge.get(&vertex_key) {
-            for face_option in neighbors.values() {
-                if face_option.is_none() {
-                    return true; // This halfedge points to no face, so it's on the boundary
+        // Check outgoing halfedges from this vertex
+        if let Some(neigh) = self.halfedge.get(&vertex_key) {
+            for (_v, face_opt) in neigh.iter() {
+                if face_opt.is_none() {
+                    return true;
+                }
+            }
+        }
+        // Check incoming halfedges to this vertex
+        for (_u, neigh) in self.halfedge.iter() {
+            if let Some(face_opt) = neigh.get(&vertex_key) {
+                if face_opt.is_none() {
+                    return true;
                 }
             }
         }
         false
     }
 
-    /// Get the neighbors of a vertex.
-    /// 
-    /// # Arguments
-    /// * `vertex_key` - The key of the vertex
-    /// 
-    /// # Returns
-    /// A vector of vertex keys that are adjacent to the given vertex
-    /// 
-    /// # Example
-    /// 
-    /// ```
-    /// use openmodel::geometry::{Mesh, Point};
-    /// let mut mesh = Mesh::new();
-    /// let v0 = mesh.add_vertex(Point::new(0.0, 0.0, 0.0), None);
-    /// let v1 = mesh.add_vertex(Point::new(1.0, 0.0, 0.0), None);
-    /// let v2 = mesh.add_vertex(Point::new(0.0, 1.0, 0.0), None);
-    /// mesh.add_face(vec![v0, v1, v2], None);
-    /// let neighbors = mesh.vertex_neighbors(v0);
-    /// assert_eq!(neighbors.len(), 2);
-    /// assert!(neighbors.contains(&v1));
-    /// assert!(neighbors.contains(&v2));
-    /// ```
-    pub fn vertex_neighbors(&self, vertex_key: usize) -> Vec<usize> {
-        if let Some(neighbors) = self.halfedge.get(&vertex_key) {
-            neighbors.keys().cloned().collect()
-        } else {
-            Vec::new()
-        }
-    }
-
-    /// Get all faces incident to a vertex.
-    /// 
-    /// # Arguments
-    /// * `vertex_key` - The key of the vertex
-    /// 
-    /// # Returns
-    /// A vector of face keys that are incident to the given vertex
-    /// 
-    /// # Example
-    /// 
-    /// ```
-    /// use openmodel::geometry::{Mesh, Point};
-    /// let mut mesh = Mesh::new();
-    /// let v0 = mesh.add_vertex(Point::new(0.0, 0.0, 0.0), None);
-    /// let v1 = mesh.add_vertex(Point::new(1.0, 0.0, 0.0), None);
-    /// let v2 = mesh.add_vertex(Point::new(0.0, 1.0, 0.0), None);
-    /// let f = mesh.add_face(vec![v0, v1, v2], None).unwrap();
-    /// let faces = mesh.vertex_faces(v0);
-    /// assert_eq!(faces.len(), 1);
-    /// assert_eq!(faces[0], f);
-    /// ```
-    pub fn vertex_faces(&self, vertex_key: usize) -> Vec<usize> {
-        let mut faces = Vec::new();
-        
-        for (face_key, vertices) in &self.face {
-            if vertices.contains(&vertex_key) {
-                faces.push(*face_key);
-            }
-        }
-        
-        faces
-    }
-
-    /// Compute the normal vector of a face.
-    /// 
-    /// The normal is computed using the cross product of the first two edges of the face.
-    /// For planar faces, this gives the unit normal vector.
-    /// 
-    /// # Arguments
-    /// * `face_key` - The key of the face
-    /// 
-    /// # Returns
-    /// The unit normal vector of the face, or None if the face is invalid
-    /// 
-    /// # Example
-    /// 
-    /// ```
-    /// use openmodel::geometry::{Mesh, Point, Vector};
-    /// let mut mesh = Mesh::new();
-    /// let v0 = mesh.add_vertex(Point::new(0.0, 0.0, 0.0), None);
-    /// let v1 = mesh.add_vertex(Point::new(1.0, 0.0, 0.0), None);
-    /// let v2 = mesh.add_vertex(Point::new(0.0, 1.0, 0.0), None);
-    /// let f = mesh.add_face(vec![v0, v1, v2], None).unwrap();
-    /// let normal = mesh.face_normal(f).unwrap();
-    /// assert!((normal.z - 1.0).abs() < 1e-10); // Normal should point in +Z direction
-    /// ```
-    pub fn face_normal(&self, face_key: usize) -> Option<Vector> {
-        let vertices = self.face.get(&face_key)?;
-        if vertices.len() < 3 {
-            return None;
-        }
-        
-        let p0 = self.vertex_position(vertices[0])?;
-        let p1 = self.vertex_position(vertices[1])?;
-        let p2 = self.vertex_position(vertices[2])?;
-        
-        let edge1 = Vector::new(p1.x - p0.x, p1.y - p0.y, p1.z - p0.z);
-        let edge2 = Vector::new(p2.x - p0.x, p2.y - p0.y, p2.z - p0.z);
-        
-        let mut normal = edge1.cross(&edge2);
-        normal.unitize();
-        Some(normal)
-    }
-
-    /// Compute the angle subtended by a vertex in a face.
-    /// 
-    /// # Arguments
-    /// * `vertex_key` - The key of the vertex
-    /// * `face_key` - The key of the face
-    /// 
-    /// # Returns
-    /// The angle in radians, or None if the vertex is not part of the face
-    fn vertex_angle_in_face(&self, vertex_key: usize, face_key: usize) -> Option<f64> {
-        let face_vertices = self.face_vertices(face_key)?;
-        let vertex_pos = self.vertex_position(vertex_key)?;
-        
-        // Find the vertex in the face
-        let vertex_index = face_vertices.iter().position(|&v| v == vertex_key)?;
-        let n = face_vertices.len();
-        
-        // Get the two adjacent vertices
-        let prev_vertex = face_vertices[(vertex_index + n - 1) % n];
-        let next_vertex = face_vertices[(vertex_index + 1) % n];
-        
-        let prev_pos = self.vertex_position(prev_vertex)?;
-        let next_pos = self.vertex_position(next_vertex)?;
-        
-        // Compute vectors from vertex to its neighbors
-        let v1 = Vector::new(
-            prev_pos.x - vertex_pos.x,
-            prev_pos.y - vertex_pos.y,
-            prev_pos.z - vertex_pos.z,
-        );
-        let v2 = Vector::new(
-            next_pos.x - vertex_pos.x,
-            next_pos.y - vertex_pos.y,
-            next_pos.z - vertex_pos.z,
-        );
-        
-        // Compute angle using dot product
-        let dot = v1.dot(&v2);
-        let len1 = v1.length();
-        let len2 = v2.length();
-        
-        if len1 > 0.0 && len2 > 0.0 {
-            let cos_angle = dot / (len1 * len2);
-            // Clamp to avoid numerical issues
-            let cos_angle = cos_angle.max(-1.0).min(1.0);
-            Some(cos_angle.acos())
-        } else {
-            None
-        }
-    }
-    
-    /// Compute the normal vector of a vertex with configurable weighting.
-    /// 
-    /// The vertex normal is computed as the weighted average of the normals of all faces
-    /// incident to the vertex, using the specified weighting scheme.
-    /// 
-    /// # Arguments
-    /// * `vertex_key` - The key of the vertex
-    /// * `weighting` - The weighting scheme to use
-    /// 
-    /// # Returns
-    /// The unit normal vector of the vertex, or None if the vertex is invalid
-    /// 
-    /// # Example
-    /// 
-    /// ```
-    /// use openmodel::geometry::{Mesh, Point};
-    /// use openmodel::geometry::mesh::NormalWeighting;
-    /// let mut mesh = Mesh::new();
-    /// let v0 = mesh.add_vertex(Point::new(0.0, 0.0, 0.0), None);
-    /// let v1 = mesh.add_vertex(Point::new(1.0, 0.0, 0.0), None);
-    /// let v2 = mesh.add_vertex(Point::new(0.0, 1.0, 0.0), None);
-    /// let f = mesh.add_face(vec![v0, v1, v2], None).unwrap();
-    /// let normal = mesh.vertex_normal_weighted(v0, NormalWeighting::Area).unwrap();
-    /// assert!((normal.z - 1.0).abs() < 1e-10); // Normal should point in +Z direction
-    /// ```
-    pub fn vertex_normal_weighted(&self, vertex_key: usize, weighting: NormalWeighting) -> Option<Vector> {
-        let faces = self.vertex_faces(vertex_key);
-        if faces.is_empty() {
-            return None;
-        }
-        
-        let mut normal_sum = Vector::new(0.0, 0.0, 0.0);
-        let mut total_weight = 0.0;
-        
-        for face_key in faces {
-            if let Some(face_normal) = self.face_normal(face_key) {
-                let weight = match weighting {
-                    NormalWeighting::Area => self.face_area(face_key).unwrap_or(0.0),
-                    NormalWeighting::Angle => self.vertex_angle_in_face(vertex_key, face_key).unwrap_or(0.0),
-                    NormalWeighting::Uniform => 1.0,
-                };
-                
-                normal_sum.x += face_normal.x * weight;
-                normal_sum.y += face_normal.y * weight;
-                normal_sum.z += face_normal.z * weight;
-                total_weight += weight;
-            }
-        }
-        
-        if total_weight > 0.0 {
-            normal_sum.x /= total_weight;
-            normal_sum.y /= total_weight;
-            normal_sum.z /= total_weight;
-            normal_sum.unitize();
-            Some(normal_sum)
-        } else {
-            None
-        }
-    }
-    
-    /// Compute the normal vector of a vertex using area weighting (default).
-    /// 
-    /// This is a convenience method that uses area weighting for backward compatibility.
-    /// 
-    /// # Arguments
-    /// * `vertex_key` - The key of the vertex
-    /// 
-    /// # Returns
-    /// The unit normal vector of the vertex, or None if the vertex is invalid
-    /// 
-    /// # Example
-    /// 
-    /// ```
-    /// use openmodel::geometry::{Mesh, Point};
-    /// let mut mesh = Mesh::new();
-    /// let v0 = mesh.add_vertex(Point::new(0.0, 0.0, 0.0), None);
-    /// let v1 = mesh.add_vertex(Point::new(1.0, 0.0, 0.0), None);
-    /// let v2 = mesh.add_vertex(Point::new(0.0, 1.0, 0.0), None);
-    /// let f = mesh.add_face(vec![v0, v1, v2], None).unwrap();
-    /// let normal = mesh.vertex_normal(v0).unwrap();
-    /// assert!((normal.z - 1.0).abs() < 1e-10); // Normal should point in +Z direction
-    /// ```
-    pub fn vertex_normal(&self, vertex_key: usize) -> Option<Vector> {
-        self.vertex_normal_weighted(vertex_key, NormalWeighting::Area)
-    }
-
-    /// Resolve a vertex normal with preference for stored per-vertex attributes.
-    ///
-    /// Fallback order:
-    /// 1) Stored per-vertex normal (attributes nx, ny, nz) if present.
-    /// 2) Area-weighted vertex normal computed from incident faces (`vertex_normal`).
-    /// 3) Face normal for the provided `face_key_hint`, if supplied.
-    /// 4) Default +Z vector.
-    pub fn vertex_normal_resolved(&self, vertex_key: usize, face_key_hint: Option<usize>) -> Vector {
-        // 1) Authored per-vertex normal from attributes
-        if let Some(vd) = self.vertex.get(&vertex_key) {
-            if let Some([nx, ny, nz]) = vd.normal() {
-                let mut v = Vector::new(nx, ny, nz);
-                v.unitize();
-                if v.length() > 0.0 {
-                    return v;
-                }
-            }
-        }
-
-        // 2) Computed smooth vertex normal
-        if let Some(mut v) = self.vertex_normal(vertex_key) {
-            v.unitize();
-            if v.length() > 0.0 {
-                return v;
-            }
-        }
-
-        // 3) Face normal hint
-        if let Some(fk) = face_key_hint {
-            if let Some(mut v) = self.face_normal(fk) {
-                v.unitize();
-                if v.length() > 0.0 {
-                    return v;
-                }
-            }
-        }
-
-        // 4) Default +Z
-        Vector::new(0.0, 0.0, 1.0)
-    }
-
-    /// Compute the area of a face.
-    /// 
-    /// For faces with more than 3 vertices, the area is computed by triangulating
-    /// the face and summing the areas of the triangles.
-    /// 
-    /// # Arguments
-    /// * `face_key` - The key of the face
-    /// 
-    /// # Returns
-    /// The area of the face, or None if the face is invalid
-    /// 
-    /// # Example
-    /// 
-    /// ```
-    /// use openmodel::geometry::{Mesh, Point};
-    /// let mut mesh = Mesh::new();
-    /// let v0 = mesh.add_vertex(Point::new(0.0, 0.0, 0.0), None);
-    /// let v1 = mesh.add_vertex(Point::new(1.0, 0.0, 0.0), None);
-    /// let v2 = mesh.add_vertex(Point::new(0.0, 1.0, 0.0), None);
-    /// let f = mesh.add_face(vec![v0, v1, v2], None).unwrap();
-    /// let area = mesh.face_area(f).unwrap();
-    /// assert!((area - 0.5).abs() < 1e-10); // Area of triangle with base=1, height=1
-    /// ```
-    pub fn face_area(&self, face_key: usize) -> Option<f64> {
-        let vertices = self.face.get(&face_key)?;
-        if vertices.len() < 3 {
-            return None;
-        }
-        
-        let mut area = 0.0;
-        
-        // Triangulate the face and sum triangle areas
-        for i in 1..vertices.len() - 1 {
-            let p0 = self.vertex_position(vertices[0])?;
-            let p1 = self.vertex_position(vertices[i])?;
-            let p2 = self.vertex_position(vertices[i + 1])?;
-            
-            let edge1 = Vector::new(p1.x - p0.x, p1.y - p0.y, p1.z - p0.z);
-            let edge2 = Vector::new(p2.x - p0.x, p2.y - p0.y, p2.z - p0.z);
-            
-            let cross = edge1.cross(&edge2);
-            area += cross.length() * 0.5;
-        }
-        
-        Some(area)
-    }
-
-    /// Compute normals for all faces in the mesh.
-    /// 
-    /// # Returns
-    /// A HashMap mapping face keys to their normal vectors
-    /// 
-    /// # Example
-    /// 
-    /// ```
-    /// use openmodel::geometry::{Mesh, Point};
-    /// let mut mesh = Mesh::new();
-    /// let v0 = mesh.add_vertex(Point::new(0.0, 0.0, 0.0), None);
-    /// let v1 = mesh.add_vertex(Point::new(1.0, 0.0, 0.0), None);
-    /// let v2 = mesh.add_vertex(Point::new(0.0, 1.0, 0.0), None);
-    /// let f = mesh.add_face(vec![v0, v1, v2], None).unwrap();
-    /// let normals = mesh.face_normals();
-    /// assert_eq!(normals.len(), 1);
-    /// assert!(normals.contains_key(&f));
-    /// ```
-    pub fn face_normals(&self) -> HashMap<usize, Vector> {
-        let mut normals = HashMap::new();
-        
-        for face_key in self.face.keys() {
-            if let Some(normal) = self.face_normal(*face_key) {
-                normals.insert(*face_key, normal);
-            }
-        }
-        
-        normals
-    }
-
-    /// Compute normals for all vertices in the mesh with configurable weighting.
-    /// 
-    /// # Arguments
-    /// * `weighting` - The weighting scheme to use
-    /// 
-    /// # Returns
-    /// A HashMap mapping vertex keys to their normal vectors
-    /// 
-    /// # Example
-    /// 
-    /// ```
-    /// use openmodel::geometry::{Mesh, Point};
-    /// use openmodel::geometry::mesh::NormalWeighting;
-    /// let mut mesh = Mesh::new();
-    /// let v0 = mesh.add_vertex(Point::new(0.0, 0.0, 0.0), None);
-    /// let v1 = mesh.add_vertex(Point::new(1.0, 0.0, 0.0), None);
-    /// let v2 = mesh.add_vertex(Point::new(0.0, 1.0, 0.0), None);
-    /// let f = mesh.add_face(vec![v0, v1, v2], None).unwrap();
-    /// let normals = mesh.vertex_normals_weighted(NormalWeighting::Angle);
-    /// assert_eq!(normals.len(), 3);
-    /// assert!(normals.contains_key(&v0));
-    /// ```
-    pub fn vertex_normals_weighted(&self, weighting: NormalWeighting) -> HashMap<usize, Vector> {
-        let mut normals = HashMap::new();
-        
-        for vertex_key in self.vertex.keys() {
-            if let Some(normal) = self.vertex_normal_weighted(*vertex_key, weighting) {
-                normals.insert(*vertex_key, normal);
-            }
-        }
-        
-        normals
-    }
-    
-    /// Compute normals for all vertices in the mesh using area weighting (default).
-    /// 
-    /// This is a convenience method that uses area weighting for backward compatibility.
-    /// 
-    /// # Returns
-    /// A HashMap mapping vertex keys to their normal vectors
-    /// 
-    /// # Example
-    /// 
-    /// ```
-    /// use openmodel::geometry::{Mesh, Point};
-    /// let mut mesh = Mesh::new();
-    /// let v0 = mesh.add_vertex(Point::new(0.0, 0.0, 0.0), None);
-    /// let v1 = mesh.add_vertex(Point::new(1.0, 0.0, 0.0), None);
-    /// let v2 = mesh.add_vertex(Point::new(0.0, 1.0, 0.0), None);
-    /// let f = mesh.add_face(vec![v0, v1, v2], None).unwrap();
-    /// let normals = mesh.vertex_normals();
-    /// assert_eq!(normals.len(), 3);
-    /// assert!(normals.contains_key(&v0));
-    /// ```
-    pub fn vertex_normals(&self) -> HashMap<usize, Vector> {
-        self.vertex_normals_weighted(NormalWeighting::Area)
-    }
-    
-    /// Compute per-edge transforms for instancing a unit pipe mesh.
-    ///
-    /// Returns a transform for each unique boundary edge of the mesh that maps a unit cylinder
-    /// aligned along the +Z axis with length=1 and radius=0.5 (centered at the origin,
-    /// from z = -0.5 to z = +0.5) onto the edge. XY scale is fixed at 1.0; Z is scaled by edge length.
-    /// Thickness is handled entirely in the pipe shader using a pixel-space radius.
-    ///
-    /// The transform encodes translation to the edge midpoint, rotation to align +Z with
-    /// the edge direction, and scale (1, 1, length).
+    /// Extract transforms for pipes along unique boundary edges of the mesh.
+    /// Uses the canonical unit pipe definition (aligned +Z, length=1, radius=0.5).
     pub fn extract_edge_pipe_transforms(&self) -> Vec<Xform> {
-        use std::collections::HashMap;
-        let mut transforms: Vec<Xform> = Vec::new();
+        let mut out: Vec<Xform> = Vec::new();
+        let mut seen: std::collections::HashSet<(usize, usize)> = std::collections::HashSet::new();
 
-        // Count undirected edge usages across faces
-        let mut edge_counts: HashMap<(usize, usize), usize> = HashMap::new();
-        for face_vertices in self.face.values() {
-            let n = face_vertices.len();
-            for i in 0..n {
-                let v1 = face_vertices[i];
-                let v2 = face_vertices[(i + 1) % n];
-                let edge = if v1 < v2 { (v1, v2) } else { (v2, v1) };
-                *edge_counts.entry(edge).or_insert(0) += 1;
+        for (u, neigh) in &self.halfedge {
+            for (v, face_opt) in neigh {
+                // Only consider boundary halfedges (no face on this oriented halfedge)
+                if face_opt.is_none() {
+                    let a = *u;
+                    let b = *v;
+                    let key = if a < b { (a, b) } else { (b, a) };
+                    if !seen.insert(key) { continue; }
+                    if let (Some(p0), Some(p1)) = (self.vertex_position(a), self.vertex_position(b)) {
+                        let seg = Line::new(p0.x, p0.y, p0.z, p1.x, p1.y, p1.z);
+                        if let Some(tf) = seg.to_pipe_transform() { out.push(tf); }
+                    }
+                }
             }
         }
-
-        // Create transforms only for boundary edges (used by exactly one face)
-        for ((a, b), cnt) in edge_counts.into_iter() {
-            if cnt != 1 { continue; }
-            if let (Some(p0), Some(p1)) = (self.vertex_position(a), self.vertex_position(b)) {
-                let dir = Vector::new(p1.x - p0.x, p1.y - p0.y, p1.z - p0.z);
-                let len = dir.length();
-                if len < 1e-6 { continue; }
-
-                let axis = dir.normalize();
-                let z_axis = Vector::new(0.0, 0.0, 1.0);
-
-                // Rotation aligning +Z to the edge direction
-                let dot = axis.dot(&z_axis);
-                let rotation = if (dot - 1.0).abs() < 1e-6 {
-                    Xform::identity()
-                } else if (dot + 1.0).abs() < 1e-6 {
-                    // 180 deg around X (any axis orthogonal to Z would do)
-                    Xform::rotation_x(PI)
-                } else {
-                    let rot_axis = z_axis.cross(&axis).normalize();
-                    let angle = z_axis.dot(&axis).acos();
-                    Xform::rotation(&rot_axis, angle)
-                };
-
-                // Midpoint translation
-                let midpoint = Point::new(
-                    (p0.x + p1.x) / 2.0,
-                    (p0.y + p1.y) / 2.0,
-                    (p0.z + p1.z) / 2.0,
-                );
-                let translation = Xform::translation(midpoint.x, midpoint.y, midpoint.z);
-
-                // Scale: XY = 1.0 (unit pipe XY is used only for direction), Z = edge length
-                let scale = Xform::scaling(1.0, 1.0, len);
-
-                // Compose: T * R * S (column-major)
-                transforms.push(translation * rotation * scale);
-            }
-        }
-
-        transforms
-    }
-    
-    /// Create a pipe mesh from a line segment.
-    /// 
-    /// Creates a cylindrical mesh along a line segment defined by two points.
-    /// The pipe has circular cross-sections perpendicular to the line direction.
-    /// This optimized version uses hardcoded coordinates for a 12-sided cylinder
-    /// and transforms them directly for maximum performance.
-    /// 
-    /// # Arguments
-    /// * `start` - Starting point of the line
-    /// * `end` - Ending point of the line
-    /// * `radius` - Radius of the pipe
-    /// 
-    /// # Returns
-    /// A new Mesh representing an 8-sided pipe along the specified line
-    /// 
-    /// # Example
-    /// 
-    /// ```
-    /// use openmodel::geometry::{Mesh, Point};
-    /// let start = Point::new(0.0, 0.0, 0.0);
-    /// let end = Point::new(0.0, 0.0, 1.0);
-    /// let radius = 0.2;
-    /// let pipe_mesh = Mesh::create_pipe(start, end, radius);
-    /// ```
-    pub fn create_pipe(start: Point, end: Point, radius: f64) -> Self {
-        let mut mesh = Mesh::new();
-        
-        // Compute transformation matrix for the pipe segment
-        let direction = Vector::new(end.x - start.x, end.y - start.y, end.z - start.z);
-        let length = direction.length();
-        
-        if length < 1e-6 {
-            return mesh; // Degenerate case
-        }
-        
-        let axis = direction.normalize();
-        
-        // Create transformation matrix
-        // 1. Scale: the base profile uses 0.5 radius in XY, so scale by 2*radius to reach the requested radius.
-        //    Z is scaled by segment length so the base spans [-0.5, +0.5] -> total length = length
-        let scale = Xform::scaling(2.0 * radius, 2.0 * radius, length);
-        
-        // 2. Rotation: align Z-axis with line direction
-        let z_axis = Vector::new(0.0, 0.0, 1.0);
-        let rotation = if (axis.dot(&z_axis) - 1.0).abs() < 1e-6 {
-            // Already aligned with Z
-            Xform::identity()
-        } else if (axis.dot(&z_axis) + 1.0).abs() < 1e-6 {
-            // Opposite to Z, rotate 180 degrees around X
-            Xform::rotation_x(PI)
-        } else {
-            // General case: rotate around cross product
-            let rotation_axis = z_axis.cross(&axis).normalize();
-            let angle = z_axis.dot(&axis).acos();
-            Xform::rotation(&rotation_axis, angle)
-        };
-        
-        // 3. Translation: move to midpoint of segment
-        let midpoint = Point::new(
-            (start.x + end.x) / 2.0,
-            (start.y + end.y) / 2.0,
-            (start.z + end.z) / 2.0,
-        );
-        let translation = Xform::translation(midpoint.x, midpoint.y, midpoint.z);
-        
-        // Combine transformations: T * R * S
-        let transform = translation * rotation * scale;
-        
-        // Get shared 8-sided unit geometry (radius 0.5 in XY, length 1 along Z)
-        let (unit_vertices, faces) = Mesh::pipe8_unit_vertices_and_faces();
-        
-        // Transform and add all vertices to mesh
-        let mut vertex_keys = Vec::with_capacity(unit_vertices.len());
-        for vertex in unit_vertices {
-            let transformed_vertex = transform.transform_point(&vertex);
-            vertex_keys.push(mesh.add_vertex(transformed_vertex, None));
-        }
-        
-        // Add all faces to mesh with the same winding
-        for face_indices in faces {
-            let face_vertices: Vec<usize> = face_indices.iter().map(|&i| vertex_keys[i]).collect();
-            mesh.add_face(face_vertices, None);
-        }
-        
-        mesh
+        out
     }
 
-    /// Create a low-poly unit sphere mesh centered at the origin.
-    /// Uses hardcoded coordinates and triangle faces, suitable for shader-based spheres.
-    pub fn create_unit_sphere() -> Self {
-        let mut mesh = Mesh::new();
-
-        // Vertex list (26 points)
-        let verts: &[[f64; 3]] = &[
-            [ 0.5,      0.0,      0.0     ], // 0
-            [ 0.353553, 0.353553, 0.0     ], // 1
-            [ 0.353553, 0.0,      0.353553], // 2
-            [ 0.353553, 0.0,     -0.353553], // 3
-            [ 0.353553,-0.353553, 0.0     ], // 4
-            [ 0.288675, 0.288675, 0.288675], // 5
-            [ 0.288675, 0.288675,-0.288675], // 6
-            [ 0.288675,-0.288675, 0.288675], // 7
-            [ 0.288675,-0.288675,-0.288675], // 8
-            [ 0.0,      0.5,      0.0     ], // 9
-            [ 0.0,      0.353553, 0.353553], // 10
-            [ 0.0,      0.353553,-0.353553], // 11
-            [ 0.0,      0.0,      0.5     ], // 12
-            [ 0.0,      0.0,     -0.5     ], // 13
-            [ 0.0,     -0.353553, 0.353553], // 14
-            [ 0.0,     -0.353553,-0.353553], // 15
-            [ 0.0,     -0.5,      0.0     ], // 16
-            [-0.288675, 0.288675, 0.288675], // 17
-            [-0.288675, 0.288675,-0.288675], // 18
-            [-0.288675,-0.288675, 0.288675], // 19
-            [-0.288675,-0.288675,-0.288675], // 20
-            [-0.353553, 0.353553, 0.0     ], // 21
-            [-0.353553, 0.0,      0.353553], // 22
-            [-0.353553, 0.0,     -0.353553], // 23
-            [-0.353553,-0.353553, 0.0     ], // 24
-            [-0.5,      0.0,      0.0     ], // 25
-        ];
-        // Map insertion order to actual vertex keys returned by add_vertex
-        let mut vkeys: Vec<usize> = Vec::with_capacity(verts.len());
-        for v in verts {
-            let k = mesh.add_vertex(Point::new(v[0], v[1], v[2]), None);
-            vkeys.push(k);
-        }
-
-        // Triangle faces (indices into the above vertex list)
-        let tris: &[[usize; 3]] = &[
-            [19,14,12], [14,7,12], [22,12,17], [12,2,5], [7,4,0], [4,8,0], [2,0,5], [0,3,6],
-            [8,15,13], [15,20,13], [3,13,6], [13,23,18], [20,24,25], [24,19,25], [23,25,18], [25,22,17],
-            [8,4,16], [4,7,16], [15,16,20], [16,14,19], [18,21,9], [21,17,9], [11,9,6], [9,10,5],
-            [19,12,22], [7,2,12], [12,10,17], [12,5,10], [7,0,2], [8,3,0], [0,1,5], [0,6,1],
-            [8,13,3], [20,23,13], [13,11,6], [13,18,11], [20,25,23], [19,22,25], [25,21,18], [25,17,21],
-            [8,16,15], [7,14,16], [16,24,20], [16,19,24], [18,9,11], [17,10,9], [9,1,6], [9,5,1],
-        ];
-
-        for t in tris {
-            let a = vkeys[t[0]]; let b = vkeys[t[1]]; let c = vkeys[t[2]];
-            mesh.add_face(vec![a, b, c], None);
-        }
-
-        mesh
-    }
-
-
-    /// Create a unit 8-sided cylinder mesh aligned to +Z (radius=0.5, length=1).
-    /// Centered at the origin, spanning z in [-0.5, +0.5]. Intended for instancing.
-    pub fn create_unit_pipe() -> Self {
-        let mut mesh = Mesh::new();
-        let (unit_vertices, faces) = Mesh::pipe8_unit_vertices_and_faces();
-        
-        // Add vertices
-        let mut vertex_keys = Vec::with_capacity(unit_vertices.len());
-        for v in unit_vertices { vertex_keys.push(mesh.add_vertex(v, None)); }
-        
-        // Add faces
-        for face in faces {
-            let face_vertices: Vec<usize> = face.iter().map(|&i| vertex_keys[i]).collect();
-            mesh.add_face(face_vertices, None);
-        }
-        
-        mesh
-    }
-
-    /// Shared 8-sided unit pipe geometry (top ring 0..=7 at z=+0.5, bottom ring 8..=15)
-    /// Winding is consistent CCW for fronts with front_face = CCW.
-    fn pipe8_unit_vertices_and_faces() -> (Vec<Point>, Vec<Vec<usize>>) {
-        // Vertices
-        let unit_vertices = vec![
-            // Top ring (z = +0.5)
-            Point::new(0.5, 0.0, 0.5),
-            Point::new(0.353553, 0.353553, 0.5),
-            Point::new(0.0, 0.5, 0.5),
-            Point::new(-0.353553, 0.353553, 0.5),
-            Point::new(-0.5, 0.0, 0.5),
-            Point::new(-0.353553, -0.353553, 0.5),
-            Point::new(0.0, -0.5, 0.5),
-            Point::new(0.353553, -0.353553, 0.5),
-            // Bottom ring (z = -0.5)
-            Point::new(0.5, 0.0, -0.5),
-            Point::new(0.353553, 0.353553, -0.5),
-            Point::new(0.0, 0.5, -0.5),
-            Point::new(-0.353553, 0.353553, -0.5),
-            Point::new(-0.5, 0.0, -0.5),
-            Point::new(-0.353553, -0.353553, -0.5),
-            Point::new(0.0, -0.5, -0.5),
-            Point::new(0.353553, -0.353553, -0.5),
-        ];
-        
-        // Faces (triangles): bottom cap, top cap, side quads split
-        let faces = vec![
-            // Side quads (first triangle per segment)
-            vec![8, 9, 1],
-            vec![9, 10, 2],
-            vec![10, 11, 3],
-            vec![11, 12, 4],
-            vec![12, 13, 5],
-            vec![13, 14, 6],
-            vec![14, 15, 7],
-            vec![15, 8, 0],
-            // Bottom cap (z = -0.5)
-            vec![15, 13, 11],
-            vec![13, 12, 11],
-            vec![15, 14, 13],
-            vec![9, 8, 15],
-            vec![9, 11, 10],
-            vec![15, 11, 9],
-            // Top cap (z = +0.5)
-            vec![7, 3, 5],
-            vec![5, 3, 4],
-            vec![7, 5, 6],
-            vec![1, 7, 0],
-            vec![1, 2, 3],
-            vec![7, 1, 3],
-            // Side quads (second triangle per segment)
-            vec![8, 1, 0],
-            vec![9, 2, 1],
-            vec![10, 3, 2],
-            vec![11, 4, 3],
-            vec![12, 5, 4],
-            vec![13, 6, 5],
-            vec![14, 7, 6],
-            vec![15, 0, 7],
-        ];
-        (unit_vertices, faces)
-    }
-
-
-    /// Shared N-sided unit pipe geometry (radius=0.5, length=1 along Z), with cap centers.
-    /// Returns vertices and triangular faces with CCW winding for front faces.
-    fn pipe_unit_vertices_and_faces(sides: usize) -> (Vec<Point>, Vec<Vec<usize>>) {
-        let n = sides.max(3); // minimum triangle
-        let r = 0.5f64;
-        let mut verts: Vec<Point> = Vec::with_capacity(2 * n + 2);
-        // Top ring (z=+0.5), CCW when viewed from +Z
-        for i in 0..n {
-            let theta = (i as f64) * (2.0 * std::f64::consts::PI / n as f64);
-            verts.push(Point::new(r * theta.cos(), r * theta.sin(), 0.5));
-        }
-        // Bottom ring (z=-0.5)
-        for i in 0..n {
-            let theta = (i as f64) * (2.0 * std::f64::consts::PI / n as f64);
-            verts.push(Point::new(r * theta.cos(), r * theta.sin(), -0.5));
-        }
-        // Cap centers
-        let top_center = verts.len();
-        verts.push(Point::new(0.0, 0.0, 0.5));
-        let bottom_center = verts.len();
-        verts.push(Point::new(0.0, 0.0, -0.5));
-
-        let mut faces: Vec<Vec<usize>> = Vec::with_capacity(4 * n);
-        // Sides: split quads into two triangles per segment
-        for i in 0..n {
-            let it = i;
-            let itn = (i + 1) % n;
-            let ib = i + n;
-            let ibn = ((i + 1) % n) + n;
-            // Match existing 8-sided orientation: [bottom_i, bottom_next, top_next], [bottom_i, top_next, top_i]
-            faces.push(vec![ib, ibn, itn]);
-            faces.push(vec![ib, itn, it]);
-        }
-        // Top cap: CCW when viewed from +Z
-        for i in 0..n {
-            let it = i;
-            let itn = (i + 1) % n;
-            faces.push(vec![top_center, it, itn]);
-        }
-        // Bottom cap: outward normal -Z -> CCW when viewed from -Z
-        for i in 0..n {
-            let ib = i + n;
-            let ibn = ((i + 1) % n) + n;
-            faces.push(vec![bottom_center, ibn, ib]);
-        }
-
-        (verts, faces)
-    }
-
-    /// Create a unit high-resolution cylinder mesh aligned to +Z (radius=0.5, length=1).
-    /// Uses 32 sides for smoother silhouette; includes cap centers and triangular fans.
+    /// Create a high-resolution unit pipe (open cylinder):
+    /// - Axis aligned to +Z
+    /// - Radius = 0.5
+    /// - Length = 1.0 (z in [-0.5, 0.5])
+    /// - Radial segments = 32
     pub fn create_unit_pipe_high_res() -> Self {
-        let mut mesh = Mesh::new();
-        let (unit_vertices, faces) = Mesh::pipe_unit_vertices_and_faces(32);
-        let mut vertex_keys = Vec::with_capacity(unit_vertices.len());
-        for v in unit_vertices { vertex_keys.push(mesh.add_vertex(v, None)); }
-        for face in faces {
-            let face_vertices: Vec<usize> = face.iter().map(|&i| vertex_keys[i]).collect();
-            mesh.add_face(face_vertices, None);
+        let mut m = Mesh::new();
+        let sides: usize = 32;
+        let r: f64 = 0.5;
+        let hz: f64 = 0.5;
+
+        let mut ring_bot: Vec<usize> = Vec::with_capacity(sides);
+        let mut ring_top: Vec<usize> = Vec::with_capacity(sides);
+
+        for i in 0..sides {
+            let theta = 2.0 * PI * (i as f64) / (sides as f64);
+            let x = r * theta.cos();
+            let y = r * theta.sin();
+            let vb = m.add_vertex(Point::new(x, y, -hz), None);
+            let vt = m.add_vertex(Point::new(x, y, hz), None);
+            ring_bot.push(vb);
+            ring_top.push(vt);
         }
-        mesh
+
+        for i in 0..sides {
+            let j = (i + 1) % sides;
+            // Quad face for side wall (ordered to produce outward normals)
+            let _ = m.add_face(vec![ring_bot[i], ring_bot[j], ring_top[j], ring_top[i]], None);
+        }
+
+        m
     }
 
-    /// Build an icosphere of radius 0.5 with `subdiv` subdivision steps.
-    /// Returns vertices positioned on the sphere and triangular faces (CCW outward).
-    fn icosphere_unit_vertices_and_faces(subdiv: u32) -> (Vec<Point>, Vec<[usize; 3]>) {
-        let r = 0.5f64;
-        let phi = (1.0 + 5.0_f64.sqrt()) * 0.5;
-        let mut verts: Vec<Point> = vec![
-            // 12 vertices of a regular icosahedron
-            Point::new(-1.0,  phi,  0.0),
-            Point::new( 1.0,  phi,  0.0),
-            Point::new(-1.0, -phi,  0.0),
-            Point::new( 1.0, -phi,  0.0),
-            Point::new( 0.0, -1.0,  phi),
-            Point::new( 0.0,  1.0,  phi),
-            Point::new( 0.0, -1.0, -phi),
-            Point::new( 0.0,  1.0, -phi),
-            Point::new( phi,  0.0, -1.0),
-            Point::new( phi,  0.0,  1.0),
-            Point::new(-phi,  0.0, -1.0),
-            Point::new(-phi,  0.0,  1.0),
-        ];
-        // Normalize all to radius r
-        for v in &mut verts {
-            let len = (v.x * v.x + v.y * v.y + v.z * v.z).sqrt();
-            if len > 0.0 {
-                v.x = v.x / len * r;
-                v.y = v.y / len * r;
-                v.z = v.z / len * r;
-            }
-        }
+    /// Create a high-resolution unit sphere (icosphere) with radius 0.5.
+    /// Subdivisions: 3 for a smooth sphere.
+    pub fn create_unit_sphere_high_res() -> Self {
+        Self::create_unit_sphere_subdivisions(3)
+    }
 
+    /// Create a unit sphere with specified subdivision levels.
+    pub fn create_unit_sphere_subdivisions(subdiv: usize) -> Self {
+        // Build an icosphere in local space, then load into Mesh.
+        let radius: f64 = 0.5;
+        let _subdiv_param = subdiv;
+
+        // Initial icosahedron vertices
+        let t = (1.0 + 5.0_f64.sqrt()) / 2.0;
+        let mut pts: Vec<Point> = vec![
+            Point::new(-1.0,  t,    0.0),
+            Point::new( 1.0,  t,    0.0),
+            Point::new(-1.0, -t,    0.0),
+            Point::new( 1.0, -t,    0.0),
+            Point::new( 0.0, -1.0,  t  ),
+            Point::new( 0.0,  1.0,  t  ),
+            Point::new( 0.0, -1.0, -t  ),
+            Point::new( 0.0,  1.0, -t  ),
+            Point::new(  t,   0.0, -1.0),
+            Point::new(  t,   0.0,  1.0),
+            Point::new( -t,   0.0, -1.0),
+            Point::new( -t,   0.0,  1.0),
+        ];
+
+        // Normalize to radius
+        let norm_to_r = |p: &Point, r: f64| -> Point {
+            let len = (p.x*p.x + p.y*p.y + p.z*p.z).sqrt();
+            if len > 0.0 { Point::new(p.x/len*r, p.y/len*r, p.z/len*r) } else { Point::new(0.0, 0.0, r) }
+        };
+        for p in &mut pts { *p = norm_to_r(p, radius); }
+
+        // Base icosahedron faces
         let mut faces: Vec<[usize; 3]> = vec![
             [0, 11, 5],  [0, 5, 1],   [0, 1, 7],   [0, 7, 10],  [0, 10, 11],
             [1, 5, 9],   [5, 11, 4],  [11, 10, 2], [10, 7, 6],  [7, 1, 8],
@@ -1480,619 +917,295 @@ impl Mesh {
             [4, 9, 5],   [2, 4, 11],  [6, 2, 10],  [8, 6, 7],   [9, 8, 1],
         ];
 
-        // Edge midpoint cache to avoid duplicate vertices
-        let mut midpoint_cache: std::collections::HashMap<(usize, usize), usize> = std::collections::HashMap::new();
-        let midpoint = |ia: usize, ib: usize, verts: &mut Vec<Point>, cache: &mut std::collections::HashMap<(usize, usize), usize>| -> usize {
-            let key = if ia < ib { (ia, ib) } else { (ib, ia) };
-            if let Some(&idx) = cache.get(&key) { return idx; }
-            let a = &verts[ia];
-            let b = &verts[ib];
-            let mut m = Point::new((a.x + b.x) * 0.5, (a.y + b.y) * 0.5, (a.z + b.z) * 0.5);
-            let len = (m.x * m.x + m.y * m.y + m.z * m.z).sqrt();
-            if len > 0.0 {
-                m.x = m.x / len * r; m.y = m.y / len * r; m.z = m.z / len * r;
-            }
-            let idx = verts.len();
-            verts.push(m);
-            cache.insert(key, idx);
-            idx
-        };
-
-        for _ in 0..subdiv {
-            let mut new_faces: Vec<[usize; 3]> = Vec::with_capacity(faces.len() * 4);
-            for [i0, i1, i2] in faces.iter().copied() {
-                let a = midpoint(i0, i1, &mut verts, &mut midpoint_cache);
-                let b = midpoint(i1, i2, &mut verts, &mut midpoint_cache);
-                let c = midpoint(i2, i0, &mut verts, &mut midpoint_cache);
-                new_faces.push([i0, a, c]);
-                new_faces.push([i1, b, a]);
-                new_faces.push([i2, c, b]);
+        // Subdivision helper: edge midpoint cache
+        use std::collections::HashMap;
+        
+        for _ in 0.._subdiv_param {
+            let mut new_faces: Vec<[usize; 3]> = Vec::with_capacity(faces.len()*4);
+            let mut midpoint_cache: HashMap<(usize, usize), usize> = HashMap::new();
+            
+            let get_midpoint = |a: usize, b: usize, pts: &mut Vec<Point>, cache: &mut HashMap<(usize, usize), usize>| -> usize {
+                let key = if a < b { (a, b) } else { (b, a) };
+                if let Some(&idx) = cache.get(&key) { return idx; }
+                let pa = &pts[a];
+                let pb = &pts[b];
+                let pm = Point::new((pa.x + pb.x)*0.5, (pa.y + pb.y)*0.5, (pa.z + pb.z)*0.5);
+                let pm = norm_to_r(&pm, radius);
+                let idx = pts.len();
+                pts.push(pm);
+                cache.insert(key, idx);
+                idx
+            };
+            
+            for [i, j, k] in faces.iter().copied() {
+                let a = get_midpoint(i, j, &mut pts, &mut midpoint_cache);
+                let b = get_midpoint(j, k, &mut pts, &mut midpoint_cache);
+                let c = get_midpoint(k, i, &mut pts, &mut midpoint_cache);
+                new_faces.push([i, a, c]);
+                new_faces.push([j, b, a]);
+                new_faces.push([k, c, b]);
                 new_faces.push([a, b, c]);
             }
             faces = new_faces;
-            midpoint_cache.clear();
         }
-        (verts, faces)
+
+        // Build Mesh from points and faces
+        let mut m = Mesh::new();
+        let mut vmap: Vec<usize> = Vec::with_capacity(pts.len());
+        for p in pts.into_iter() {
+            let vk = m.add_vertex(p, None);
+            vmap.push(vk);
+        }
+        for [a, b, c] in faces {
+            let _ = m.add_face(vec![vmap[a], vmap[b], vmap[c]], None);
+        }
+
+        m
     }
 
-    /// High-resolution unit sphere using a procedural icosphere (radius=0.5).
-    /// Subdivision level is tuned for a smooth silhouette while staying under u16 index limits.
-    pub fn create_unit_sphere_high_res() -> Self {
-        let (unit_vertices, faces) = Mesh::icosphere_unit_vertices_and_faces(3); // 642 verts, 1280 faces
-        let mut mesh = Mesh::new();
-        let mut vkeys: Vec<usize> = Vec::with_capacity(unit_vertices.len());
-        for v in unit_vertices { vkeys.push(mesh.add_vertex(v, None)); }
-        for f in faces {
-            mesh.add_face(vec![vkeys[f[0]], vkeys[f[1]], vkeys[f[2]]], None);
-        }
-        mesh
-    }
-
-
-
-    /// Create a halfedge mesh from a list of polygons.
-    /// 
-    /// Each polygon is defined by a list of 3D points. Vertices are merged
-    /// based on coordinate precision to avoid duplicates.
-    /// 
-    /// # Arguments
-    /// * `polygons` - List of polygons, each defined by a list of 3D points
-    /// * `precision` - Precision for merging vertices (default: 1e-10)
-    /// 
-    /// # Returns
-    /// A new halfedge mesh constructed from the polygons
-    /// 
-    /// # Example
-    /// 
-    /// ```
-    /// use openmodel::geometry::{Mesh, Point};
-    /// let triangle = vec![
-    ///     Point::new(0.0, 0.0, 0.0),
-    ///     Point::new(1.0, 0.0, 0.0),
-    ///     Point::new(0.0, 1.0, 0.0),
-    /// ];
-    /// let mesh = Mesh::from_polygons(vec![triangle], None);
-    /// assert_eq!(mesh.number_of_vertices(), 3);
-    /// assert_eq!(mesh.number_of_faces(), 1);
-    /// ```
-    pub fn from_polygons(polygons: Vec<Vec<Point>>, precision: Option<f64>) -> Self {
-        let precision = precision.unwrap_or(1e-10);
-        let mut mesh = Mesh::new();
-        let mut vertex_map: HashMap<String, usize> = HashMap::new();
+    /// Create a low-resolution pipe mesh for backward compatibility.
+    /// 8-sided cylinder with radius and length based on start/end points.
+    pub fn create_pipe(start: Point, end: Point, thickness: f64) -> Self {
+        let mut m = Mesh::new();
+        let sides: usize = 8;
+        let r = thickness * 0.5;
         
-        for polygon in polygons {
-            if polygon.len() < 3 {
-                continue; // Skip invalid polygons
-            }
-            
-            let mut face_vertices = Vec::new();
-            
-            for point in polygon {
-                // Create a key for the point based on its coordinates with precision
-                let key = format!(
-                    "{:.10}_{:.10}_{:.10}",
-                    (point.x / precision).round() * precision,
-                    (point.y / precision).round() * precision,
-                    (point.z / precision).round() * precision
-                );
-                
-                // Check if vertex already exists
-                let vertex_key = if let Some(&existing_key) = vertex_map.get(&key) {
-                    existing_key
-                } else {
-                    // Add new vertex
-                    let new_key = mesh.add_vertex(point, None);
-                    vertex_map.insert(key, new_key);
-                    new_key
-                };
-                
-                face_vertices.push(vertex_key);
-            }
-            
-            // Add the face if it has valid vertices
-            if face_vertices.len() >= 3 {
-                mesh.add_face(face_vertices, None);
-            }
-        }
+        // Calculate direction and length
+        let dir_x = end.x - start.x;
+        let dir_y = end.y - start.y;
+        let dir_z = end.z - start.z;
+        let length = (dir_x*dir_x + dir_y*dir_y + dir_z*dir_z).sqrt();
         
-        mesh
-    }
-    
-    /// Create a mesh from a polygon using ear clipping triangulation.
-    /// 
-    /// The polygon is assumed to be planar and non-self-intersecting.
-    /// Points should be provided in counter-clockwise order for correct triangulation.
-    /// 
-    /// # Arguments
-    /// * `polygon_points` - List of 3D points defining the polygon boundary
-    /// 
-    /// # Returns
-    /// A new halfedge mesh representing the triangulated polygon
-    /// 
-    /// # Example
-    /// 
-    /// ```
-    /// use openmodel::geometry::{Mesh, Point};
-    /// let square = vec![
-    ///     Point::new(0.0, 0.0, 0.0),
-    ///     Point::new(1.0, 0.0, 0.0),
-    ///     Point::new(1.0, 1.0, 0.0),
-    ///     Point::new(0.0, 1.0, 0.0),
-    /// ];
-    /// let mesh = Mesh::from_polygon_earclip(square);
-    /// assert_eq!(mesh.number_of_vertices(), 4);
-    /// assert_eq!(mesh.number_of_faces(), 2); // Square triangulated into 2 triangles
-    /// ```
-    pub fn from_polygon_earclip(polygon_points: Vec<Point>) -> Self {
-        if polygon_points.len() < 3 {
-            return Self::new();
-        }
+        if length < 1e-9 { return m; }
         
-        // Convert 3D points to 2D for triangulation (assuming planar polygon)
-        let points_2d: Vec<[f64; 2]> = polygon_points.iter()
-            .map(|p| [p.x, p.y])
-            .collect();
+        // Normalize direction
+        let nx = dir_x / length;
+        let ny = dir_y / length;
+        let nz = dir_z / length;
         
-        // Perform ear clipping triangulation
-        let triangles = match earclip_triangulate(&points_2d) {
-            Ok(tris) => tris,
-            Err(_) => return Self::new(), // Return empty mesh on error
+        // Create orthogonal basis
+        let (ux, uy, uz) = if nz.abs() < 0.9 {
+            let len = (nx*nx + ny*ny).sqrt();
+            (-ny/len, nx/len, 0.0)
+        } else {
+            let len = (ny*ny + nz*nz).sqrt();
+            (0.0, -nz/len, ny/len)
         };
         
-        // Create mesh from triangulated result
-        let mut mesh = Self::new();
+        let vx = ny*uz - nz*uy;
+        let vy = nz*ux - nx*uz;
+        let vz = nx*uy - ny*ux;
         
-        // Add all vertices
-        let mut vertex_keys = Vec::new();
-        for point in polygon_points {
-            let key = mesh.add_vertex(point, None);
-            vertex_keys.push(key);
-        }
+        // Generate vertices
+        let mut ring_start: Vec<usize> = Vec::with_capacity(sides);
+        let mut ring_end: Vec<usize> = Vec::with_capacity(sides);
         
-        // Add triangular faces
-        for triangle in triangles {
-            let face_vertices = vec![
-                vertex_keys[triangle[0]],
-                vertex_keys[triangle[1]], 
-                vertex_keys[triangle[2]]
-            ];
-            mesh.add_face(face_vertices, None);
-        }
-        
-        mesh
-    }
-    
-    /// Extract all unique edges from the mesh as Line objects.
-    /// 
-    /// This method traverses all faces and collects unique edges (no duplicates).
-    /// Each edge is represented as a Line connecting two vertices.
-    /// 
-    /// # Returns
-    /// A vector of Line objects representing the unique edges of the mesh
-    /// 
-    /// # Example
-    /// 
-    /// ```
-    /// use openmodel::geometry::{Mesh, Point};
-    /// let mut mesh = Mesh::new();
-    /// let v0 = mesh.add_vertex(Point::new(0.0, 0.0, 0.0), None);
-    /// let v1 = mesh.add_vertex(Point::new(1.0, 0.0, 0.0), None);
-    /// let v2 = mesh.add_vertex(Point::new(0.0, 1.0, 0.0), None);
-    /// mesh.add_face(vec![v0, v1, v2], None);
-    /// 
-    /// let edges = mesh.extract_edges_as_lines();
-    /// assert_eq!(edges.len(), 3); // Triangle has 3 edges
-    /// ```
-    pub fn extract_edges_as_lines(&self) -> Vec<crate::geometry::Line> {
-        use std::collections::HashSet;
-        use crate::geometry::Line;
-        
-        let mut unique_edges = HashSet::new();
-        let mut lines = Vec::new();
-        
-        // Iterate through all faces to collect edges
-        for face_vertices in self.face.values() {
-            let n = face_vertices.len();
-            for i in 0..n {
-                let v1 = face_vertices[i];
-                let v2 = face_vertices[(i + 1) % n];
-                
-                // Create a normalized edge (smaller vertex index first) to avoid duplicates
-                let edge = if v1 < v2 { (v1, v2) } else { (v2, v1) };
-                
-                if unique_edges.insert(edge) {
-                    // Get vertex positions
-                    if let (Some(pos1), Some(pos2)) = (
-                        self.vertex_position(v1),
-                        self.vertex_position(v2)
-                    ) {
-                        let line = Line::new(
-                            pos1.x, pos1.y, pos1.z,
-                            pos2.x, pos2.y, pos2.z
-                        );
-                        lines.push(line);
-                    }
-                }
-            }
-        }
-        
-        lines
-    }
-    
-    /// Extract all unique edges from the mesh as pipe meshes (cylinders).
-    /// 
-    /// This method creates cylindrical pipe meshes for each unique edge in the mesh.
-    /// The pipes use the specified radius and number of sides for the cross-section.
-    /// 
-    /// # Arguments
-    /// * `radius` - Radius of the pipe cylinders
-    /// * `sides` - Number of sides for the cylindrical cross-section (default: 8)
-    /// 
-    /// # Returns
-    /// A vector of Mesh objects representing the pipe meshes for each edge
-    /// 
-    /// # Example
-    /// 
-    /// ```
-    /// use openmodel::geometry::{Mesh, Point};
-    /// let mut mesh = Mesh::new();
-    /// let v0 = mesh.add_vertex(Point::new(0.0, 0.0, 0.0), None);
-    /// let v1 = mesh.add_vertex(Point::new(1.0, 0.0, 0.0), None);
-    /// let v2 = mesh.add_vertex(Point::new(0.0, 1.0, 0.0), None);
-    /// mesh.add_face(vec![v0, v1, v2], None);
-    /// 
-    /// let pipe_meshes = mesh.extract_edges_as_pipes(0.05, Some(8));
-    /// assert_eq!(pipe_meshes.len(), 3); // Triangle has 3 edges
-    /// ```
-    pub fn extract_edges_as_pipes(&self, radius: f64, _sides: Option<usize>) -> Vec<Mesh> {
-        use std::collections::HashSet;
-        let mut unique_edges = HashSet::new();
-        let mut pipe_meshes = Vec::new();
-        
-        // Iterate through all faces to collect edges
-        for face_vertices in self.face.values() {
-            let n = face_vertices.len();
-            for i in 0..n {
-                let v1 = face_vertices[i];
-                let v2 = face_vertices[(i + 1) % n];
-                
-                // Create a normalized edge (smaller vertex index first) to avoid duplicates
-                let edge = if v1 < v2 { (v1, v2) } else { (v2, v1) };
-                
-                if unique_edges.insert(edge) {
-                    // Get vertex positions
-                    if let (Some(pos1), Some(pos2)) = (
-                        self.vertex_position(v1),
-                        self.vertex_position(v2)
-                    ) {
-                        // Create pipe mesh for this edge
-                        let pipe_mesh = Mesh::create_pipe(pos1, pos2, radius);
-                        pipe_meshes.push(pipe_mesh);
-                    }
-                }
-            }
-        }
-        
-        pipe_meshes
-    }
-    
-    /// Create a mesh from a list of polygons with automatic duplicate point removal.
-    /// 
-    /// This method takes a list of polygons (each defined by a list of 3D points) and
-    /// creates a unified mesh by merging duplicate vertices based on coordinate precision.
-    /// Polygons with 4 or more vertices are automatically triangulated using ear clipping.
-    /// 
-    /// # Arguments
-    /// * `polygons` - List of polygons, each defined by a list of 3D points
-    /// * `precision` - Precision for merging vertices (default: 1e-10)
-    /// 
-    /// # Returns
-    /// A new halfedge mesh constructed from the polygons with merged vertices
-    /// 
-    /// # Example
-    /// 
-    /// ```
-    /// use openmodel::geometry::{Mesh, Point};
-    /// 
-    /// // Create a cube using quad faces
-    /// let cube_faces = vec![
-    ///     // Front face
-    ///     vec![
-    ///         Point::new(0.0, 0.0, 0.0),
-    ///         Point::new(1.0, 0.0, 0.0),
-    ///         Point::new(1.0, 1.0, 0.0),
-    ///         Point::new(0.0, 1.0, 0.0),
-    ///     ],
-    ///     // Back face
-    ///     vec![
-    ///         Point::new(1.0, 0.0, 1.0),
-    ///         Point::new(0.0, 0.0, 1.0),
-    ///         Point::new(0.0, 1.0, 1.0),
-    ///         Point::new(1.0, 1.0, 1.0),
-    ///     ],
-    /// ];
-    /// 
-    /// let mesh = Mesh::from_polygons_with_merge(cube_faces, None);
-    /// assert_eq!(mesh.number_of_vertices(), 8); // Cube has 8 unique vertices
-    /// ```
-    pub fn from_polygons_with_merge(polygons: Vec<Vec<Point>>, precision: Option<f64>) -> Self {
-        use std::collections::HashMap;
-        
-        let precision = precision.unwrap_or(1e-10);
-        let mut mesh = Self::new();
-        
-        // Map to store unique vertices and their keys
-        let mut vertex_map: HashMap<String, usize> = HashMap::new();
-        let mut unique_vertices: Vec<Point> = Vec::new();
-        
-        // Helper function to create a key for a point based on precision
-        let point_key = |p: &Point| -> String {
-            let factor = 1.0 / precision;
-            let x = (p.x * factor).round() as i64;
-            let y = (p.y * factor).round() as i64;
-            let z = (p.z * factor).round() as i64;
-            format!("{},{},{}", x, y, z)
-        };
-        
-        // First pass: collect all unique vertices
-        for polygon in &polygons {
-            for point in polygon {
-                let key = point_key(point);
-                if !vertex_map.contains_key(&key) {
-                    let vertex_key = unique_vertices.len();
-                    vertex_map.insert(key, vertex_key);
-                    unique_vertices.push(point.clone());
-                }
-            }
-        }
-        
-        // Add all unique vertices to the mesh
-        let mut mesh_vertex_keys = Vec::new();
-        for vertex in unique_vertices {
-            let key = mesh.add_vertex(vertex, None);
-            mesh_vertex_keys.push(key);
-        }
-        
-        // Second pass: create faces using the merged vertices
-        for polygon in polygons {
-            if polygon.len() < 3 {
-                continue; // Skip degenerate polygons
-            }
+        for i in 0..sides {
+            let theta = 2.0 * PI * (i as f64) / (sides as f64);
+            let cos_t = theta.cos();
+            let sin_t = theta.sin();
             
-            // Map polygon points to mesh vertex keys
-            let face_vertices: Vec<usize> = polygon.iter()
-                .map(|point| {
-                    let key = point_key(point);
-                    let vertex_index = vertex_map[&key];
-                    mesh_vertex_keys[vertex_index]
-                })
-                .collect();
+            let offset_x = r * (cos_t * ux + sin_t * vx);
+            let offset_y = r * (cos_t * uy + sin_t * vy);
+            let offset_z = r * (cos_t * uz + sin_t * vz);
             
-            if polygon.len() == 3 {
-                // Triangle - add directly
-                mesh.add_face(face_vertices, None);
-            } else {
-                // Polygon with 4+ vertices - triangulate using ear clipping
-                // First, project the 3D polygon to 2D for triangulation
-                let points_2d = project_polygon_to_2d(&polygon);
-                
-                match earclip_triangulate(&points_2d) {
-                    Ok(triangles) => {
-                        for triangle in triangles {
-                            let triangle_vertices = vec![
-                                face_vertices[triangle[0]],
-                                face_vertices[triangle[1]],
-                                face_vertices[triangle[2]]
-                            ];
-                            mesh.add_face(triangle_vertices, None);
+            let vs = m.add_vertex(Point::new(
+                start.x + offset_x,
+                start.y + offset_y,
+                start.z + offset_z
+            ), None);
+            
+            let ve = m.add_vertex(Point::new(
+                end.x + offset_x,
+                end.y + offset_y,
+                end.z + offset_z
+            ), None);
+            
+            ring_start.push(vs);
+            ring_end.push(ve);
+        }
+        
+        // Create side faces
+        for i in 0..sides {
+            let j = (i + 1) % sides;
+            let _ = m.add_face(vec![ring_start[i], ring_start[j], ring_end[j], ring_end[i]], None);
+        }
+        
+        m
+    }
+
+    /// Resolve vertex normal with fallback hierarchy:
+    /// 1. Stored per-vertex nx,ny,nz attributes
+    /// 2. Computed area-weighted vertex normal
+    /// 3. Face normal (if face_key_hint provided)
+    /// 4. Default +Z normal
+    pub fn vertex_normal_resolved(&self, vertex_key: usize, face_key_hint: Option<usize>) -> crate::primitives::Vector {
+        use crate::primitives::Vector;
+        
+        // 1. Check for stored per-vertex normal attributes
+        if let Some(vd) = self.vertex.get(&vertex_key) {
+            if let (Some(&nx), Some(&ny), Some(&nz)) = (
+                vd.attributes.get("nx"),
+                vd.attributes.get("ny"),
+                vd.attributes.get("nz")
+            ) {
+                let len = (nx*nx + ny*ny + nz*nz).sqrt();
+                if len > 1e-9 {
+                    return Vector::new(nx/len, ny/len, nz/len);
+                }
+            }
+        }
+        
+        // 2. Compute area-weighted vertex normal
+        let mut normal_acc = Vector::new(0.0, 0.0, 0.0);
+        let mut face_count = 0;
+        
+        // Find all faces adjacent to this vertex
+        for (_face_key, face_vertices) in &self.face {
+            if face_vertices.contains(&vertex_key) {
+                if let Some(face_normal) = self.compute_face_normal_from_vertices(face_vertices) {
+                    normal_acc.x += face_normal.x;
+                    normal_acc.y += face_normal.y;
+                    normal_acc.z += face_normal.z;
+                    face_count += 1;
+                }
+            }
+        }
+        
+        if face_count > 0 {
+            let len = (normal_acc.x*normal_acc.x + normal_acc.y*normal_acc.y + normal_acc.z*normal_acc.z).sqrt();
+            if len > 1e-9 {
+                return Vector::new(normal_acc.x/len, normal_acc.y/len, normal_acc.z/len);
+            }
+        }
+        
+        // 3. Use face normal if hint provided
+        if let Some(face_key) = face_key_hint {
+            if let Some(face_vertices) = self.face.get(&face_key) {
+                if let Some(face_normal) = self.compute_face_normal_from_vertices(face_vertices) {
+                    return face_normal;
+                }
+            }
+        }
+        
+        // 4. Default +Z normal
+        Vector::new(0.0, 0.0, 1.0)
+    }
+
+    /// Compute face normal from vertex list using cross product
+    fn compute_face_normal_from_vertices(&self, face_vertices: &[usize]) -> Option<crate::primitives::Vector> {
+        use crate::primitives::Vector;
+        
+        if face_vertices.len() < 3 { return None; }
+        
+        let p0 = self.vertex_position(face_vertices[0])?;
+        let p1 = self.vertex_position(face_vertices[1])?;
+        let p2 = self.vertex_position(face_vertices[2])?;
+        
+        let u = Vector::new(p1.x - p0.x, p1.y - p0.y, p1.z - p0.z);
+        let v = Vector::new(p2.x - p0.x, p2.y - p0.y, p2.z - p0.z);
+        
+        let normal = Vector::new(
+            u.y * v.z - u.z * v.y,
+            u.z * v.x - u.x * v.z,
+            u.x * v.y - u.y * v.x
+        );
+        
+        let len = (normal.x*normal.x + normal.y*normal.y + normal.z*normal.z).sqrt();
+        if len > 1e-9 {
+            Some(Vector::new(normal.x/len, normal.y/len, normal.z/len))
+        } else {
+            None
+        }
+    }
+
+}
+
+    impl Mesh {
+        /// Load a mesh from a JSON file using the legacy JSON format:
+        /// { "cube": { "polygons": [ { "vertices": [{"x":...,"y":...,"z":...}, ...] }, ... ] } }
+        /// Additionally supports a root-level { "polygons": [...] } with the same structure.
+        pub fn from_json_file(file_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
+            let content = std::fs::read_to_string(file_path)?;
+            let json_data: serde_json::Value = serde_json::from_str(&content)?;
+
+            // Helper to parse polygons array into Vec<Vec<Point>>
+            fn parse_polygons(polygons_data: &serde_json::Value) -> Option<Vec<Vec<Point>>> {
+                let mut polygons: Vec<Vec<Point>> = Vec::new();
+                if let Some(polygon_array) = polygons_data.as_array() {
+                    for polygon_data in polygon_array {
+                        if let Some(vertices_data) = polygon_data.get("vertices") {
+                            if let Some(vertex_array) = vertices_data.as_array() {
+                                let mut polygon = Vec::new();
+                                for vertex_data in vertex_array {
+                                    if let (Some(x), Some(y), Some(z)) = (
+                                        vertex_data.get("x").and_then(|v| v.as_f64()),
+                                        vertex_data.get("y").and_then(|v| v.as_f64()),
+                                        vertex_data.get("z").and_then(|v| v.as_f64()),
+                                    ) {
+                                        polygon.push(Point::new(x, y, z));
+                                    }
+                                }
+                                if !polygon.is_empty() {
+                                    polygons.push(polygon);
+                                }
+                            }
                         }
                     }
-                    Err(_) => {
-                        // If triangulation fails, use simple fan triangulation as fallback
-                        for i in 1..polygon.len() - 1 {
-                            let triangle_vertices = vec![
-                                face_vertices[0],
-                                face_vertices[i],
-                                face_vertices[i + 1]
-                            ];
-                            mesh.add_face(triangle_vertices, None);
-                        }
+                    return Some(polygons);
+                }
+                None
+            }
+
+            // Try nested under "cube"
+            if let Some(cube) = json_data.get("cube") {
+                if let Some(polygons_data) = cube.get("polygons") {
+                    if let Some(polygons) = parse_polygons(polygons_data) {
+                        return Ok(Mesh::from_polygons_with_merge(polygons, None));
                     }
                 }
             }
-        }
-        
-        mesh
-    }
-}
 
-/// Project a 3D polygon to 2D for triangulation.
-/// 
-/// This function finds the best 2D projection plane for the polygon by calculating
-/// the polygon's normal vector and projecting to the plane with the largest component.
-fn project_polygon_to_2d(polygon: &[Point]) -> Vec<[f64; 2]> {
-    use crate::primitives::Vector;
-    
-    if polygon.len() < 3 {
-        return Vec::new();
-    }
-    
-    // Calculate polygon normal using Newell's method for robustness
-    let mut normal = Vector::new(0.0, 0.0, 0.0);
-    for i in 0..polygon.len() {
-        let current = &polygon[i];
-        let next = &polygon[(i + 1) % polygon.len()];
-        
-        normal.x += (current.y - next.y) * (current.z + next.z);
-        normal.y += (current.z - next.z) * (current.x + next.x);
-        normal.z += (current.x - next.x) * (current.y + next.y);
-    }
-    
-    // Normalize the normal vector
-    let length = (normal.x * normal.x + normal.y * normal.y + normal.z * normal.z).sqrt();
-    if length > 1e-10 {
-        normal.x /= length;
-        normal.y /= length;
-        normal.z /= length;
-    } else {
-        // Degenerate polygon, use XY plane
-        normal = Vector::new(0.0, 0.0, 1.0);
-    }
-    
-    // Choose the projection plane based on the largest component of the normal
-    let abs_x = normal.x.abs();
-    let abs_y = normal.y.abs();
-    let abs_z = normal.z.abs();
-    
-    let points_2d: Vec<[f64; 2]> = if abs_z >= abs_x && abs_z >= abs_y {
-        // Project to XY plane (drop Z)
-        polygon.iter().map(|p| [p.x, p.y]).collect()
-    } else if abs_y >= abs_x && abs_y >= abs_z {
-        // Project to XZ plane (drop Y)
-        polygon.iter().map(|p| [p.x, p.z]).collect()
-    } else {
-        // Project to YZ plane (drop X)
-        polygon.iter().map(|p| [p.y, p.z]).collect()
-    };
-    
-    points_2d
-}
-
-// Ear clipping triangulation implementation
-// Based on COMPAS reference: https://github.com/compas-dev/compas/blob/main/src/compas/geometry/triangulation_earclip.py
-
-/// Triangulate a polygon using the ear clipping algorithm
-/// 
-/// # Arguments
-/// * `points` - Array of 2D points defining the polygon boundary
-/// 
-/// # Returns
-/// Result containing triangles as arrays of vertex indices, or error message
-fn earclip_triangulate(points: &[[f64; 2]]) -> Result<Vec<[usize; 3]>, &'static str> {
-    if points.len() < 3 {
-        return Err("Polygon must have at least 3 vertices");
-    }
-    
-    if points.len() == 3 {
-        return Ok(vec![[0, 1, 2]]);
-    }
-    
-    // Check winding order and reverse if clockwise
-    let mut polygon_points = points.to_vec();
-    let signed_area = compute_signed_area(&polygon_points);
-    let was_reversed = signed_area > 0.0; // Note: > 0 means clockwise in our coordinate system
-    
-    if was_reversed {
-        polygon_points.reverse();
-    }
-    
-    // Simple ear clipping implementation
-    let mut triangles = Vec::new();
-    let mut indices: Vec<usize> = (0..polygon_points.len()).collect();
-    
-    while indices.len() > 3 {
-        let mut ear_found = false;
-        
-        for i in 0..indices.len() {
-            let prev_idx = if i == 0 { indices.len() - 1 } else { i - 1 };
-            let next_idx = (i + 1) % indices.len();
-            
-            let prev = indices[prev_idx];
-            let curr = indices[i];
-            let next = indices[next_idx];
-            
-            // Check if this forms a valid ear
-            if is_ear(&polygon_points, &indices, prev, curr, next) {
-                // Add triangle
-                triangles.push([prev, curr, next]);
-                
-                // Remove the ear vertex
-                indices.remove(i);
-                ear_found = true;
-                break;
+            // Try root-level "polygons"
+            if let Some(polygons_data) = json_data.get("polygons") {
+                if let Some(polygons) = parse_polygons(polygons_data) {
+                    return Ok(Mesh::from_polygons_with_merge(polygons, None));
+                }
             }
-        }
-        
-        if !ear_found {
-            return Err("Unable to find valid ear for triangulation");
-        }
+
+            Err("Invalid JSON format or missing polygons".into())
     }
-    
-    // Add the final triangle
-    if indices.len() == 3 {
-        triangles.push([indices[0], indices[1], indices[2]]);
-    }
-    
-    // If we reversed the points, adjust triangle indices back
-    if was_reversed {
-        let n = points.len();
-        for triangle in &mut triangles {
-            triangle[0] = n - 1 - triangle[0];
-            triangle[1] = n - 1 - triangle[1];
-            triangle[2] = n - 1 - triangle[2];
-        }
-    }
-    
-    Ok(triangles)
 }
 
-/// Check if three consecutive vertices form a valid ear
-fn is_ear(points: &[[f64; 2]], indices: &[usize], prev: usize, curr: usize, next: usize) -> bool {
-    let a = points[prev];
-    let b = points[curr];
-    let c = points[next];
-    
-    // Check if the angle at curr is convex (less than 180 degrees)
-    let ab = [b[0] - a[0], b[1] - a[1]];
-    let bc = [c[0] - b[0], c[1] - b[1]];
-    let cross = ab[0] * bc[1] - ab[1] * bc[0];
-    
-    if cross <= 0.0 {
-        return false; // Not convex
+
+/// Compute Newell's normal for a 3D polygon. Returns a (nx, ny, nz) tuple.
+fn newell_normal(points: &[Point]) -> (f64, f64, f64) {
+    if points.len() < 3 { return (0.0, 0.0, 1.0); }
+    let mut nx = 0.0;
+    let mut ny = 0.0;
+    let mut nz = 0.0;
+    for i in 0..points.len() {
+        let p = &points[i];
+        let q = &points[(i + 1) % points.len()];
+        nx += (p.y - q.y) * (p.z + q.z);
+        ny += (p.z - q.z) * (p.x + q.x);
+        nz += (p.x - q.x) * (p.y + q.y);
     }
-    
-    // Check if any other vertex lies inside the triangle
-    for &idx in indices {
-        if idx != prev && idx != curr && idx != next {
-            if point_in_triangle(points[idx], a, b, c) {
-                return false;
-            }
-        }
-    }
-    
-    true
+    let len = (nx * nx + ny * ny + nz * nz).sqrt();
+    if len > 0.0 { (nx / len, ny / len, nz / len) } else { (0.0, 0.0, 1.0) }
 }
 
-/// Check if a point is inside a triangle using barycentric coordinates
-fn point_in_triangle(p: [f64; 2], a: [f64; 2], b: [f64; 2], c: [f64; 2]) -> bool {
-    let d1 = sign(p, a, b);
-    let d2 = sign(p, b, c);
-    let d3 = sign(p, c, a);
-    
-    let has_neg = (d1 < 0.0) || (d2 < 0.0) || (d3 < 0.0);
-    let has_pos = (d1 > 0.0) || (d2 > 0.0) || (d3 > 0.0);
-    
-    !(has_neg && has_pos)
-}
-
-/// Helper function for point-in-triangle test
-fn sign(p1: [f64; 2], p2: [f64; 2], p3: [f64; 2]) -> f64 {
-    (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
-}
-
-/// Compute the signed area of a 2D polygon
-/// Positive area indicates counter-clockwise winding, negative indicates clockwise
-fn compute_signed_area(points: &[[f64; 2]]) -> f64 {
-    let mut sum = 0.0;
+/// Compute standard signed area of a 2D polygon (CCW positive).
+fn signed_area_2d(points: &[[f64; 2]]) -> f64 {
     let n = points.len();
-    
+    if n < 3 { return 0.0; }
+    let mut sum = 0.0;
     for i in 0..n {
         let p0 = points[i];
         let p1 = points[(i + 1) % n];
-        sum += (p1[0] - p0[0]) * (p1[1] + p0[1]);
+        sum += p0[0] * p1[1] - p1[0] * p0[1];
     }
-    
-    sum * 0.5
+    0.5 * sum
 }
 
 #[cfg(test)]

@@ -54,18 +54,18 @@ fn test_extract_edges_as_pipes_triangle() {
     
     // Extract edges as pipe meshes
     let radius = 0.05;
-    let sides = 8; // This parameter is ignored, create_pipe always uses 12 sides
+    let sides = 8; // Parameter is ignored; create_pipe uses an 8-sided unit cylinder without cap centers
     let pipe_meshes = mesh.extract_edges_as_pipes(radius, Some(sides));
     
     // Triangle should have exactly 3 pipe meshes
     assert_eq!(pipe_meshes.len(), 3);
     
-    // Each pipe mesh should have the correct structure (always 12-sided)
+    // Each pipe mesh should have the current 8-sided structure (no cap centers)
     for pipe_mesh in &pipe_meshes {
-        // Each pipe should have 2 + 12*2 vertices (2 centers + 12*2 rim vertices)
-        assert_eq!(pipe_mesh.number_of_vertices(), 2 + 12 * 2);
-        // Each pipe should have 12 + 12 + 12*2 faces (bottom cap + top cap + sides)
-        assert_eq!(pipe_mesh.number_of_faces(), 12 + 12 + 12 * 2);
+        // 8 vertices per ring * 2 rings = 16 vertices
+        assert_eq!(pipe_mesh.number_of_vertices(), 16);
+        // Caps: 2*(8-2)=12 triangles; Sides: 8*2=16 triangles -> total 28 faces
+        assert_eq!(pipe_mesh.number_of_faces(), 28);
     }
 }
 
@@ -78,17 +78,17 @@ fn test_extract_edges_as_pipes_with_default_sides() {
     let v2 = mesh.add_vertex(Point::new(0.0, 1.0, 0.0), None);
     mesh.add_face(vec![v0, v1, v2], None);
     
-    // Extract edges as pipe meshes with default sides (8)
+    // Extract edges as pipe meshes with default sides (ignored; implementation uses 8-sided)
     let radius = 0.05;
     let pipe_meshes = mesh.extract_edges_as_pipes(radius, None);
     
     // Triangle should have exactly 3 pipe meshes
     assert_eq!(pipe_meshes.len(), 3);
     
-    // Each pipe mesh always uses 12 sides (sides parameter is ignored)
+    // Each pipe mesh uses the current 8-sided unit cylinder (sides parameter is ignored)
     for pipe_mesh in &pipe_meshes {
-        assert_eq!(pipe_mesh.number_of_vertices(), 2 + 12 * 2); // 2 + 12*2 = 26
-        assert_eq!(pipe_mesh.number_of_faces(), 12 + 12 + 12 * 2); // 12 + 12 + 24 = 48
+        assert_eq!(pipe_mesh.number_of_vertices(), 16);
+        assert_eq!(pipe_mesh.number_of_faces(), 28);
     }
 }
 
