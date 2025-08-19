@@ -38,6 +38,12 @@ const MIN_ZOOM_DISTANCE: f32 = 0.5;
 const MAX_ZOOM_DISTANCE: f32 = 100.0;
 
 // Professional 3D orbit camera implementation
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CameraViewMode {
+    Perspective,
+    TopView,
+}
+
 #[derive(Debug)]
 pub struct Camera {
     // Eye position in 3D space
@@ -73,6 +79,16 @@ pub struct Camera {
     pub is_ortho: bool,
     // Orthographic half-height of the view volume (world units)
     pub ortho_half_height: f32,
+
+    // Camera view mode tracking
+    pub view_mode: CameraViewMode,
+    // Saved perspective state for toggling
+    pub saved_perspective_position: Point3<f32>,
+    pub saved_perspective_target: Point3<f32>,
+    pub saved_perspective_orientation: Quaternion<f32>,
+    pub saved_perspective_distance: f32,
+    pub saved_perspective_is_ortho: bool,
+    pub saved_perspective_ortho_half_height: f32,
 
     // OpenModel camera pose: world_from_camera transform kept in sync with the camera state
     pub om_world_from_camera: Xform,
@@ -135,6 +151,19 @@ impl Camera {
             // Start in perspective; initialize ortho scale to roughly match current view at target
             is_ortho: false,
             ortho_half_height: {
+                let fovy_rad = 0.5f32 * 45.0f32.to_radians();
+                distance * fovy_rad.tan()
+            },
+
+            // Camera view mode tracking
+            view_mode: CameraViewMode::Perspective,
+            // Initialize saved perspective state with current values
+            saved_perspective_position: position,
+            saved_perspective_target: target,
+            saved_perspective_orientation: orientation,
+            saved_perspective_distance: distance,
+            saved_perspective_is_ortho: false,
+            saved_perspective_ortho_half_height: {
                 let fovy_rad = 0.5f32 * 45.0f32.to_radians();
                 distance * fovy_rad.tan()
             },
@@ -239,31 +268,36 @@ impl Camera {
         self.reference_frame = Matrix3::from_cols(right, up, forward);
         self.last_right = right;
 
-        self.update_position();
-        self.update_om_xform();
     }
-
-    // Legacy method for compatibility
     pub fn build_view_projection_matrix(&self) -> Matrix4<f32> {
-        // Prefer OpenModel world_from_camera for view; fall back to look_at if non-invertible
-        let view = {
-            let w_from_c = xform_to_mat4f32(&self.om_world_from_camera);
-            if let Some(inv) = w_from_c.invert() { inv } else { Matrix4::look_at_rh(self.position, self.target, self.up) }
-        };
-        let proj = if self.is_ortho {
-            let half_h = self.ortho_half_height.max(1e-6);
-            let half_w = half_h * self.aspect.max(1e-6);
-            ortho(-half_w, half_w, -half_h, half_h, self.znear, self.zfar)
-        } else {
-            perspective(Deg(self.fovy), self.aspect, self.znear, self.zfar)
-        };
-        OPENGL_TO_WGPU_MATRIX * proj * view
+    // In TopView, force an exact view with +Y as up and -Z forward to avoid any roll.
+    // Otherwise, prefer OpenModel world_from_camera; fall back to look_at if non-invertible.
+    let view = if self.view_mode == CameraViewMode::TopView && self.is_ortho {
+        Matrix4::look_at_rh(self.position, self.target, Vector3::unit_y())
+    } else {
+        let w_from_c = xform_to_mat4f32(&self.om_world_from_camera);
+        if let Some(inv) = w_from_c.invert() { inv } else { Matrix4::look_at_rh(self.position, self.target, self.up) }
+    };
+    let proj = if self.is_ortho {
+        let half_h = self.ortho_half_height.max(1e-6);
+        let half_w = half_h * self.aspect.max(1e-6);
+        // Use much larger near/far planes to avoid clipping geometry
+        ortho(-half_w, half_w, -half_h, half_h, -1000.0, 1000.0)
+    } else {
+        perspective(Deg(self.fovy), self.aspect, self.znear, self.zfar)
+    };
+    OPENGL_TO_WGPU_MATRIX * proj * view
     }
-
-    /// Apply an external OpenModel world_from_camera transform to this camera.
-    /// This updates internal position/target/up/orientation/reference frame to match the transform
     /// and stores the OpenModel transform for view construction.
     pub fn set_om_world_from_camera(&mut self, xf: Xform) {
+        // When in TopView, ignore external OM camera transforms to prevent overriding
+        // the enforced orthographic top-down orientation and target/position.
+        if self.view_mode == CameraViewMode::TopView {
+            log::warn!(
+                "Ignoring external OM transform while in TopView to prevent rotation override"
+            );
+            return;
+        }
         // Extract basis vectors and translation from column-major matrix
         let right_ws = Vector3::new(xf.m[0] as f32, xf.m[1] as f32, xf.m[2] as f32).normalize();
         let up_ws    = Vector3::new(xf.m[4] as f32, xf.m[5] as f32, xf.m[6] as f32).normalize();
@@ -306,6 +340,186 @@ impl Camera {
 
         // Update OM transform after panning
         self.update_om_xform();
+    }
+
+    // Dolly camera along its forward direction (moves position and target together)
+    pub fn dolly(&mut self, amount: f32) {
+        if amount == 0.0 { return; }
+        let dir = self.forward_dir();
+        let delta = dir * amount;
+        self.position += delta;
+        self.target += delta;
+        // Keep OpenModel camera pose in sync
+        self.update_om_xform();
+    }
+
+    // Toggle between perspective and orthographic projection
+    pub fn toggle_view_mode(&mut self) {
+        if self.is_ortho {
+            // Switch to perspective and restore saved perspective state (if coming from TopView)
+            self.is_ortho = false;
+            self.view_mode = CameraViewMode::Perspective;
+
+            // Restore saved perspective camera pose/orientation
+            self.position = self.saved_perspective_position;
+            self.target = self.saved_perspective_target;
+            self.orientation = self.saved_perspective_orientation;
+            self.distance = self.saved_perspective_distance;
+
+            // Rebuild reference frame and up vector from restored pose
+            let dir = (self.target - self.position).normalize();
+            let forward = -dir;
+            let right = forward.cross(self.world_up).normalize();
+            let up = right.cross(forward).normalize();
+            self.reference_frame = Matrix3::from_cols(right, up, forward);
+            self.last_right = right;
+            self.up = up;
+
+            // Sync OM transform so build_view_projection uses the restored view
+            self.update_om_xform();
+
+            log::info!("Switched to perspective projection (restored)");
+        } else {
+            // Switch to orthographic
+            self.is_ortho = true;
+            self.ortho_half_height = 6.0;
+            log::info!("Switched to orthographic projection with half_height={}", self.ortho_half_height);
+        }
+    }
+    
+    // Cycle through: Perspective -> TopView -> Parallel (orthographic, free-orbit)
+    pub fn cycle_view_triple(&mut self) {
+        if !self.is_ortho && self.view_mode != CameraViewMode::TopView {
+            // State A: Perspective -> go to TopView (locked, ortho)
+            self.set_top_view();
+            return;
+        }
+
+        if self.view_mode == CameraViewMode::TopView {
+            // State B: TopView -> go to Parallel-Ortho (free orbit, keep ortho scale)
+            // Use the saved perspective pose to avoid starting exactly at the pole
+            self.view_mode = CameraViewMode::Perspective; // re-enable orbit
+            self.is_ortho = true; // stay orthographic
+
+            // Restore saved perspective spatial state (pose), but remain in orthographic projection
+            self.position = self.saved_perspective_position;
+            self.target = self.saved_perspective_target;
+            self.orientation = self.saved_perspective_orientation;
+            self.distance = self.saved_perspective_distance;
+            // Note: keep current ortho_half_height so user-controlled scale is preserved
+
+            // Apply a 45° yaw around world Z to the restored pose for the Parallel view
+            let yaw_rotation = Quaternion::from_axis_angle(self.world_up, Rad(std::f32::consts::FRAC_PI_4));
+            self.orientation = (yaw_rotation * self.orientation).normalize();
+            // Recompute position/up/reference frame from orientation
+            self.update_position();
+
+            // Rebuild reference frame from restored pose
+            let dir = (self.target - self.position).normalize();
+            let forward = -dir;
+            let right = forward.cross(self.world_up).normalize();
+            let up = right.cross(forward).normalize();
+            self.reference_frame = Matrix3::from_cols(right, up, forward);
+            self.last_right = right;
+            self.up = up;
+
+            // Keep OM transform in sync
+            self.update_om_xform();
+            log::info!(
+                "Cycled to Parallel-Ortho (free orbit) using saved perspective pose. ortho_half_height={:.3}",
+                self.ortho_half_height
+            );
+            return;
+        }
+
+        // State C: Parallel-Ortho -> go back to Perspective (restore saved perspective state)
+        if self.is_ortho {
+            self.toggle_view_mode();
+            return;
+        }
+    }
+    
+    // Set camera to top view (looking down along -Z axis)
+    fn set_top_view(&mut self) {
+        // True top-down: look straight down -Z with +Y as up.
+        // Center on world origin: target = (0,0,0), position = (0,0,distance)
+        // Save current perspective state so we can restore when exiting TopView
+        if self.view_mode != CameraViewMode::TopView {
+            self.saved_perspective_position = self.position;
+            self.saved_perspective_target = self.target;
+            self.saved_perspective_orientation = self.orientation;
+            self.saved_perspective_distance = self.distance;
+            self.saved_perspective_is_ortho = self.is_ortho;
+            self.saved_perspective_ortho_half_height = self.ortho_half_height;
+        }
+        self.is_ortho = true;
+        // Ensure a reasonable ortho scale
+        if self.ortho_half_height < 1.0 {
+            self.ortho_half_height = 6.0;
+        } else {
+            self.ortho_half_height = self.ortho_half_height.max(6.0);
+        }
+
+        // Set fixed top-view orientation and reference frame
+        self.up = Vector3::unit_y();
+        // Center at origin (x,y = 0) and keep distance along +Z so view is along -Z
+        self.target = Point3::new(0.0, 0.0, 0.0);
+        self.position = Point3::new(0.0, 0.0, self.distance);
+        // Use a +90° rotation about +X so that rot(+Y) = +Z, hence forward = -rot(+Y) = -Z
+        self.orientation = Quaternion::from_axis_angle(Vector3::unit_x(), Rad(std::f32::consts::FRAC_PI_2));
+        let forward = -Vector3::unit_z();
+        let right = Vector3::unit_x();
+        let up = Vector3::unit_y();
+        self.reference_frame = Matrix3::from_cols(right, up, forward);
+        self.last_right = right;
+
+        // Mark view mode and sync OM transform
+        self.view_mode = CameraViewMode::TopView;
+        self.update_om_xform();
+
+        log::info!(
+            "Top view set (ortho): pos=({:.3},{:.3},{:.3}) target=({:.3},{:.3},{:.3}) ortho_half_height={:.3}",
+            self.position.x, self.position.y, self.position.z,
+            self.target.x, self.target.y, self.target.z,
+            self.ortho_half_height
+        );
+    }
+
+    // Set orthographic camera with scene bounds for proper framing
+    pub fn set_top_view_with_bounds(&mut self, scene_center: Point3<f32>, scene_size: Vector3<f32>) {
+        // Position camera above the scene center
+        let view_height = (scene_size.z * 0.5 + scene_size.x.max(scene_size.y) * 0.5).max(10.0);
+        self.position = Point3::new(scene_center.x, scene_center.y, scene_center.z + view_height);
+        self.target = scene_center;
+        
+        // Look down along -Z axis
+        self.up = Vector3::unit_y(); // Y is up in top view
+        
+        // Set orthographic projection for top view
+        self.is_ortho = true;
+        // Set ortho bounds to fit the scene with some padding
+        let padding_factor = 1.2; // 20% padding around scene
+        let max_scene_extent = scene_size.x.max(scene_size.y) * 0.5 * padding_factor;
+        self.ortho_half_height = max_scene_extent.max(1.0);
+        
+        // Set orientation to look straight down
+        self.orientation = Quaternion::look_at(-Vector3::unit_z(), Vector3::unit_y());
+        
+        // Update reference frame for top view
+        let forward = -Vector3::unit_z();
+        let right = Vector3::unit_x();
+        let up = Vector3::unit_y();
+        self.reference_frame = Matrix3::from_cols(right, up, forward);
+        self.last_right = right;
+        
+        self.update_om_xform();
+        
+        log::info!(
+            "Orthographic top view set: center=({:.3},{:.3},{:.3}) size=({:.3},{:.3},{:.3}) ortho_half_height={:.3}",
+            scene_center.x, scene_center.y, scene_center.z,
+            scene_size.x, scene_size.y, scene_size.z,
+            self.ortho_half_height
+        );
     }
 
     // Legacy compatibility - map position to eye
@@ -403,11 +617,18 @@ pub struct CameraController {
     // Camera control settings
     orbit_speed: f32,
     zoom_speed: f32,
+    ortho_zoom_speed: f32,
     orbit_invert_y: bool,
     max_rotation_per_frame: f32,
 
+    // Camera view toggle functionality
+    toggle_view_pressed: bool,
+    // Top view trigger
+    top_view_pressed: bool,
     // Reset functionality
     reset_camera_pressed: bool,
+    // New: single-key cycle (Perspective -> TopView -> Parallel-Ortho)
+    cycle_view_pressed: bool,
 }
 
 impl CameraController {
@@ -429,10 +650,14 @@ impl CameraController {
             mouse_pan_x: 0.0,
             mouse_pan_y: 0.0,
             orbit_speed: 1.5,    // Increased orbit speed for responsive control
-            zoom_speed: 0.05,    // Reduced for softer zoom
+            zoom_speed: 0.05,    // Reduced for softer zoom (perspective)
+            ortho_zoom_speed: 0.15, // Exponential zoom factor for orthographic
             orbit_invert_y: false, // Standard behavior in most 3D software
             max_rotation_per_frame: 0.1, // Limit to about 5.7 degrees per frame
+            toggle_view_pressed: false,
+            top_view_pressed: false,
             reset_camera_pressed: false,
+            cycle_view_pressed: false,
         }
     }
 
@@ -464,6 +689,25 @@ impl CameraController {
                 true
             }
             KeyCode::KeyC => {
+                if state == ElementState::Pressed {
+                    log::info!("KeyC is deprecated. Use 'P' to cycle: Perspective -> TopView -> Parallel");
+                }
+                true
+            }
+            KeyCode::KeyT => {
+                if state == ElementState::Pressed {
+                    log::info!("KeyT is deprecated. Use 'P' to cycle: Perspective -> TopView -> Parallel");
+                }
+                true
+            }
+            KeyCode::KeyP => {
+                if state == ElementState::Pressed {
+                    log::info!("KeyP pressed: scheduling view cycle (Perspective -> TopView -> Parallel)");
+                    self.cycle_view_pressed = true;
+                }
+                true
+            }
+            KeyCode::KeyF => {
                 if state == ElementState::Pressed {
                     self.reset_camera_pressed = true;
                 }
@@ -516,9 +760,13 @@ impl CameraController {
             MouseScrollDelta::PixelDelta(PhysicalPosition { y, .. }) => *y as f32 * 0.01,
         };
     }
-
     // Update the professional orbit camera - Z-up turntable style (Blender/Maya)
     pub fn update_camera(&mut self, camera: &mut Camera, dt: Duration) {
+        self.update_camera_with_bounds(camera, dt, None);
+    }
+
+    // Update camera with optional scene bounds for orthographic framing
+    pub fn update_camera_with_bounds(&mut self, camera: &mut Camera, dt: Duration, _scene_bounds: Option<(cgmath::Point3<f32>, cgmath::Vector3<f32>)>) {
         let dt = dt.as_secs_f32();
 
         // Handle keyboard panning (WASD/arrow keys)
@@ -526,6 +774,12 @@ impl CameraController {
         let key_pan_up = (self.amount_up - self.amount_down) * self.speed * dt;
         if key_pan_right != 0.0 || key_pan_up != 0.0 {
             camera.pan(key_pan_right, key_pan_up);
+        }
+
+        // Handle keyboard dolly (W/S)
+        let key_dolly = (self.amount_forward - self.amount_backward) * self.speed * dt;
+        if key_dolly != 0.0 {
+            camera.dolly(key_dolly);
         }
 
         // Handle mouse panning (middle button drag)
@@ -541,7 +795,10 @@ impl CameraController {
         }
 
         // Handle orbit rotation (right button drag) - Z-up turntable style
-        if self.is_orbiting && (self.mouse_delta_x != 0.0 || self.mouse_delta_y != 0.0) {
+        if self.is_orbiting
+            && (self.mouse_delta_x != 0.0 || self.mouse_delta_y != 0.0)
+            && camera.view_mode != CameraViewMode::TopView
+        {
             // In Z-up turntable mode (like Blender/Maya):
             // X mouse movement -> rotate around Z world axis (yaw)
             // Y mouse movement -> rotate around horizontal axis (pitch)
@@ -592,9 +849,12 @@ impl CameraController {
         // Handle zooming with scroll wheel (standard in all 3D software)
         if self.scroll != 0.0 {
             if camera.is_ortho {
-                // In orthographic mode, zoom changes the projection scale
-                camera.ortho_half_height *= 1.0 + self.scroll * self.zoom_speed;
-                camera.ortho_half_height = camera.ortho_half_height.max(1e-3).min(1.0e6);
+                // Orthographic: use exponential zoom for a consistent feel
+                // factor = 2^(scroll * ortho_zoom_speed)
+                let factor = (2.0_f32).powf(self.scroll * self.ortho_zoom_speed);
+                camera.ortho_half_height = (camera.ortho_half_height * factor)
+                    .max(1e-4)
+                    .min(1.0e6);
                 // No change to camera.position for ortho zoom; keep it stable
             } else {
                 // Perspective mode: adjust camera distance
@@ -606,7 +866,25 @@ impl CameraController {
             self.scroll = 0.0;
         }
 
-        // Handle camera reset (c key)
+        // Handle top view trigger (t key)
+        if self.top_view_pressed {
+            camera.set_top_view();
+            self.top_view_pressed = false;
+        }
+
+        // Handle 'P' triple-cycle: Perspective -> TopView -> Parallel (orthographic, free-orbit)
+        if self.cycle_view_pressed {
+            camera.cycle_view_triple();
+            self.cycle_view_pressed = false;
+        }
+
+        // Handle camera view toggle (c key)
+        if self.toggle_view_pressed {
+            camera.toggle_view_mode();
+            self.toggle_view_pressed = false;
+        }
+
+        // Handle camera reset (f key)
         if self.reset_camera_pressed {
             camera.reset_to_initial();
             self.reset_camera_pressed = false;

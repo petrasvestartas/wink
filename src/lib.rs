@@ -29,6 +29,51 @@ use instance::BatchKind;
 use openmodel::AllGeometryData;
 use openmodel::geometry::{Mesh};
 
+/// Scene bounding box for orthographic camera framing
+#[derive(Debug, Clone, Copy)]
+pub struct SceneBounds {
+    pub min: cgmath::Point3<f32>,
+    pub max: cgmath::Point3<f32>,
+}
+
+impl SceneBounds {
+    pub fn new() -> Self {
+        Self {
+            min: cgmath::Point3::new(f32::INFINITY, f32::INFINITY, f32::INFINITY),
+            max: cgmath::Point3::new(f32::NEG_INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY),
+        }
+    }
+
+    pub fn expand_point(&mut self, point: cgmath::Point3<f32>) {
+        self.min.x = self.min.x.min(point.x);
+        self.min.y = self.min.y.min(point.y);
+        self.min.z = self.min.z.min(point.z);
+        self.max.x = self.max.x.max(point.x);
+        self.max.y = self.max.y.max(point.y);
+        self.max.z = self.max.z.max(point.z);
+    }
+
+    pub fn center(&self) -> cgmath::Point3<f32> {
+        cgmath::Point3::new(
+            (self.min.x + self.max.x) * 0.5,
+            (self.min.y + self.max.y) * 0.5,
+            (self.min.z + self.max.z) * 0.5,
+        )
+    }
+
+    pub fn size(&self) -> cgmath::Vector3<f32> {
+        cgmath::Vector3::new(
+            self.max.x - self.min.x,
+            self.max.y - self.min.y,
+            self.max.z - self.min.z,
+        )
+    }
+
+    pub fn is_valid(&self) -> bool {
+        self.min.x <= self.max.x && self.min.y <= self.max.y && self.min.z <= self.max.z
+    }
+}
+
 #[cfg(target_arch = "wasm32")]
 const LOCAL_GEOMETRY_HTTP_PATH: &str = "/geometry/all_geometry.json"; // served by docs dev server
 
@@ -52,7 +97,7 @@ const _MSAA_SAMPLE_COUNT: u32 = 4;
 const _MSAA_SAMPLE_COUNT: u32 = 4;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-enum PipelineMode { Solid, Color, Lights }
+enum PipelineMode { Color, Solid, Lights }
 
 #[cfg(target_arch = "wasm32")]
 use std::cell::{Cell, RefCell};
@@ -199,6 +244,8 @@ pub struct State{
     pipeline_mode: PipelineMode,                 // Active pipeline selection
     // Pipe rendering controls
     pipe_px_radius: f32,
+    // Scene bounds for orthographic camera framing
+    scene_bounds: Option<SceneBounds>,
     vertex_buffer: wgpu::Buffer, // We will store data of vertex.rs in this buffer
     index_buffer: wgpu::Buffer, // We will store data of vertex.rs in this buffer
     num_indices: u32,
@@ -631,6 +678,25 @@ impl State{
         });
         let msaa_color_view = msaa_color_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
+        // Compute scene bounds from vertices for orthographic camera framing
+        let scene_bounds = if !vertices.is_empty() {
+            let mut bounds = SceneBounds::new();
+            for vertex in vertices {
+                bounds.expand_point(cgmath::Point3::new(
+                    vertex.position[0],
+                    vertex.position[1],
+                    vertex.position[2],
+                ));
+            }
+            if bounds.is_valid() {
+                Some(bounds)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
         // Now that we configured our render surface.
         // We can create the struct State with its arguments.
         let mut state = Self {
@@ -645,12 +711,12 @@ impl State{
             render_pipeline_pipe,
             render_pipeline_sphere,
             render_pipeline_lights,
-            pipeline_mode: PipelineMode::Color,  
-            pipe_px_radius: default_pipe_px_radius,
+            pipeline_mode: PipelineMode::Color,
+            pipe_px_radius: 1.0,
+            scene_bounds,
             vertex_buffer,
             index_buffer,
             num_indices,
-            // Camera system - testing step by step
             camera,
             camera_uniform,
             camera_buffer,
@@ -736,6 +802,25 @@ impl State{
         self.instances = flat_instances;
         self.instance_buffer = new_instance_buffer;
         self.batches = batch_draws;
+
+        // Recompute scene bounds after geometry update
+        self.scene_bounds = if !vertices.is_empty() {
+            let mut bounds = SceneBounds::new();
+            for vertex in vertices {
+                bounds.expand_point(cgmath::Point3::new(
+                    vertex.position[0],
+                    vertex.position[1],
+                    vertex.position[2],
+                ));
+            }
+            if bounds.is_valid() {
+                Some(bounds)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
 
         #[cfg(target_arch = "wasm32")]
         {
@@ -959,6 +1044,11 @@ impl State{
         );
     }
 
+    /// Get scene bounds for camera framing
+    pub fn get_scene_bounds(&self) -> Option<(cgmath::Point3<f32>, cgmath::Vector3<f32>)> {
+        self.scene_bounds.map(|bounds| (bounds.center(), bounds.size()))
+    }
+
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         self.window.request_redraw(); // We ask the window to draw another frame
 
@@ -1114,6 +1204,26 @@ impl State{
                     // Update camera position to reflect distance change
                     self.camera.update_position();
                 }
+                // Immediately refresh camera uniform and push to GPU so the first frame after the toggle
+                // uses the correct view-projection and ortho parameters.
+                self.camera_uniform.update_view_proj(&self.camera);
+                self.camera_uniform.set_eye_dir(&self.camera);
+                self.camera_uniform.set_view_params(
+                    self.config.width as f32,
+                    self.config.height as f32,
+                    self.camera.fovy,
+                    self.camera.aspect,
+                    self.pipe_px_radius,
+                    self.camera.is_ortho,
+                    self.camera.ortho_half_height,
+                );
+                self.queue.write_buffer(
+                    &self.camera_buffer,
+                    0,
+                    bytemuck::cast_slice(&[self.camera_uniform]),
+                );
+                // Ensure a redraw is scheduled immediately
+                self.window.request_redraw();
                 #[cfg(target_arch = "wasm32")]
                 web_sys::console::log_1(&format!(
                     "Projection mode: {} (ortho_half_height={:.3})",
