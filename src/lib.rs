@@ -212,6 +212,47 @@ fn xform_to_instance(xf: &openmodel::primitives::Xform) -> Instance {
     Instance::from_xform(xf)
 }
 
+// Helper: convert an OpenModel PointCloud to PointCloudInstance records used by the point-cloud pipeline
+fn convert_pointcloud_to_instances(pointcloud: &PointCloud, out: &mut Vec<PointCloudInstance>) {
+    for (i, p) in pointcloud.points.iter().enumerate() {
+        let color = if i < pointcloud.colors.len() {
+            let c = &pointcloud.colors[i];
+            [c.r as f32 / 255.0, c.g as f32 / 255.0, c.b as f32 / 255.0]
+        } else {
+            [0.8, 0.8, 0.8]
+        };
+        out.push(PointCloudInstance {
+            position: [p.x as f32, p.y as f32, p.z as f32],
+            color,
+            size: 1.0,
+        });
+    }
+}
+
+// Helper: generate a small test set of point cloud instances (3x3x3 grid)
+fn create_test_pointcloud_instances() -> Vec<PointCloudInstance> {
+    let mut out = Vec::new();
+    let n = 3;
+    let spacing = 1.0f32;
+    let offset = -((n as f32 - 1.0) * spacing * 0.5);
+    for x in 0..n {
+        for y in 0..n {
+            for z in 0..n {
+                out.push(PointCloudInstance {
+                    position: [
+                        offset + x as f32 * spacing,
+                        offset + y as f32 * spacing,
+                        offset + z as f32 * spacing,
+                    ],
+                    color: [1.0, 0.7, 0.2],
+                    size: 1.0,
+                });
+            }
+        }
+    }
+    out
+}
+
 // Helper: convert point cloud to instances for instanced rendering
 // Convert point cloud data to unified geometry (vertices + indices + instances)
 fn create_pointcloud_geometry_from_data(pointclouds: &[openmodel::geometry::PointCloud]) -> (Vec<Vertex>, Vec<u16>, Vec<Instance>) {
@@ -234,7 +275,7 @@ fn create_pointcloud_geometry_from_data(pointclouds: &[openmodel::geometry::Poin
     // Create instances for each point
     for pointcloud in pointclouds {
         for (i, point) in pointcloud.points.iter().enumerate() {
-            let color = if i < pointcloud.colors.len() {
+            let _color = if i < pointcloud.colors.len() {
                 let c = &pointcloud.colors[i];
                 [c.r as f32, c.g as f32, c.b as f32]
             } else {
