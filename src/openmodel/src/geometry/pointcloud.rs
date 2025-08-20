@@ -1,10 +1,10 @@
 use crate::geometry::{Point, Vector, Color, Xform};
 use crate::common::{FromJsonData, HasJsonData, Data};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::fmt;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct PointCloud {
     /// The collection of points.
     pub points: Vec<Point>,
@@ -175,6 +175,23 @@ impl Sub<&Vector> for PointCloud {
             p.z -= other.z;
         }
         return c;
+    }
+}
+
+// Custom Serialize implementation for simple format compatible with wink
+impl Serialize for PointCloud {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        use serde::ser::SerializeStruct;
+        let mut state = serializer.serialize_struct("PointCloud", 5)?;
+        state.serialize_field("points", &self.points)?;
+        state.serialize_field("normals", &self.normals)?;
+        state.serialize_field("colors", &self.colors)?;
+        state.serialize_field("xform", &self.xform)?;
+        state.serialize_field("data", &self.data)?;
+        state.end()
     }
 }
 

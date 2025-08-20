@@ -35,6 +35,7 @@ pub enum BatchKind {
     Surface,
     Pipe,
     Sphere,
+    PointCloud,
 }
 
 // Since quaternion are not available in shader,

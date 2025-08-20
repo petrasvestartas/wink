@@ -11,12 +11,15 @@ pub mod vertex;
 pub mod camera;
 pub mod timing;
 pub mod instance;
+pub mod pointcloud_vertex;
 pub mod shader_color_pipeline;
 pub mod shader_solid_pipeline;
 pub mod shader_pipe_pipeline;
 pub mod shader_sphere_pipeline;
 pub mod shader_lights_pipeline;
+pub mod shader_pointcloud_pipeline;
 use vertex::Vertex;
+use pointcloud_vertex::{PointCloudInstance, QuadVertex};
 use camera::{Camera, CameraUniform, CameraController};
 use timing::Instant;
 use wgpu::util::DeviceExt;
@@ -27,7 +30,7 @@ use instance::BatchDraw;
 use instance::BatchKind;
 // OpenModel: JSON geometry + mesh utilities
 use openmodel::AllGeometryData;
-use openmodel::geometry::{Mesh};
+use openmodel::geometry::{Mesh, PointCloud};
 
 /// Scene bounding box for orthographic camera framing
 #[derive(Debug, Clone, Copy)]
@@ -104,7 +107,7 @@ use std::cell::{Cell, RefCell};
 
 #[cfg(target_arch = "wasm32")]
 thread_local! {
-    static PENDING_GEOMETRY: RefCell<Option<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>)>> = RefCell::new(None);
+    static PENDING_GEOMETRY: RefCell<Option<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>)>> = RefCell::new(None);
     static LOCAL_HASH: RefCell<Option<u64>> = RefCell::new(None);
     static LOCAL_FETCHING: Cell<bool> = Cell::new(false);
 }
@@ -209,25 +212,101 @@ fn xform_to_instance(xf: &openmodel::primitives::Xform) -> Instance {
     Instance::from_xform(xf)
 }
 
-// // Helper: 10x10 grid (11 lines per direction) + 1-unit Z axis as pipes
-// fn make_grid_and_axis_meshes() -> Vec<(Mesh, [f32; 3])> {
-//     let mut out = Vec::new();
-//     let size: i32 = 5; // -5..=5 => 11 lines => 10x10 cells
-//     let radius: f64 = 0.02;
-//     let grid_color: [f32; 3] = [0.3, 0.3, 0.3];
-//     let axis_color: [f32; 3] = [0.0, 0.0, 1.0];
-
-//     for i in -size..=size {
-//         let y = i as f64;
-//         out.push((Mesh::create_pipe(Point::new(-(size as f64), y, 0.0), Point::new(size as f64, y, 0.0), radius), grid_color));
-//     }
-//     for i in -size..=size {
-//         let x = i as f64;
-//         out.push((Mesh::create_pipe(Point::new(x, -(size as f64), 0.0), Point::new(x, size as f64, 0.0), radius), grid_color));
-//     }
-//     out.push((Mesh::create_pipe(Point::new(0.0, 0.0, 0.0), Point::new(0.0, 0.0, 1.0), 0.03), axis_color));
-//     out
-// }
+// Helper: convert point cloud to instances for instanced rendering
+// Convert point cloud data to unified geometry (vertices + indices + instances)
+fn create_pointcloud_geometry_from_data(pointclouds: &[openmodel::geometry::PointCloud]) -> (Vec<Vertex>, Vec<u16>, Vec<Instance>) {
+    let mut vertices = Vec::new();
+    let mut indices = Vec::new();
+    let mut instances = Vec::new();
+    
+    // Create shared quad geometry for all point cloud instances
+    let quad_vertices = [
+        Vertex { position: [-0.5, -0.5, 0.0], color: [1.0, 1.0, 1.0], normal: [0.0, 0.0, 1.0] },
+        Vertex { position: [ 0.5, -0.5, 0.0], color: [1.0, 1.0, 1.0], normal: [0.0, 0.0, 1.0] },
+        Vertex { position: [ 0.5,  0.5, 0.0], color: [1.0, 1.0, 1.0], normal: [0.0, 0.0, 1.0] },
+        Vertex { position: [-0.5,  0.5, 0.0], color: [1.0, 1.0, 1.0], normal: [0.0, 0.0, 1.0] },
+    ];
+    let quad_indices = [0, 1, 2, 2, 3, 0];
+    
+    vertices.extend_from_slice(&quad_vertices);
+    indices.extend_from_slice(&quad_indices);
+    
+    // Create instances for each point
+    for pointcloud in pointclouds {
+        for (i, point) in pointcloud.points.iter().enumerate() {
+            let color = if i < pointcloud.colors.len() {
+                let c = &pointcloud.colors[i];
+                [c.r as f32, c.g as f32, c.b as f32]
+            } else {
+                [0.8, 0.8, 0.8] // Default gray
+            };
+            
+            // Create transform matrix: translation to point position + scale for size
+            let size = 0.1; // Point size
+            let transform = [
+                [size, 0.0, 0.0, 0.0],
+                [0.0, size, 0.0, 0.0], 
+                [0.0, 0.0, size, 0.0],
+                [point.x as f32, point.y as f32, point.z as f32, 1.0],
+            ];
+            
+            instances.push(Instance { model: transform });
+        }
+    }
+    
+    (vertices, indices, instances)
+}
+// Helper: create test point cloud geometry using unified system
+fn create_test_pointcloud_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<Instance>) {
+    let mut vertices = Vec::new();
+    let mut indices = Vec::new();
+    let mut instances = Vec::new();
+    
+    // Create shared quad geometry
+    let quad_vertices = [
+        Vertex { position: [-0.5, -0.5, 0.0], color: [1.0, 1.0, 1.0], normal: [0.0, 0.0, 1.0] },
+        Vertex { position: [ 0.5, -0.5, 0.0], color: [1.0, 1.0, 1.0], normal: [0.0, 0.0, 1.0] },
+        Vertex { position: [ 0.5,  0.5, 0.0], color: [1.0, 1.0, 1.0], normal: [0.0, 0.0, 1.0] },
+        Vertex { position: [-0.5,  0.5, 0.0], color: [1.0, 1.0, 1.0], normal: [0.0, 0.0, 1.0] },
+    ];
+    let quad_indices = [0, 1, 2, 2, 3, 0];
+    
+    vertices.extend_from_slice(&quad_vertices);
+    indices.extend_from_slice(&quad_indices);
+    
+    let size = 3;
+    let spacing = 1.0f32;
+    let offset = -((size as f32 - 1.0) * spacing * 0.5);
+    
+    for x in 0..size {
+        for y in 0..size {
+            for z in 0..size {
+                let position = [
+                    offset + x as f32 * spacing,
+                    offset + y as f32 * spacing,
+                    offset + z as f32 * spacing,
+                ];
+                
+                let point_size = 0.1;
+                let transform = [
+                    [point_size, 0.0, 0.0, 0.0],
+                    [0.0, point_size, 0.0, 0.0], 
+                    [0.0, 0.0, point_size, 0.0],
+                    [position[0], position[1], position[2], 1.0],
+                ];
+                
+                instances.push(Instance { model: transform });
+            }
+        }
+    }
+    
+    #[cfg(target_arch = "wasm32")]
+    web_sys::console::log_1(&format!("Created {} test point cloud instances", instances.len()).into());
+    #[cfg(not(target_arch = "wasm32"))]
+    println!("Created {} test point cloud instances", instances.len());
+    
+    (vertices, indices, instances)
+}
 
 pub struct State{
     surface: wgpu::Surface<'static>,
@@ -241,6 +320,7 @@ pub struct State{
     render_pipeline_pipe: wgpu::RenderPipeline,  // Third pipeline (pipe-specific)
     render_pipeline_sphere: wgpu::RenderPipeline, // Sphere pipeline (vertex caps)
     render_pipeline_lights: wgpu::RenderPipeline, // Lights pipeline (lit surfaces)
+    render_pipeline_pointcloud: wgpu::RenderPipeline, // Point cloud glyph pipeline
     pipeline_mode: PipelineMode,                 // Active pipeline selection
     // Pipe rendering controls
     pipe_px_radius: f32,
@@ -249,6 +329,10 @@ pub struct State{
     vertex_buffer: wgpu::Buffer, // We will store data of vertex.rs in this buffer
     index_buffer: wgpu::Buffer, // We will store data of vertex.rs in this buffer
     num_indices: u32,
+    // Point cloud rendering buffers (instanced approach)
+    pointcloud_quad_buffer: wgpu::Buffer,      // Shared quad geometry
+    pointcloud_instance_buffer: wgpu::Buffer,  // Instance data (position, color, size)
+    pointcloud_num_instances: u32,
     // Camera system - testing step by step
     camera: Camera,
     camera_uniform: CameraUniform,
@@ -281,7 +365,7 @@ pub struct State{
 
 impl State{
     // We don't need to be async right now, will implement later
-    pub async fn new(window: Arc<Window>, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch]) -> anyhow::Result<Self> {
+    pub async fn new(window: Arc<Window>, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch], pointcloud_instances: &[PointCloudInstance]) -> anyhow::Result<Self> {
 
         let size = window.inner_size();
         // Clamp initial surface size on Web (WebGL2 backend) to avoid exceeding max texture limit.
@@ -508,6 +592,10 @@ impl State{
             &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, msaa_sample_count,
         );
 
+        let render_pipeline_pointcloud = crate::shader_pointcloud_pipeline::create(
+            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, msaa_sample_count,
+        );
+
         // Pop and log any validation errors that might have occurred during pipeline creation
         #[cfg(target_arch = "wasm32")]
         if let Some(err) = device.pop_error_scope().await {
@@ -568,6 +656,26 @@ impl State{
         );
         
         let num_indices = indices.len() as u32;
+        
+        // Create shared quad geometry buffer for point cloud rendering
+        let pointcloud_quad_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Point Cloud Quad Buffer"),
+            contents: bytemuck::cast_slice(QuadVertex::VERTICES),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+        
+        // Create point cloud instance buffer
+        let pointcloud_instance_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Point Cloud Instance Buffer"),
+            contents: bytemuck::cast_slice(pointcloud_instances),
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+        });
+        let pointcloud_num_instances = pointcloud_instances.len() as u32;
+        
+        #[cfg(target_arch = "wasm32")]
+        web_sys::console::log_1(&format!("Initialized point cloud with {} instances", pointcloud_num_instances).into());
+        #[cfg(not(target_arch = "wasm32"))]
+        println!("Initialized point cloud with {} instances", pointcloud_num_instances);
         
         // Instances come from batches below (default identity per-batch if none provided)
 
@@ -711,12 +819,16 @@ impl State{
             render_pipeline_pipe,
             render_pipeline_sphere,
             render_pipeline_lights,
+            render_pipeline_pointcloud,
             pipeline_mode: PipelineMode::Color,
-            pipe_px_radius: 1.0,
+            pipe_px_radius: 1.5,
             scene_bounds,
             vertex_buffer,
             index_buffer,
             num_indices,
+            pointcloud_quad_buffer,
+            pointcloud_instance_buffer,
+            pointcloud_num_instances,
             camera,
             camera_uniform,
             camera_buffer,
@@ -750,8 +862,58 @@ impl State{
         Ok(state)
     }
 
+    // Update point cloud instance buffer with new data (only if different)
+    fn update_pointcloud_instances(&mut self, pointcloud_instances: &[PointCloudInstance]) {
+        let new_count = pointcloud_instances.len() as u32;
+        
+        // Skip update if count is the same (assume data is identical)
+        if new_count == self.pointcloud_num_instances {
+            #[cfg(target_arch = "wasm32")]
+            web_sys::console::log_1(&format!("⏭️ SKIPPING point cloud buffer update: {} instances unchanged", new_count).into());
+            #[cfg(not(target_arch = "wasm32"))]
+            println!("⏭️ SKIPPING point cloud buffer update: {} instances unchanged", new_count);
+            return;
+        }
+        
+        // Create new instance buffer only when needed
+        let pointcloud_instance_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Point Cloud Instance Buffer"),
+            contents: bytemuck::cast_slice(pointcloud_instances),
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+        });
+        
+        #[cfg(target_arch = "wasm32")]
+        web_sys::console::log_1(&format!("🔄 UPDATING point cloud buffer: {} -> {} instances", self.pointcloud_num_instances, new_count).into());
+        #[cfg(not(target_arch = "wasm32"))]
+        println!("🔄 UPDATING point cloud buffer: {} -> {} instances", self.pointcloud_num_instances, new_count);
+
+        self.pointcloud_instance_buffer = pointcloud_instance_buffer;
+        self.pointcloud_num_instances = new_count;
+        
+        #[cfg(target_arch = "wasm32")]
+        web_sys::console::log_1(&format!("✅ Point cloud buffer updated successfully: {} instances", self.pointcloud_num_instances).into());
+        #[cfg(not(target_arch = "wasm32"))]
+        println!("✅ Point cloud buffer updated successfully: {} instances", self.pointcloud_num_instances);
+    }
+
     // Replace entire scene: geometry + instance batches
     fn replace_scene(&mut self, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch]) {
+        // When replace_scene is called without point clouds, we need to regenerate them
+        // This happens when the scene is updated from sources that don't include point cloud data
+        #[cfg(target_arch = "wasm32")]
+        web_sys::console::log_1(&"⚠️ replace_scene called without point clouds - this will clear them!".into());
+        #[cfg(not(target_arch = "wasm32"))]
+        println!("⚠️ replace_scene called without point clouds - this will clear them!");
+        
+        self.replace_scene_with_pointclouds(vertices, indices, batches_in, &[]);
+    }
+
+    // Replace entire scene including point clouds
+    fn replace_scene_with_pointclouds(&mut self, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch], pointcloud_instances: &[PointCloudInstance]) {
+        #[cfg(target_arch = "wasm32")]
+        web_sys::console::log_1(&format!("🔄 REPLACING SCENE: {} vertices, {} indices, {} batches, {} point cloud instances", vertices.len(), indices.len(), batches_in.len(), pointcloud_instances.len()).into());
+        #[cfg(not(target_arch = "wasm32"))]
+        println!("🔄 REPLACING SCENE: {} vertices, {} indices, {} batches, {} point cloud instances", vertices.len(), indices.len(), batches_in.len(), pointcloud_instances.len());
         // Replace vertex/index buffers
         let new_vertex_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
@@ -799,6 +961,39 @@ impl State{
             contents: bytemuck::cast_slice(&instance_data),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
+        // Update point cloud buffer only if new data is provided; otherwise preserve existing
+        if !pointcloud_instances.is_empty() {
+            #[cfg(target_arch = "wasm32")]
+            web_sys::console::log_1(&format!("📊 Point cloud instances provided: {}", pointcloud_instances.len()).into());
+            #[cfg(not(target_arch = "wasm32"))]
+            println!("📊 Point cloud instances provided: {}", pointcloud_instances.len());
+            
+            self.update_pointcloud_instances(pointcloud_instances);
+        } else {
+            #[cfg(target_arch = "wasm32")]
+            web_sys::console::log_1(&format!("⚠️ NO point cloud instances provided - keeping existing {} instances", self.pointcloud_num_instances).into());
+            #[cfg(not(target_arch = "wasm32"))]
+            println!("⚠️ NO point cloud instances provided - keeping existing {} instances", self.pointcloud_num_instances);
+            
+            // CRITICAL: Add point cloud batch back to batches if it doesn't exist
+            let has_pointcloud_batch = batch_draws.iter().any(|b| matches!(b.kind, BatchKind::PointCloud));
+            if !has_pointcloud_batch && self.pointcloud_num_instances > 0 {
+                #[cfg(target_arch = "wasm32")]
+                web_sys::console::log_1(&"🔧 Adding missing point cloud batch to preserve rendering".into());
+                #[cfg(not(target_arch = "wasm32"))]
+                println!("🔧 Adding missing point cloud batch to preserve rendering");
+                
+                batch_draws.push(BatchDraw {
+                    first_index: 0,
+                    index_count: 0,
+                    base_vertex: 0,
+                    instance_offset: 0,
+                    instance_count: 0,
+                    kind: BatchKind::PointCloud,
+                });
+            }
+        }
+
         self.instances = flat_instances;
         self.instance_buffer = new_instance_buffer;
         self.batches = batch_draws;
@@ -838,7 +1033,13 @@ impl State{
         #[cfg(not(target_arch = "wasm32"))]
         {
             while let Ok((vertices, indices, batches)) = self.geom_rx.try_recv() {
-                self.replace_scene(&vertices, &indices, &batches);
+                // Preserve existing point cloud instances during native updates
+                // Don't regenerate - keep the current point cloud data
+                println!("🔄 Native geometry update - preserving {} existing point cloud instances", self.pointcloud_num_instances);
+                
+                // Create empty vec to preserve existing point clouds
+                let empty_pointcloud_instances = Vec::new();
+                self.replace_scene_with_pointclouds(&vertices, &indices, &batches, &empty_pointcloud_instances);
             }
             return;
         }
@@ -869,8 +1070,10 @@ impl State{
                     
                     if local_changed {
                         // Rebuild full scene using the same logic as initial load
-                        let (vertices, indices, batches) = get_geometry().await;
-                        PENDING_GEOMETRY.with(|p| *p.borrow_mut() = Some((vertices, indices, batches)));
+                        let (vertices, indices, batches, pointcloud_instances) = get_geometry_with_pointclouds().await;
+                        #[cfg(target_arch = "wasm32")]
+                        web_sys::console::log_1(&format!("🔄 FILE CHANGED - Reloading geometry: {} vertices, {} indices, {} batches, {} point cloud instances", vertices.len(), indices.len(), batches.len(), pointcloud_instances.len()).into());
+                        PENDING_GEOMETRY.with(|p| *p.borrow_mut() = Some((vertices, indices, batches, pointcloud_instances)));
                         web_sys::console::log_1(&"Geometry changed; source: local".into());
                     }
                     LOCAL_FETCHING.with(|f| f.set(false));
@@ -879,8 +1082,13 @@ impl State{
 
             // Apply any pending geometry prepared by the async task
             let pending = PENDING_GEOMETRY.with(|p| p.borrow_mut().take());
-            if let Some((vertices, indices, batches)) = pending {
-                self.replace_scene(&vertices, &indices, &batches);
+            if let Some((vertices, indices, batches, pointcloud_instances)) = pending {
+                #[cfg(target_arch = "wasm32")]
+                web_sys::console::log_1(&format!("🔄 APPLYING PENDING GEOMETRY: {} vertices, {} indices, {} batches, {} point cloud instances", vertices.len(), indices.len(), batches.len(), pointcloud_instances.len()).into());
+                #[cfg(not(target_arch = "wasm32"))]
+                println!("🔄 APPLYING PENDING GEOMETRY: {} vertices, {} indices, {} batches, {} point cloud instances", vertices.len(), indices.len(), batches.len(), pointcloud_instances.len());
+                
+                self.replace_scene_with_pointclouds(&vertices, &indices, &batches, &pointcloud_instances);
             }
         }
     }
@@ -1122,6 +1330,15 @@ impl State{
             // Second argument is the base vertex.
             // Third argument is the instance count.
             let stride = std::mem::size_of::<InstanceRaw>() as u64;
+            
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                let pointcloud_batches = self.batches.iter().filter(|b| matches!(b.kind, BatchKind::PointCloud)).count();
+                if pointcloud_batches > 0 {
+                    println!("Found {} point cloud batches in render loop", pointcloud_batches);
+                }
+            }
+            
             for d in &self.batches {
                 // Integrated rendering:
                 // - Pipe batches render in BOTH Solid and Color modes using the pipe pipeline.
@@ -1140,18 +1357,57 @@ impl State{
                     BatchKind::Sphere => {
                         render_pass.set_pipeline(&self.render_pipeline_sphere);
                     }
+                    BatchKind::PointCloud => {
+                        render_pass.set_pipeline(&self.render_pipeline_pointcloud);
+                    }
                 }
                 // Set the camera bind group (after pipeline)
                 render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
-                if d.index_count == 0 || d.instance_count == 0 { continue; }
-                let start = d.instance_offset as u64 * stride;
-                let end = start + d.instance_count as u64 * stride;
-                render_pass.set_vertex_buffer(1, self.instance_buffer.slice(start..end));
-                render_pass.draw_indexed(
-                    d.first_index..(d.first_index + d.index_count),
-                    d.base_vertex,
-                    0..d.instance_count,
-                );
+                
+                match d.kind {
+                    BatchKind::PointCloud => {
+                        // Point clouds use instanced rendering with shared quad geometry
+                        render_pass.set_vertex_buffer(0, self.pointcloud_quad_buffer.slice(..));
+                        render_pass.set_vertex_buffer(1, self.pointcloud_instance_buffer.slice(..));
+                        if self.pointcloud_num_instances > 0 {
+                            // Only log occasionally to avoid spam
+                            static mut FRAME_COUNT: u32 = 0;
+                            unsafe {
+                                FRAME_COUNT += 1;
+                                if FRAME_COUNT % 60 == 0 { // Log every 60 frames
+                                    #[cfg(target_arch = "wasm32")]
+                                    web_sys::console::log_1(&format!("🎨 Frame {}: RENDERING {} point cloud instances", FRAME_COUNT, self.pointcloud_num_instances).into());
+                                    #[cfg(not(target_arch = "wasm32"))]
+                                    println!("🎨 Frame {}: RENDERING {} point cloud instances", FRAME_COUNT, self.pointcloud_num_instances);
+                                }
+                            }
+                            
+                            // Draw 6 vertices (quad) for each instance
+                            render_pass.draw(0..6, 0..self.pointcloud_num_instances);
+                        } else {
+                            #[cfg(target_arch = "wasm32")]
+                            web_sys::console::log_1(&"❌ Point cloud batch found but NO INSTANCES to render!".into());
+                            #[cfg(not(target_arch = "wasm32"))]
+                            println!("❌ Point cloud batch found but NO INSTANCES to render!");
+                        }
+                        continue; // Skip normal instance rendering for point clouds
+                    }
+                    _ => {
+                        // Regular indexed drawing for meshes
+                        if d.instance_count == 0 { continue; }
+                        let start = d.instance_offset as u64 * stride;
+                        let end = start + d.instance_count as u64 * stride;
+                        render_pass.set_vertex_buffer(1, self.instance_buffer.slice(start..end));
+                        
+                        if d.index_count > 0 {
+                            render_pass.draw_indexed(
+                                d.first_index..(d.first_index + d.index_count),
+                                d.base_vertex,
+                                0..d.instance_count,
+                            );
+                        }
+                    }
+                }
             }
 
         }
@@ -1325,9 +1581,24 @@ impl ApplicationHandler<State> for App {
 
         #[cfg(not(target_arch = "wasm32"))]
         {
-            // If we are not on web we can use pollster to
-            // await the 
-            self.state = Some(pollster::block_on(State::new(window, &self.vertices, &self.indices, &self.batches)).unwrap());
+            // Native: load full geometry including point clouds so we can render glyphs
+            // and ensure a PointCloud batch exists.
+            let (vertices, indices, batches, pointcloud_vertices) = pollster::block_on(get_geometry_with_pointclouds());
+            // Keep App copies in sync (may be used later)
+            self.vertices = vertices;
+            self.indices = indices;
+            self.batches = batches;
+            // Create State with point cloud vertices
+            self.state = Some(
+                pollster::block_on(State::new(
+                    window,
+                    &self.vertices,
+                    &self.indices,
+                    &self.batches,
+                    &pointcloud_vertices,
+                ))
+                .unwrap(),
+            );
         }
 
         #[cfg(target_arch = "wasm32")]
@@ -1337,14 +1608,14 @@ impl ApplicationHandler<State> for App {
             if let Some(proxy) = self.proxy.take() {
                 wasm_bindgen_futures::spawn_local(async move {
                     // Build geometry on WASM (embedded + grid/axis + local JSON if available)
-                    let (vertices, indices, batches) = get_geometry().await;
+                    let (vertices, indices, batches, pointcloud_vertices) = get_geometry_with_pointclouds().await;
                     assert!(proxy
                         .send_event(
-                            State::new(window, &vertices, &indices, &batches)
+                            State::new(window, &vertices, &indices, &batches, &pointcloud_vertices)
                                 .await
                                 .expect("Unable to create canvas!!!")
                         )
-                        .is_ok())
+                        .is_ok());
                 });
             }
         }
@@ -1522,6 +1793,64 @@ pub fn run_web() -> Result<(), wasm_bindgen::JsValue> {
     Ok(())
 }
 
+// Enhanced geometry loading with point cloud support
+pub async fn get_geometry_with_pointclouds() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>) {
+    let (mut vertices, mut indices, mut batches) = get_geometry().await;
+    
+    // Load point cloud data from AllGeometryData
+    let mut pointcloud_instances: Vec<PointCloudInstance> = Vec::new();
+    
+    // Parse geometry data again to extract point clouds
+    let local: Option<String> = {
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let base = env!("CARGO_MANIFEST_DIR");
+            let primary = format!("{}/all_geometry.json", base);
+            std::fs::read_to_string(&primary)
+                .or_else(|_| std::fs::read_to_string(LOCAL_GEOMETRY_PATH))
+                .ok()
+        }
+        #[cfg(target_arch = "wasm32")]
+        { fetch_text(LOCAL_GEOMETRY_HTTP_PATH).await }
+    };
+
+    let all_geom: AllGeometryData = match local {
+        Some(ref s) => serde_json::from_str::<AllGeometryData>(s).unwrap_or_else(|_| {
+            serde_json::from_str(include_str!("openmodel/all_geometry.json"))
+                .expect("embedded geometry JSON must be valid")
+        }),
+        None => serde_json::from_str(include_str!("openmodel/all_geometry.json"))
+            .expect("embedded geometry JSON must be valid"),
+    };
+
+    // Process point clouds if they exist
+    for pointcloud in &all_geom.point_clouds {
+        convert_pointcloud_to_instances(pointcloud, &mut pointcloud_instances);
+    }
+
+    // Add test point cloud instances
+    let test_pointcloud_instances = create_test_pointcloud_instances();
+    pointcloud_instances.extend_from_slice(&test_pointcloud_instances);
+
+    // Create point cloud batch if we have point cloud instances
+    if !pointcloud_instances.is_empty() {
+        #[cfg(target_arch = "wasm32")]
+        web_sys::console::log_1(&format!("Creating point cloud batch with {} instances", pointcloud_instances.len()).into());
+        #[cfg(not(target_arch = "wasm32"))]
+        println!("Creating point cloud batch with {} instances", pointcloud_instances.len());
+        
+        batches.push(DrawBatch {
+            first_index: 0, // Not used for point clouds
+            index_count: 0, // Not used for point clouds
+            base_vertex: 0,
+            instances: vec![Instance::identity()], // Single identity instance
+            kind: BatchKind::PointCloud,
+        });
+    }
+
+    (vertices, indices, batches, pointcloud_instances)
+}
+
 // Geometry loading: minimal single function using local-or-embedded JSON
 pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
     // Prefer local (native file or WASM fetch); fall back to embedded JSON.
@@ -1604,22 +1933,6 @@ pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
             log::warn!("Mesh {} produced no triangles (vertices={}, faces={})", i, m.number_of_vertices(), m.number_of_faces());
         }
     }
-
-    // // Add procedural grid and axis once
-    // for (m, color) in make_grid_and_axis_meshes() {
-    //     let first_index = indices.len() as u32;
-    //     append_mesh_as_triangles(&m, color, &mut vertices, &mut indices);
-    //     let index_count = (indices.len() as u32) - first_index;
-    //     if index_count > 0 {
-    //         batches.push(DrawBatch {
-    //             first_index,
-    //             index_count,
-    //             base_vertex: 0,
-    //             instances: vec![],
-    //             kind: BatchKind::Surface,
-    //         });
-    //     }
-    // }
 
     // Pipe instancing from augmented mesh_instances (if any)
     if let Some(pipe_idx) = all_geom.pipe_mesh_index {

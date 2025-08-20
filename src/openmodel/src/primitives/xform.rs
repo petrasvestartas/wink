@@ -581,15 +581,16 @@ mod tests {
     }
 }
 
-// Custom Serialize implementation to use COMPAS-style format by default
+// Custom Serialize implementation for simple format compatible with wink
 impl Serialize for Xform {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        // Use COMPAS-style format with dtype when serializing
-        let value = self.to_json_data(false);
-        value.serialize(serializer)
+        use serde::ser::SerializeStruct;
+        let mut state = serializer.serialize_struct("Xform", 1)?;
+        state.serialize_field("m", &self.m)?;
+        state.end()
     }
 }
 

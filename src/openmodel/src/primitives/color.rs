@@ -272,15 +272,20 @@ impl fmt::Display for Color {
     }
 }
 
-// Custom Serialize implementation to use COMPAS-style format by default
+// Custom Serialize implementation to use simple format for wink compatibility
 impl Serialize for Color {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        // Use COMPAS-style format with dtype when serializing
-        let value = self.to_json_data(false);
-        value.serialize(serializer)
+        // Use simple format for wink compatibility
+        use serde::ser::SerializeStruct;
+        let mut state = serializer.serialize_struct("Color", 4)?;
+        state.serialize_field("r", &self.r)?;
+        state.serialize_field("g", &self.g)?;
+        state.serialize_field("b", &self.b)?;
+        state.serialize_field("a", &self.a)?;
+        state.end()
     }
 }
 

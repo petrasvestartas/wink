@@ -17,15 +17,18 @@ pub struct Vector {
     pub z: f64,
 }
 
-// Custom Serialize implementation to use COMPAS-style format by default
+// Custom Serialize implementation for simple format compatible with wink
 impl Serialize for Vector {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        // Use COMPAS-style format with dtype when serializing
-        let value = self.to_json_data(false);
-        value.serialize(serializer)
+        use serde::ser::SerializeStruct;
+        let mut state = serializer.serialize_struct("Vector", 3)?;
+        state.serialize_field("x", &self.x)?;
+        state.serialize_field("y", &self.y)?;
+        state.serialize_field("z", &self.z)?;
+        state.end()
     }
 }
 

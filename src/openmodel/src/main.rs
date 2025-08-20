@@ -1,4 +1,4 @@
-use openmodel::geometry::{Point, Line, Mesh};
+use openmodel::geometry::{Point, Line, Mesh, PointCloud, Vector, Color};
 use openmodel::common::json_dump;
 use openmodel::AllGeometryData;
 
@@ -132,6 +132,43 @@ fn make_dodecahedron_mesh() -> Mesh {
     dodecahedron
 }
 
+fn make_point_cloud() -> PointCloud {
+    println!("Generating 1000 points within 10x10x10 bounds...");
+    
+    let mut points = Vec::new();
+    let mut normals = Vec::new();
+    let mut colors = Vec::new();
+    
+    // Generate 10x10x10 = 1,000 points within 10x10x10 bounds
+    let grid_size = 10;
+    let bound = 5.0; // -5 to +5 = 10 units
+    let step = (2.0 * bound) / (grid_size as f64 - 1.0);
+    
+    for i in 0..grid_size {
+        for j in 0..grid_size {
+            for k in 0..grid_size {
+                let x = -bound + (i as f64) * step;
+                let y = -bound + (j as f64) * step;
+                let z = -bound + (k as f64) * step;
+                
+                points.push(Point::new(x, y, z));
+                
+                // Generate upward-pointing normals
+                normals.push(Vector::new(0.0, 0.0, 1.0));
+                
+                // Generate colors based on position (rainbow gradient)
+                let r = ((i as f64 / grid_size as f64) * 255.0) as u8;
+                let g = ((j as f64 / grid_size as f64) * 255.0) as u8;
+                let b = ((k as f64 / grid_size as f64) * 255.0) as u8;
+                colors.push(Color::new(r, g, b, 255));
+            }
+        }
+    }
+    
+    println!("Generated {} points", points.len());
+    PointCloud::new(points, normals, colors)
+}
+
 fn main() {
     // Minimal: 10x10 grid (11 lines per direction) on Z=0 plus Z axis line
     let mut lines: Vec<Line> = Vec::new();
@@ -162,11 +199,15 @@ fn main() {
     // Dodecahedron positioned at y+3
     let dodecahedron = make_dodecahedron_mesh();
 
+    // Generate point cloud
+    let point_cloud = make_point_cloud();
+
     println!("Created {} meshes:", 4);
     println!("  Star: {} vertices, {} faces", star.number_of_vertices(), star.number_of_faces());
     println!("  Sphere: {} vertices, {} faces", sphere.number_of_vertices(), sphere.number_of_faces());
     println!("  Cube: {} vertices, {} faces", cube.number_of_vertices(), cube.number_of_faces());
     println!("  Dodecahedron: {} vertices, {} faces", dodecahedron.number_of_vertices(), dodecahedron.number_of_faces());
+    println!("  Point Cloud: {} points", point_cloud.points.len());
 
     let all_geometry = AllGeometryData {
         points: vec![],
@@ -174,7 +215,7 @@ fn main() {
         lines,
         planes: vec![],
         colors: vec![],
-        point_clouds: vec![],
+        point_clouds: vec![point_cloud],
         line_clouds: vec![],
         plines: vec![],
         xforms: vec![],
@@ -186,6 +227,7 @@ fn main() {
 
     // Write deterministically next to this Cargo package (not dependent on current working dir)
     let out_path = format!("{}/all_geometry.json", env!("CARGO_MANIFEST_DIR"));
-    json_dump(&all_geometry, &out_path);
+    let json_string = serde_json::to_string_pretty(&all_geometry).unwrap();
+    std::fs::write(&out_path, json_string).unwrap();
     println!("Wrote {}", out_path);
 }
