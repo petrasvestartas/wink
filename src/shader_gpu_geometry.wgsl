@@ -192,15 +192,9 @@ fn vs_pipes(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
     }
     let desired_world_r = max(px_radius * world_per_pixel, 1e-6);
 
-    // Orientation compensation: when axis is parallel to view, side contribution vanishes
-    let sin_theta = length(cross(axis_world_dir, vdir));
-    let r_world_side = desired_world_r / max(sin_theta, 1e-3);
-    let r_world_cap = desired_world_r;
-    let w_parallel = smoothstep(0.1, 0.3, sin_theta);
-    let req_world_r = mix(r_world_cap, r_world_side, w_parallel);
-
-    // Local XY scale: unit pipe radius is 0.5, so scale factor = 2 * world_radius
-    let pipe_scale_xy = 2.0 * req_world_r;
+    // Simple consistent scaling - no orientation compensation
+    // This matches the reference shader approach for consistent pipe thickness
+    let pipe_scale_xy = 2.0 * desired_world_r;
     let scaled_local_pos = vec3<f32>(
         local_pos.x * pipe_scale_xy,
         local_pos.y * pipe_scale_xy,

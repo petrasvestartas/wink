@@ -869,7 +869,7 @@ impl State{
             render_pipeline_lights,
             render_pipeline_pointcloud,
             pipeline_mode: PipelineMode::Color,
-            pipe_px_radius: 1.5,
+            pipe_px_radius: 10.5,
             scene_bounds,
             vertex_buffer,
             index_buffer,
