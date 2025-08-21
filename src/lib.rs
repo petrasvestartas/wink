@@ -31,7 +31,7 @@ use instance::BatchDraw;
 use instance::BatchKind;
 // OpenModel: JSON geometry + mesh utilities
 use openmodel::AllGeometryData;
-use openmodel::geometry::{Mesh, PointCloud};
+use openmodel::geometry::Mesh;
 
 /// Scene bounding box for orthographic camera framing
 
@@ -215,152 +215,13 @@ fn xform_to_instance(xf: &openmodel::primitives::Xform) -> Instance {
 }
 
 // Helper: convert an OpenModel PointCloud to PointCloudInstance records used by the point-cloud pipeline
-fn convert_pointcloud_to_instances(pointcloud: &PointCloud, out: &mut Vec<PointCloudInstance>) {
-    // WEB OPTIMIZATION: Reduce point density by 75% for better performance
-    #[cfg(target_arch = "wasm32")]
-    let step = 4; // Render every 4th point on web
-    #[cfg(not(target_arch = "wasm32"))]
-    let step = 1; // Render all points on native
-    
-    for (i, p) in pointcloud.points.iter().enumerate().step_by(step) {
-        let color = if i < pointcloud.colors.len() {
-            let c = &pointcloud.colors[i];
-            [c.r as f32 / 255.0, c.g as f32 / 255.0, c.b as f32 / 255.0]
-        } else {
-            [0.8, 0.8, 0.8]
-        };
-        out.push(PointCloudInstance {
-            position: [p.x as f32, p.y as f32, p.z as f32],
-            color,
-            size: 1.0,
-        });
-    }
-}
 
 // Helper: generate a small test set of point cloud instances (3x3x3 grid)
-fn create_test_pointcloud_instances() -> Vec<PointCloudInstance> {
-    let mut out = Vec::new();
-    // WEB OPTIMIZATION: Reduce test point cloud size
-    #[cfg(target_arch = "wasm32")]
-    let n = 2; // 2x2x2 = 8 points on web
-    #[cfg(not(target_arch = "wasm32"))]
-    let n = 3; // 3x3x3 = 27 points on native
-    
-    let spacing = 1.0f32;
-    let offset = -((n as f32 - 1.0) * spacing * 0.5);
-    for x in 0..n {
-        for y in 0..n {
-            for z in 0..n {
-                out.push(PointCloudInstance {
-                    position: [
-                        offset + x as f32 * spacing,
-                        offset + y as f32 * spacing,
-                        offset + z as f32 * spacing,
-                    ],
-                    color: [1.0, 0.7, 0.2],
-                    size: 1.0,
-                });
-            }
-        }
-    }
-    out
-}
 
 // Helper: convert point cloud to instances for instanced rendering
 // Convert point cloud data to unified geometry (vertices + indices + instances)
-fn create_pointcloud_geometry_from_data(pointclouds: &[openmodel::geometry::PointCloud]) -> (Vec<Vertex>, Vec<u16>, Vec<Instance>) {
-    let mut vertices = Vec::new();
-    let mut indices = Vec::new();
-    let mut instances = Vec::new();
-    
-    // Create shared quad geometry for all point cloud instances
-    let quad_vertices = [
-        Vertex { position: [-0.5, -0.5, 0.0], color: [1.0, 1.0, 1.0], normal: [0.0, 0.0, 1.0] },
-        Vertex { position: [ 0.5, -0.5, 0.0], color: [1.0, 1.0, 1.0], normal: [0.0, 0.0, 1.0] },
-        Vertex { position: [ 0.5,  0.5, 0.0], color: [1.0, 1.0, 1.0], normal: [0.0, 0.0, 1.0] },
-        Vertex { position: [-0.5,  0.5, 0.0], color: [1.0, 1.0, 1.0], normal: [0.0, 0.0, 1.0] },
-    ];
-    let quad_indices = [0, 1, 2, 2, 3, 0];
-    
-    vertices.extend_from_slice(&quad_vertices);
-    indices.extend_from_slice(&quad_indices);
-    
-    // Create instances for each point
-    for pointcloud in pointclouds {
-        for (i, point) in pointcloud.points.iter().enumerate() {
-            let _color = if i < pointcloud.colors.len() {
-                let c = &pointcloud.colors[i];
-                [c.r as f32, c.g as f32, c.b as f32]
-            } else {
-                [0.8, 0.8, 0.8] // Default gray
-            };
-            
-            // Create transform matrix: translation to point position + scale for size
-            let size = 0.1; // Point size
-            let transform = [
-                [size, 0.0, 0.0, 0.0],
-                [0.0, size, 0.0, 0.0], 
-                [0.0, 0.0, size, 0.0],
-                [point.x as f32, point.y as f32, point.z as f32, 1.0],
-            ];
-            
-            instances.push(Instance { model: transform });
-        }
-    }
-    
-    (vertices, indices, instances)
-}
+
 // Helper: create test point cloud geometry using unified system
-fn create_test_pointcloud_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<Instance>) {
-    let mut vertices = Vec::new();
-    let mut indices = Vec::new();
-    let mut instances = Vec::new();
-    
-    // Create shared quad geometry
-    let quad_vertices = [
-        Vertex { position: [-0.5, -0.5, 0.0], color: [1.0, 1.0, 1.0], normal: [0.0, 0.0, 1.0] },
-        Vertex { position: [ 0.5, -0.5, 0.0], color: [1.0, 1.0, 1.0], normal: [0.0, 0.0, 1.0] },
-        Vertex { position: [ 0.5,  0.5, 0.0], color: [1.0, 1.0, 1.0], normal: [0.0, 0.0, 1.0] },
-        Vertex { position: [-0.5,  0.5, 0.0], color: [1.0, 1.0, 1.0], normal: [0.0, 0.0, 1.0] },
-    ];
-    let quad_indices = [0, 1, 2, 2, 3, 0];
-    
-    vertices.extend_from_slice(&quad_vertices);
-    indices.extend_from_slice(&quad_indices);
-    
-    let size = 3;
-    let spacing = 1.0f32;
-    let offset = -((size as f32 - 1.0) * spacing * 0.5);
-    
-    for x in 0..size {
-        for y in 0..size {
-            for z in 0..size {
-                let position = [
-                    offset + x as f32 * spacing,
-                    offset + y as f32 * spacing,
-                    offset + z as f32 * spacing,
-                ];
-                
-                let point_size = 0.1;
-                let transform = [
-                    [point_size, 0.0, 0.0, 0.0],
-                    [0.0, point_size, 0.0, 0.0], 
-                    [0.0, 0.0, point_size, 0.0],
-                    [position[0], position[1], position[2], 1.0],
-                ];
-                
-                instances.push(Instance { model: transform });
-            }
-        }
-    }
-    
-    // #[cfg(target_arch = "wasm32")]
-    // web_sys::console::log_1(&format!("Created {} test point cloud instances", instances.len()).into());
-    // #[cfg(not(target_arch = "wasm32"))]
-    // println!("Created {} test point cloud instances", instances.len());
-    
-    (vertices, indices, instances)
-}
 
 pub struct State{
     surface: wgpu::Surface<'static>,
@@ -715,10 +576,20 @@ impl State{
             usage: wgpu::BufferUsages::VERTEX,
         });
         
-        // Create point cloud instance buffer
+        // Create point cloud instance buffer - ensure we have at least one dummy instance to avoid GPU crashes
+        let buffer_data = if pointcloud_instances.is_empty() {
+            vec![PointCloudInstance {
+                position: [0.0, 0.0, 0.0],
+                size: 0.0,
+                color: [0.0, 0.0, 0.0],
+            }]
+        } else {
+            pointcloud_instances.to_vec()
+        };
+        
         let pointcloud_instance_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Point Cloud Instance Buffer"),
-            contents: bytemuck::cast_slice(pointcloud_instances),
+            contents: bytemuck::cast_slice(&buffer_data),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
         let pointcloud_num_instances = pointcloud_instances.len() as u32;
@@ -1028,22 +899,12 @@ impl State{
         println!("✅ Point cloud buffer updated successfully: {} instances", self.pointcloud_num_instances);
     }
 
-    // Replace entire scene: geometry + instance batches
-    fn replace_scene(&mut self, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch]) {
-        // When replace_scene is called without point clouds, we need to regenerate them
-        // This happens when the scene is updated from sources that don't include point cloud data
-        #[cfg(target_arch = "wasm32")]
-        web_sys::console::log_1(&"⚠️ replace_scene called without point clouds - this will clear them!".into());
-        #[cfg(not(target_arch = "wasm32"))]
-        println!("⚠️ replace_scene called without point clouds - this will clear them!");
-        
-        self.replace_scene_with_pointclouds(vertices, indices, batches_in, &[]);
-    }
 
     // Replace entire scene including point clouds
     fn replace_scene_with_pointclouds(&mut self, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch], pointcloud_instances: &[PointCloudInstance]) {
         #[cfg(target_arch = "wasm32")]
         web_sys::console::log_1(&format!("🔄 REPLACING SCENE: {} vertices, {} indices, {} batches, {} point cloud instances", vertices.len(), indices.len(), batches_in.len(), pointcloud_instances.len()).into());
+        // Add a new line here to log the point cloud instances
         #[cfg(not(target_arch = "wasm32"))]
         println!("🔄 REPLACING SCENE: {} vertices, {} indices, {} batches, {} point cloud instances", vertices.len(), indices.len(), batches_in.len(), pointcloud_instances.len());
         // Replace vertex/index buffers
@@ -1577,7 +1438,7 @@ impl State{
                         render_pass.set_vertex_buffer(1, self.pointcloud_instance_buffer.slice(..));
                         if self.pointcloud_num_instances > 0 {
                             // Only log occasionally to avoid spam
-                            static mut FRAME_COUNT: u32 = 0;
+                            static mut _FRAME_COUNT: u32 = 0;
                             // unsafe {
                             //     FRAME_COUNT += 1;
                             //     if FRAME_COUNT % 60 == 0 { // Log every 60 frames
@@ -1819,7 +1680,7 @@ impl ApplicationHandler<State> for App {
         {
             // Native: load full geometry including point clouds so we can render glyphs
             // and ensure a PointCloud batch exists.
-            let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms) = pollster::block_on(get_geometry_with_pointclouds_and_gpu());
+            let (vertices, indices, batches, pointcloud_vertices, _pipe_transforms, _sphere_transforms) = pollster::block_on(get_geometry_with_pointclouds_and_gpu());
             // Keep App copies in sync (may be used later)
             self.vertices = vertices;
             self.indices = indices;
@@ -1831,9 +1692,9 @@ impl ApplicationHandler<State> for App {
                     &self.vertices,
                     &self.indices,
                     &self.batches,
-                    &Vec::new(), // Empty pointcloud instances
-                    pipe_transforms,
-                    sphere_transforms
+                    &pointcloud_vertices, // Use loaded pointcloud instances
+                    _pipe_transforms,
+                    _sphere_transforms
                 ))
                 .expect("Unable to create state")
             );
@@ -1845,10 +1706,10 @@ impl ApplicationHandler<State> for App {
             if let Some(proxy) = self.proxy.take() {
                 wasm_bindgen_futures::spawn_local(async move {
                     // Build geometry on WASM (embedded + grid/axis + local JSON if available)
-                    let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms) = get_geometry_with_pointclouds_and_gpu().await;
+                    let (vertices, indices, batches, pointcloud_vertices, _pipe_transforms, _sphere_transforms) = get_geometry_with_pointclouds_and_gpu().await;
                     assert!(proxy
                         .send_event(
-                            State::new(window, &vertices, &indices, &batches, &pointcloud_vertices, pipe_transforms, sphere_transforms)
+                            State::new(window, &vertices, &indices, &batches, &pointcloud_vertices, _pipe_transforms, _sphere_transforms)
                                 .await
                                 .expect("Unable to create canvas!!!")
                         )
@@ -2032,7 +1893,7 @@ pub fn run_web() -> Result<(), wasm_bindgen::JsValue> {
 
 // Enhanced geometry loading with point cloud and GPU geometry support
 pub async fn get_geometry_with_pointclouds_and_gpu() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>) {
-    let (vertices, indices, batches, pipe_transforms, sphere_transforms) = get_geometry_with_gpu_data().await;
+    let (vertices, indices, mut batches, pipe_transforms, sphere_transforms) = get_geometry_with_gpu_data().await;
     
     // Load point cloud data from AllGeometryData
     let mut pointcloud_instances: Vec<PointCloudInstance> = Vec::new();
@@ -2089,17 +1950,47 @@ pub async fn get_geometry_with_pointclouds_and_gpu() -> (Vec<Vertex>, Vec<u16>, 
     };
 
     if let Ok(all_geom) = serde_json::from_str::<AllGeometryData>(&json_str) {
+        #[cfg(not(target_arch = "wasm32"))]
+        println!("🔍 Found {} point clouds in geometry data", all_geom.point_clouds.len());
+        
         // Extract point cloud data
         for pc in &all_geom.point_clouds {
-            for _point in &pc.points {
+            #[cfg(not(target_arch = "wasm32"))]
+            println!("🔍 Processing point cloud with {} points", pc.points.len());
+            
+            for (i, point) in pc.points.iter().enumerate() {
+                let color = if i < pc.colors.len() {
+                    let c = &pc.colors[i];
+                    [c.r as f32 / 255.0, c.g as f32 / 255.0, c.b as f32 / 255.0]
+                } else {
+                    [1.0, 1.0, 1.0] // Default white color
+                };
+                
                 let instance = PointCloudInstance {
-                    position: [0.0, 0.0, 0.0], // Default position
-                    size: 1.0, // Default size
-                    color: [1.0, 1.0, 1.0], // Default white color
+                    position: [point.x as f32, point.y as f32, point.z as f32],
+                    size: 1.0, // Smaller size
+                    color,
                 };
                 pointcloud_instances.push(instance);
             }
         }
+        
+        #[cfg(not(target_arch = "wasm32"))]
+        println!("✅ Created {} pointcloud instances total", pointcloud_instances.len());
+    } else {
+        #[cfg(not(target_arch = "wasm32"))]
+        println!("❌ Failed to parse AllGeometryData from JSON");
+    }
+
+    // Add PointCloud batch if we have pointcloud instances
+    if !pointcloud_instances.is_empty() {
+        batches.push(DrawBatch {
+            first_index: 0,
+            index_count: 0, // Point clouds use draw() not draw_indexed()
+            base_vertex: 0,
+            instances: Vec::new(), // Point clouds use instanced rendering
+            kind: BatchKind::PointCloud,
+        });
     }
 
     (vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms)
@@ -2167,8 +2058,8 @@ pub async fn get_geometry_with_gpu_data() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBat
 
     // Build vertices, indices, and batches from parsed geometry
 
-    let mut pipe_transforms: Vec<PipeTransform> = Vec::new();
-    let mut sphere_transforms: Vec<SphereTransform> = Vec::new();
+    let _pipe_transforms: Vec<PipeTransform> = Vec::new();
+    let _sphere_transforms: Vec<SphereTransform> = Vec::new();
     let mut vertices: Vec<Vertex> = Vec::new();
     let mut indices: Vec<u16> = Vec::new();
     let mut batches: Vec<DrawBatch> = Vec::new();

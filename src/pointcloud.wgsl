@@ -82,9 +82,6 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     // Smooth edge for antialiasing
     let alpha = 1.0 - smoothstep(0.8, 1.0, dist_from_center);
     
-    // Simple brightness based on distance from center
-    let brightness = 1.0 - dist_from_center * 0.3;
-    let final_color = in.color * brightness;
-    
-    return vec4<f32>(final_color, alpha);
+    // Use constant color without brightness variation
+    return vec4<f32>(in.color, alpha);
 }
