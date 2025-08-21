@@ -246,11 +246,12 @@ fn vs_pipes(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
     // Transform to world space with scaled radius but original length
     let final_world_position = pipe_transform * vec4<f32>(scaled_local_pos, 1.0);
     
-    // Transform normal properly (use upper 3x3 of transform matrix)
+    // Transform normal properly - use inverse transpose for non-uniform scaling
+    // For uniform scaling, we can use the transform matrix directly
     let normal_matrix = mat3x3<f32>(
-        pipe_transform[0].xyz,
-        pipe_transform[1].xyz, 
-        pipe_transform[2].xyz
+        normalize(pipe_transform[0].xyz),
+        normalize(pipe_transform[1].xyz), 
+        normalize(pipe_transform[2].xyz)
     );
     let world_normal = normalize(normal_matrix * local_normal);
     
@@ -303,18 +304,19 @@ fn vs_spheres(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
     
     let desired_world_r = px_radius * world_per_pixel;
     
-    // Scale sphere to match pipe radius exactly: pipes use desired_world_r * 2.0
-    let sphere_scale = desired_world_r * 2.0;
-    let scaled_local_pos = local_pos * sphere_scale;
+    // Scale sphere uniformly to match pipe radius exactly
+    // Pipes scale radius by desired_world_r * 2.0, so spheres should match
+    let sphere_radius_scale = desired_world_r * 2.0;
+    let scaled_local_pos = local_pos * sphere_radius_scale;
     
     // Transform to world space
     let world_position = sphere_transform * vec4<f32>(scaled_local_pos, 1.0);
     
-    // Transform normal properly
+    // Transform normal properly - use normalized axes for correct lighting
     let normal_matrix = mat3x3<f32>(
-        sphere_transform[0].xyz,
-        sphere_transform[1].xyz,
-        sphere_transform[2].xyz
+        normalize(sphere_transform[0].xyz),
+        normalize(sphere_transform[1].xyz),
+        normalize(sphere_transform[2].xyz)
     );
     let world_normal = normalize(normal_matrix * local_normal);
     
@@ -326,9 +328,18 @@ fn vs_spheres(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
     return out;
 }
 
-// Fragment shader with flat colors - no shading for both pipes and spheres
+// Fragment shader with proper lighting for both pipes and spheres
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    // Flat black color for both pipes and spheres - no lighting
-    return vec4<f32>(in.color, 1.0);
+    // Simple directional lighting
+    let light_dir = normalize(vec3<f32>(0.5, 0.5, -1.0)); // Light coming from front-right-top
+    let ambient = 0.3;
+    let diffuse = max(0.0, dot(in.world_normal, -light_dir));
+    let lighting = ambient + diffuse * 0.7;
+    
+    // Base color - dark gray for better visibility
+    let base_color = vec3<f32>(0.4, 0.4, 0.4);
+    let final_color = base_color * lighting;
+    
+    return vec4<f32>(final_color, 1.0);
 }

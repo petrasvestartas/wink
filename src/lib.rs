@@ -821,34 +821,16 @@ impl State{
     }
     
     // Apply uniform scaling to pipe transformation matrices
-    fn apply_scale_to_pipes(&self, mut pipes: Vec<PipeTransform>) -> Vec<PipeTransform> {
-        for pipe in &mut pipes {
-            // Apply radial scaling to the transformation matrix
-            // Scale only X, Y components (radius), not Z (length)
-            // Matrix is stored in column-major order: [m00, m10, m20, m30, m01, m11, m21, m31, ...]
-            let scale = self.pipe_px_radius / 10.5;
-            pipe.transform[0] *= scale;  // m00
-            pipe.transform[1] *= scale;  // m10
-            pipe.transform[4] *= scale;  // m01
-            pipe.transform[5] *= scale;  // m11
-        }
+    fn apply_scale_to_pipes(&self, pipes: Vec<PipeTransform>) -> Vec<PipeTransform> {
+        // No scaling applied here - GPU shader handles all scaling based on pipe_px_radius
+        // This prevents double scaling issues
         pipes
     }
     
     // Apply uniform scaling to sphere transformation matrices
-    fn apply_scale_to_spheres(&self, mut spheres: Vec<SphereTransform>) -> Vec<SphereTransform> {
-        for sphere in &mut spheres {
-            // Apply uniform scaling to the transformation matrix
-            // Scale the X, Y, Z components (diagonal elements)
-            // Matrix is stored in column-major order: [m00, m10, m20, m30, m01, m11, m21, m31, ...]
-            let scale = self.pipe_px_radius / 10.5;
-            sphere.transform[0] *= scale;   // m00
-            sphere.transform[1] *= scale;   // m10
-            sphere.transform[4] *= scale;   // m01
-            sphere.transform[5] *= scale;   // m11
-            sphere.transform[8] *= scale;   // m02
-            sphere.transform[9] *= scale;   // m12
-        }
+    fn apply_scale_to_spheres(&self, spheres: Vec<SphereTransform>) -> Vec<SphereTransform> {
+        // No scaling applied here - GPU shader handles all scaling based on pipe_px_radius
+        // This prevents double scaling issues
         spheres
     }
     
