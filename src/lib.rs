@@ -12,12 +12,13 @@ pub mod camera;
 pub mod timing;
 pub mod instance;
 pub mod pointcloud_vertex;
+pub mod merged_geometry;
+use gpu_geometry::{GpuGeometryPipeline, PipeTransform, SphereTransform};
 pub mod shader_color_pipeline;
 pub mod shader_solid_pipeline;
-pub mod shader_pipe_pipeline;
-pub mod shader_sphere_pipeline;
 pub mod shader_lights_pipeline;
 pub mod shader_pointcloud_pipeline;
+pub mod gpu_geometry;
 use vertex::Vertex;
 use pointcloud_vertex::{PointCloudInstance, QuadVertex};
 use camera::{Camera, CameraUniform, CameraController};
@@ -214,7 +215,13 @@ fn xform_to_instance(xf: &openmodel::primitives::Xform) -> Instance {
 
 // Helper: convert an OpenModel PointCloud to PointCloudInstance records used by the point-cloud pipeline
 fn convert_pointcloud_to_instances(pointcloud: &PointCloud, out: &mut Vec<PointCloudInstance>) {
-    for (i, p) in pointcloud.points.iter().enumerate() {
+    // WEB OPTIMIZATION: Reduce point density by 75% for better performance
+    #[cfg(target_arch = "wasm32")]
+    let step = 4; // Render every 4th point on web
+    #[cfg(not(target_arch = "wasm32"))]
+    let step = 1; // Render all points on native
+    
+    for (i, p) in pointcloud.points.iter().enumerate().step_by(step) {
         let color = if i < pointcloud.colors.len() {
             let c = &pointcloud.colors[i];
             [c.r as f32 / 255.0, c.g as f32 / 255.0, c.b as f32 / 255.0]
@@ -232,7 +239,12 @@ fn convert_pointcloud_to_instances(pointcloud: &PointCloud, out: &mut Vec<PointC
 // Helper: generate a small test set of point cloud instances (3x3x3 grid)
 fn create_test_pointcloud_instances() -> Vec<PointCloudInstance> {
     let mut out = Vec::new();
-    let n = 3;
+    // WEB OPTIMIZATION: Reduce test point cloud size
+    #[cfg(target_arch = "wasm32")]
+    let n = 2; // 2x2x2 = 8 points on web
+    #[cfg(not(target_arch = "wasm32"))]
+    let n = 3; // 3x3x3 = 27 points on native
+    
     let spacing = 1.0f32;
     let offset = -((n as f32 - 1.0) * spacing * 0.5);
     for x in 0..n {
@@ -341,10 +353,10 @@ fn create_test_pointcloud_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<Instance>) {
         }
     }
     
-    #[cfg(target_arch = "wasm32")]
-    web_sys::console::log_1(&format!("Created {} test point cloud instances", instances.len()).into());
-    #[cfg(not(target_arch = "wasm32"))]
-    println!("Created {} test point cloud instances", instances.len());
+    // #[cfg(target_arch = "wasm32")]
+    // web_sys::console::log_1(&format!("Created {} test point cloud instances", instances.len()).into());
+    // #[cfg(not(target_arch = "wasm32"))]
+    // println!("Created {} test point cloud instances", instances.len());
     
     (vertices, indices, instances)
 }
@@ -358,8 +370,6 @@ pub struct State{
     // Shader pipelines
     render_pipeline_solid: wgpu::RenderPipeline, // First pipeline (one color)
     render_pipeline_color: wgpu::RenderPipeline, // Second pipeline (vertex colors)
-    render_pipeline_pipe: wgpu::RenderPipeline,  // Third pipeline (pipe-specific)
-    render_pipeline_sphere: wgpu::RenderPipeline, // Sphere pipeline (vertex caps)
     render_pipeline_lights: wgpu::RenderPipeline, // Lights pipeline (lit surfaces)
     render_pipeline_pointcloud: wgpu::RenderPipeline, // Point cloud glyph pipeline
     pipeline_mode: PipelineMode,                 // Active pipeline selection
@@ -379,6 +389,7 @@ pub struct State{
     camera_uniform: CameraUniform,
     camera_buffer: wgpu::Buffer,
     camera_bind_group: wgpu::BindGroup,
+    camera_bind_group_layout: wgpu::BindGroupLayout,
     camera_controller: CameraController,
     last_render_time: Instant,
     // Change detection throttle timestamp
@@ -402,11 +413,17 @@ pub struct State{
     msaa_sample_count: u32,
     msaa_color_texture: wgpu::Texture,
     msaa_color_view: wgpu::TextureView,
+    // GPU geometry pipeline for compute-based pipe and sphere generation
+    gpu_geometry_pipeline: Option<GpuGeometryPipeline>,
+    gpu_geometry_bind_group: Option<wgpu::BindGroup>,
+    gpu_pipes_data: Vec<PipeTransform>,
+    gpu_spheres_data: Vec<SphereTransform>,
+    gpu_geometry_scale: f32,
 }
 
 impl State{
     // We don't need to be async right now, will implement later
-    pub async fn new(window: Arc<Window>, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch], pointcloud_instances: &[PointCloudInstance]) -> anyhow::Result<Self> {
+    pub async fn new(window: Arc<Window>, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch], pointcloud_instances: &[PointCloudInstance], pipes: Vec<PipeTransform>, spheres: Vec<SphereTransform>) -> anyhow::Result<Self> {
 
         let size = window.inner_size();
         // Clamp initial surface size on Web (WebGL2 backend) to avoid exceeding max texture limit.
@@ -618,14 +635,6 @@ impl State{
         );
 
         let render_pipeline_color = crate::shader_color_pipeline::create(
-            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, msaa_sample_count,
-        );
-
-        let render_pipeline_pipe = crate::shader_pipe_pipeline::create(
-            &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, msaa_sample_count,
-        );
-
-        let render_pipeline_sphere = crate::shader_sphere_pipeline::create(
             &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, msaa_sample_count,
         );
 
@@ -857,8 +866,6 @@ impl State{
             // Pipelines
             render_pipeline_solid,
             render_pipeline_color,
-            render_pipeline_pipe,
-            render_pipeline_sphere,
             render_pipeline_lights,
             render_pipeline_pointcloud,
             pipeline_mode: PipelineMode::Color,
@@ -874,6 +881,7 @@ impl State{
             camera_uniform,
             camera_buffer,
             camera_bind_group,
+            camera_bind_group_layout,
             camera_controller,
             // Instance data
             instances: flat_instances,
@@ -897,10 +905,83 @@ impl State{
             msaa_sample_count: msaa_sample_count,
             msaa_color_texture,
             msaa_color_view,
+            // GPU geometry pipeline (initially None, will be initialized later if needed)
+            gpu_geometry_pipeline: None,
+            gpu_geometry_bind_group: None,
+            gpu_pipes_data: pipes,
+            gpu_spheres_data: spheres,
+            gpu_geometry_scale: 1.0,
         };
         // Configure surface immediately to avoid first-frame issues
         state.resize(size.width, size.height);
         Ok(state)
+    }
+
+    // Initialize GPU geometry pipeline for compute-based pipe and sphere generation
+    fn init_gpu_geometry_pipeline(&mut self) {
+        if self.gpu_geometry_pipeline.is_none() {
+            let pipeline = GpuGeometryPipeline::new(
+                &self.device, 
+                &self.config, 
+                &self.camera_bind_group_layout,
+                DEPTH_FORMAT,
+                self.msaa_sample_count
+            );
+            self.gpu_geometry_pipeline = Some(pipeline);
+        }
+    }
+
+    // This function is no longer needed as we use transformation matrices directly
+
+    // Update GPU geometry data and recreate buffers if needed
+    fn update_gpu_geometry_data(&mut self, pipes: Vec<PipeTransform>, spheres: Vec<SphereTransform>) {
+        self.gpu_pipes_data = pipes;
+        self.gpu_spheres_data = spheres;
+        
+        if let Some(pipeline) = &self.gpu_geometry_pipeline {
+            let bind_group = pipeline.update_data(
+                &self.device,
+                self.apply_scale_to_pipes(self.gpu_pipes_data.clone()),
+                self.apply_scale_to_spheres(self.gpu_spheres_data.clone()),
+            );
+            self.gpu_geometry_bind_group = Some(bind_group);
+        }
+    }
+    
+    // Apply uniform scaling to pipe transformation matrices
+    fn apply_scale_to_pipes(&self, mut pipes: Vec<PipeTransform>) -> Vec<PipeTransform> {
+        for pipe in &mut pipes {
+            // Apply radial scaling to the transformation matrix
+            // Scale only X, Y components (radius), not Z (length)
+            pipe.transform[0][0] *= self.gpu_geometry_scale;
+            pipe.transform[1][1] *= self.gpu_geometry_scale;
+            // Do NOT scale Z component: pipe.transform[2][2] *= self.gpu_geometry_scale;
+        }
+        pipes
+    }
+    
+    // Apply uniform scaling to sphere transformation matrices
+    fn apply_scale_to_spheres(&self, mut spheres: Vec<SphereTransform>) -> Vec<SphereTransform> {
+        for sphere in &mut spheres {
+            // Apply uniform scaling to the transformation matrix
+            // Scale the X, Y, Z components (diagonal elements)
+            sphere.transform[0][0] *= self.gpu_geometry_scale;
+            sphere.transform[1][1] *= self.gpu_geometry_scale;
+            sphere.transform[2][2] *= self.gpu_geometry_scale;
+        }
+        spheres
+    }
+    
+    // Update GPU geometry scale and refresh buffers
+    fn update_gpu_geometry_scale(&mut self) {
+        if let Some(pipeline) = &self.gpu_geometry_pipeline {
+            let bind_group = pipeline.update_data(
+                &self.device,
+                self.apply_scale_to_pipes(self.gpu_pipes_data.clone()),
+                self.apply_scale_to_spheres(self.gpu_spheres_data.clone()),
+            );
+            self.gpu_geometry_bind_group = Some(bind_group);
+        }
     }
 
     // Update point cloud instance buffer with new data (only if different)
@@ -909,8 +990,17 @@ impl State{
         
         // Skip update if count is the same (assume data is identical)
         if new_count == self.pointcloud_num_instances {
+            // Reduce logging frequency on web to improve performance
             #[cfg(target_arch = "wasm32")]
-            web_sys::console::log_1(&format!("⏭️ SKIPPING point cloud buffer update: {} instances unchanged", new_count).into());
+            {
+                static mut LOG_COUNTER: u32 = 0;
+                unsafe {
+                    LOG_COUNTER += 1;
+                    if LOG_COUNTER % 100 == 0 { // Log every 100th skip
+                        web_sys::console::log_1(&format!("⏭️ SKIPPED {} point cloud buffer updates: {} instances unchanged", LOG_COUNTER, new_count).into());
+                    }
+                }
+            }
             #[cfg(not(target_arch = "wasm32"))]
             println!("⏭️ SKIPPING point cloud buffer update: {} instances unchanged", new_count);
             return;
@@ -1089,8 +1179,10 @@ impl State{
         #[cfg(target_arch = "wasm32")]
         {
             let now = Instant::now();
-            if (now - self.last_poll_time).as_millis() < (GEOMETRY_POLL_INTERVAL_MS as u128) {
-                return;
+            let elapsed = now.duration_since(self.last_poll_time);
+            let web_poll_interval = GEOMETRY_POLL_INTERVAL_MS * 3; // 3x slower polling on web
+            if elapsed.as_millis() < web_poll_interval as u128 {
+                return; // Skip this frame
             }
             self.last_poll_time = now;
             // If a fetch is already running, just try to apply pending result
@@ -1209,7 +1301,58 @@ impl State{
                         ..
                     },
                 ..
-            } => self.camera_controller.process_keyboard(*key, *state),
+            } => {
+                // Intercept '[' and ']' to adjust pipe thickness (in pixels)
+                if *state == ElementState::Pressed {
+                    match key {
+                        KeyCode::BracketLeft => {
+                            // Decrease pipe pixel radius, clamp to a sensible minimum
+                            self.pipe_px_radius = (self.pipe_px_radius * 0.9).max(0.1);
+                            // Update camera uniform immediately; the render loop also updates each frame
+                            self.camera_uniform.set_eye_dir(&self.camera);
+                            self.camera_uniform.set_view_params(
+                                self.config.width as f32,
+                                self.config.height as f32,
+                                self.camera.fovy,
+                                self.camera.aspect,
+                                self.pipe_px_radius,
+                                self.camera.is_ortho,
+                                self.camera.ortho_half_height,
+                            );
+                            self.queue.write_buffer(
+                                &self.camera_buffer,
+                                0,
+                                bytemuck::cast_slice(&[self.camera_uniform]),
+                            );
+                            true
+                        }
+                        KeyCode::BracketRight => {
+                            // Increase pipe pixel radius, clamp to a sensible maximum
+                            self.pipe_px_radius = (self.pipe_px_radius * 1.1111).min(10.0);
+                            // Update camera uniform immediately; the render loop also updates each frame
+                            self.camera_uniform.set_eye_dir(&self.camera);
+                            self.camera_uniform.set_view_params(
+                                self.config.width as f32,
+                                self.config.height as f32,
+                                self.camera.fovy,
+                                self.camera.aspect,
+                                self.pipe_px_radius,
+                                self.camera.is_ortho,
+                                self.camera.ortho_half_height,
+                            );
+                            self.queue.write_buffer(
+                                &self.camera_buffer,
+                                0,
+                                bytemuck::cast_slice(&[self.camera_uniform]),
+                            );
+                            true
+                        }
+                        _ => self.camera_controller.process_keyboard(*key, *state),
+                    }
+                } else {
+                    self.camera_controller.process_keyboard(*key, *state)
+                }
+            },
             WindowEvent::MouseWheel { delta, .. } => {
                 self.camera_controller.process_scroll(delta);
                 true
@@ -1306,6 +1449,9 @@ impl State{
             return Ok(());
         }
 
+        // Check for geometry changes and reload if needed
+        self.poll_geometry_changes();
+
         // The get_current_texture() function will wait for the surface to provide a new surface texture. 
         // Will store it in the output variable for later use.
         let output = self.surface.get_current_texture()?;
@@ -1320,6 +1466,22 @@ impl State{
         let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Render Encoder"),
         });
+
+        // Initialize GPU geometry pipeline if needed
+        self.init_gpu_geometry_pipeline();
+
+        // Use cached GPU geometry data from the state
+        let pipes = self.gpu_pipes_data.clone();
+        let spheres = self.gpu_spheres_data.clone();
+        
+        #[cfg(target_arch = "wasm32")]
+        web_sys::console::log_1(&format!("📊 Creating GPU geometry: {} pipes, {} spheres", pipes.len(), spheres.len()).into());
+        #[cfg(not(target_arch = "wasm32"))]
+        println!("📊 Creating GPU geometry: {} pipes, {} spheres", pipes.len(), spheres.len());
+        
+        self.update_gpu_geometry_data(pipes, spheres);
+
+        // GPU geometry pipeline now generates geometry directly in vertex shader - no compute dispatch needed
 
         // Clearing the screen.
         // We need to use the encoder to create a RenderPass.
@@ -1374,10 +1536,10 @@ impl State{
             
             #[cfg(not(target_arch = "wasm32"))]
             {
-                let pointcloud_batches = self.batches.iter().filter(|b| matches!(b.kind, BatchKind::PointCloud)).count();
-                if pointcloud_batches > 0 {
-                    println!("Found {} point cloud batches in render loop", pointcloud_batches);
-                }
+                // let pointcloud_batches = self.batches.iter().filter(|b| matches!(b.kind, BatchKind::PointCloud)).count();
+                // if pointcloud_batches > 0 {
+                //     println!("Found {} point cloud batches in render loop", pointcloud_batches);
+                // }
             }
             
             for d in &self.batches {
@@ -1386,7 +1548,8 @@ impl State{
                 // - Surface batches render with Solid or Color depending on current mode.
                 match d.kind {
                     BatchKind::Pipe => {
-                        render_pass.set_pipeline(&self.render_pipeline_pipe);
+                        // Skip CPU-generated pipe instances - using GPU geometry instead
+                        continue;
                     }
                     BatchKind::Surface => {
                         match self.pipeline_mode {
@@ -1396,7 +1559,8 @@ impl State{
                         }
                     }
                     BatchKind::Sphere => {
-                        render_pass.set_pipeline(&self.render_pipeline_sphere);
+                        // Skip CPU-generated sphere instances - using GPU geometry instead
+                        continue;
                     }
                     BatchKind::PointCloud => {
                         render_pass.set_pipeline(&self.render_pipeline_pointcloud);
@@ -1413,15 +1577,15 @@ impl State{
                         if self.pointcloud_num_instances > 0 {
                             // Only log occasionally to avoid spam
                             static mut FRAME_COUNT: u32 = 0;
-                            unsafe {
-                                FRAME_COUNT += 1;
-                                if FRAME_COUNT % 60 == 0 { // Log every 60 frames
-                                    #[cfg(target_arch = "wasm32")]
-                                    web_sys::console::log_1(&format!("🎨 Frame {}: RENDERING {} point cloud instances", FRAME_COUNT, self.pointcloud_num_instances).into());
-                                    #[cfg(not(target_arch = "wasm32"))]
-                                    println!("🎨 Frame {}: RENDERING {} point cloud instances", FRAME_COUNT, self.pointcloud_num_instances);
-                                }
-                            }
+                            // unsafe {
+                            //     FRAME_COUNT += 1;
+                            //     if FRAME_COUNT % 60 == 0 { // Log every 60 frames
+                            //         #[cfg(target_arch = "wasm32")]
+                            //         web_sys::console::log_1(&format!("🎨 Frame {}: RENDERING {} point cloud instances", FRAME_COUNT, self.pointcloud_num_instances).into());
+                            //         #[cfg(not(target_arch = "wasm32"))]
+                            //         println!("🎨 Frame {}: RENDERING {} point cloud instances", FRAME_COUNT, self.pointcloud_num_instances);
+                            //     }
+                            // }
                             
                             // Draw 6 vertices (quad) for each instance
                             render_pass.draw(0..6, 0..self.pointcloud_num_instances);
@@ -1448,6 +1612,34 @@ impl State{
                             );
                         }
                     }
+                }
+            }
+
+            // Render GPU geometry (pipes and spheres) with embedded vertex data
+            if let (Some(pipeline), Some(bind_group)) = (&self.gpu_geometry_pipeline, &self.gpu_geometry_bind_group) {
+                let num_pipes = self.gpu_pipes_data.len() as u32;
+                let num_spheres = self.gpu_spheres_data.len() as u32;
+                
+                #[cfg(target_arch = "wasm32")]
+                web_sys::console::log_1(&format!("🔧 GPU Geometry: {} pipes, {} spheres", num_pipes, num_spheres).into());
+                #[cfg(not(target_arch = "wasm32"))]
+                println!("🔧 GPU Geometry: {} pipes, {} spheres", num_pipes, num_spheres);
+                
+                if num_pipes > 0 {
+                    #[cfg(target_arch = "wasm32")]
+                    web_sys::console::log_1(&format!("🔵 Rendering {} pipes", num_pipes).into());
+                    #[cfg(not(target_arch = "wasm32"))]
+                    println!("🔵 Rendering {} pipes", num_pipes);
+                    pipeline.render_pipes(&mut render_pass, bind_group, &self.camera_bind_group, num_pipes);
+                }
+                
+                // Render spheres using embedded geometry in shader
+                if num_spheres > 0 {
+                    #[cfg(target_arch = "wasm32")]
+                    web_sys::console::log_1(&format!("🟡 Rendering {} spheres", num_spheres).into());
+                    #[cfg(not(target_arch = "wasm32"))]
+                    println!("🟡 Rendering {} spheres", num_spheres);
+                    pipeline.render_spheres(&mut render_pass, bind_group, &self.camera_bind_group, num_spheres);
                 }
             }
 
@@ -1534,20 +1726,22 @@ impl State{
                     self.camera.ortho_half_height
                 );
             }
-            // Adjust pipe pixel radius (affects only Pipe shader)
+            // Adjust GPU geometry scale (affects pipes and spheres in GPU geometry shader)
             (KeyCode::BracketLeft, true) => {
-                self.pipe_px_radius = (self.pipe_px_radius * 0.9).max(0.25);
+                self.gpu_geometry_scale = (self.gpu_geometry_scale * 0.9).max(0.1);
+                self.update_gpu_geometry_scale();
                 #[cfg(target_arch = "wasm32")]
-                web_sys::console::log_1(&format!("pipe_px_radius = {:.2}", self.pipe_px_radius).into());
+                web_sys::console::log_1(&format!("GPU geometry scale = {:.2}", self.gpu_geometry_scale).into());
                 #[cfg(not(target_arch = "wasm32"))]
-                log::info!("pipe_px_radius = {:.2}", self.pipe_px_radius);
+                log::info!("GPU geometry scale = {:.2}", self.gpu_geometry_scale);
             }
             (KeyCode::BracketRight, true) => {
-                self.pipe_px_radius = (self.pipe_px_radius * 1.1111).min(64.0);
+                self.gpu_geometry_scale = (self.gpu_geometry_scale * 1.1111).min(10.0);
+                self.update_gpu_geometry_scale();
                 #[cfg(target_arch = "wasm32")]
-                web_sys::console::log_1(&format!("pipe_px_radius = {:.2}", self.pipe_px_radius).into());
+                web_sys::console::log_1(&format!("GPU geometry scale = {:.2}", self.gpu_geometry_scale).into());
                 #[cfg(not(target_arch = "wasm32"))]
-                log::info!("pipe_px_radius = {:.2}", self.pipe_px_radius);
+                log::info!("GPU geometry scale = {:.2}", self.gpu_geometry_scale);
             }
             _ => {}
         }
@@ -1624,7 +1818,7 @@ impl ApplicationHandler<State> for App {
         {
             // Native: load full geometry including point clouds so we can render glyphs
             // and ensure a PointCloud batch exists.
-            let (vertices, indices, batches, pointcloud_vertices) = pollster::block_on(get_geometry_with_pointclouds());
+            let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms) = pollster::block_on(get_geometry_with_pointclouds_and_gpu());
             // Keep App copies in sync (may be used later)
             self.vertices = vertices;
             self.indices = indices;
@@ -1636,12 +1830,13 @@ impl ApplicationHandler<State> for App {
                     &self.vertices,
                     &self.indices,
                     &self.batches,
-                    &pointcloud_vertices,
+                    &Vec::new(), // Empty pointcloud instances
+                    pipe_transforms,
+                    sphere_transforms
                 ))
-                .unwrap(),
+                .expect("Unable to create state")
             );
         }
-
         #[cfg(target_arch = "wasm32")]
         {
             // Run the future asynchronously and use the
@@ -1649,10 +1844,10 @@ impl ApplicationHandler<State> for App {
             if let Some(proxy) = self.proxy.take() {
                 wasm_bindgen_futures::spawn_local(async move {
                     // Build geometry on WASM (embedded + grid/axis + local JSON if available)
-                    let (vertices, indices, batches, pointcloud_vertices) = get_geometry_with_pointclouds().await;
+                    let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms) = get_geometry_with_pointclouds_and_gpu().await;
                     assert!(proxy
                         .send_event(
-                            State::new(window, &vertices, &indices, &batches, &pointcloud_vertices)
+                            State::new(window, &vertices, &indices, &batches, &pointcloud_vertices, pipe_transforms, sphere_transforms)
                                 .await
                                 .expect("Unable to create canvas!!!")
                         )
@@ -1834,9 +2029,9 @@ pub fn run_web() -> Result<(), wasm_bindgen::JsValue> {
     Ok(())
 }
 
-// Enhanced geometry loading with point cloud support
-pub async fn get_geometry_with_pointclouds() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>) {
-    let (mut vertices, mut indices, mut batches) = get_geometry().await;
+// Enhanced geometry loading with point cloud and GPU geometry support
+pub async fn get_geometry_with_pointclouds_and_gpu() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>) {
+    let (vertices, indices, batches, pipe_transforms, sphere_transforms) = get_geometry_with_gpu_data().await;
     
     // Load point cloud data from AllGeometryData
     let mut pointcloud_instances: Vec<PointCloudInstance> = Vec::new();
@@ -1852,48 +2047,77 @@ pub async fn get_geometry_with_pointclouds() -> (Vec<Vertex>, Vec<u16>, Vec<Draw
                 .ok()
         }
         #[cfg(target_arch = "wasm32")]
-        { fetch_text(LOCAL_GEOMETRY_HTTP_PATH).await }
+        {
+            None // Will be handled by fetch below
+        }
     };
 
-    let all_geom: AllGeometryData = match local {
-        Some(ref s) => serde_json::from_str::<AllGeometryData>(s).unwrap_or_else(|_| {
-            serde_json::from_str(include_str!("openmodel/all_geometry.json"))
-                .expect("embedded geometry JSON must be valid")
-        }),
-        None => serde_json::from_str(include_str!("openmodel/all_geometry.json"))
-            .expect("embedded geometry JSON must be valid"),
-    };
-
-    // Process point clouds if they exist
-    for pointcloud in &all_geom.point_clouds {
-        convert_pointcloud_to_instances(pointcloud, &mut pointcloud_instances);
-    }
-
-    // Add test point cloud instances
-    let test_pointcloud_instances = create_test_pointcloud_instances();
-    pointcloud_instances.extend_from_slice(&test_pointcloud_instances);
-
-    // Create point cloud batch if we have point cloud instances
-    if !pointcloud_instances.is_empty() {
-        #[cfg(target_arch = "wasm32")]
-        web_sys::console::log_1(&format!("Creating point cloud batch with {} instances", pointcloud_instances.len()).into());
-        #[cfg(not(target_arch = "wasm32"))]
-        println!("Creating point cloud batch with {} instances", pointcloud_instances.len());
+    #[cfg(target_arch = "wasm32")]
+    let wasm_fetched = {
+        use wasm_bindgen_futures::JsFuture;
+        use web_sys::{Request, RequestInit, RequestMode, Response};
         
-        batches.push(DrawBatch {
-            first_index: 0, // Not used for point clouds
-            index_count: 0, // Not used for point clouds
-            base_vertex: 0,
-            instances: vec![Instance::identity()], // Single identity instance
-            kind: BatchKind::PointCloud,
-        });
+        let mut opts = RequestInit::new();
+        opts.method("GET");
+        opts.mode(RequestMode::Cors);
+        
+        let url = "./all_geometry.json";
+        let request = Request::new_with_str_and_init(url, &opts).unwrap();
+        
+        match JsFuture::from(web_sys::window().unwrap().fetch_with_request(&request)).await {
+            Ok(resp_value) => {
+                let resp: Response = resp_value.dyn_into().unwrap();
+                if resp.ok() {
+                    match JsFuture::from(resp.text().unwrap()).await {
+                        Ok(text) => Some(text.as_string().unwrap()),
+                        Err(_) => None,
+                    }
+                } else {
+                    None
+                }
+            }
+            Err(_) => None,
+        }
+    };
+
+    let json_str = {
+        #[cfg(not(target_arch = "wasm32"))]
+        { local.unwrap_or_else(|| include_str!("openmodel/all_geometry.json").to_string()) }
+        #[cfg(target_arch = "wasm32")]
+        { wasm_fetched.unwrap_or_else(|| include_str!("openmodel/all_geometry.json").to_string()) }
+    };
+
+    if let Ok(all_geom) = serde_json::from_str::<AllGeometryData>(&json_str) {
+        // Extract point cloud data
+        for pc in &all_geom.point_clouds {
+            for _point in &pc.points {
+                let instance = PointCloudInstance {
+                    position: [0.0, 0.0, 0.0], // Default position
+                    size: 1.0, // Default size
+                    color: [1.0, 1.0, 1.0], // Default white color
+                };
+                pointcloud_instances.push(instance);
+            }
+        }
     }
 
+    (vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms)
+}
+
+// Enhanced geometry loading with point cloud support
+pub async fn get_geometry_with_pointclouds() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>) {
+    let (vertices, indices, batches, pointcloud_instances, _pipe_transforms, _sphere_transforms) = get_geometry_with_pointclouds_and_gpu().await;
     (vertices, indices, batches, pointcloud_instances)
 }
 
 // Geometry loading: minimal single function using local-or-embedded JSON
 pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
+    let (vertices, indices, batches, _pointcloud_instances, _pipe_transforms, _sphere_transforms) = get_geometry_with_pointclouds_and_gpu().await;
+    (vertices, indices, batches)
+}
+
+// Enhanced geometry loading that also returns GPU geometry data
+pub async fn get_geometry_with_gpu_data() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PipeTransform>, Vec<SphereTransform>) {
     // Prefer local (native file or WASM fetch); fall back to embedded JSON.
     let local: Option<String> = {
         #[cfg(not(target_arch = "wasm32"))]
@@ -1942,6 +2166,8 @@ pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
 
     // Build vertices, indices, and batches from parsed geometry
 
+    let mut pipe_transforms: Vec<PipeTransform> = Vec::new();
+    let mut sphere_transforms: Vec<SphereTransform> = Vec::new();
     let mut vertices: Vec<Vertex> = Vec::new();
     let mut indices: Vec<u16> = Vec::new();
     let mut batches: Vec<DrawBatch> = Vec::new();
@@ -2048,6 +2274,48 @@ pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
             batches[*bi].instances = insts;
         }
     }
+    
+    // Extract GPU geometry data from pipe and sphere transforms
+    let mut pipes = Vec::new();
+    let mut spheres = Vec::new();
+    
+    // Extract pipe transforms directly - no conversion needed!
+    if let Some(pipe_idx) = all_geom.pipe_mesh_index {
+        if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == pipe_idx) {
+            for xf in &mi.transforms {
+                // Use transformation matrix directly - preserves all rotation, scale, and position data
+                // Convert f64 matrix to f32 and reshape from [f64; 16] to [[f32; 4]; 4]
+                let matrix_f32: [[f32; 4]; 4] = [
+                    [xf.m[0] as f32, xf.m[1] as f32, xf.m[2] as f32, xf.m[3] as f32],
+                    [xf.m[4] as f32, xf.m[5] as f32, xf.m[6] as f32, xf.m[7] as f32],
+                    [xf.m[8] as f32, xf.m[9] as f32, xf.m[10] as f32, xf.m[11] as f32],
+                    [xf.m[12] as f32, xf.m[13] as f32, xf.m[14] as f32, xf.m[15] as f32],
+                ];
+                pipes.push(PipeTransform {
+                    transform: matrix_f32,
+                });
+            }
+        }
+    }
+    
+    // Extract sphere transforms directly - no conversion needed!
+    if let Some(sphere_idx) = all_geom.sphere_mesh_index {
+        if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == sphere_idx) {
+            for xf in &mi.transforms {
+                // Use transformation matrix directly - preserves all rotation, scale, and position data
+                // Convert f64 matrix to f32 and reshape from [f64; 16] to [[f32; 4]; 4]
+                let matrix_f32: [[f32; 4]; 4] = [
+                    [xf.m[0] as f32, xf.m[1] as f32, xf.m[2] as f32, xf.m[3] as f32],
+                    [xf.m[4] as f32, xf.m[5] as f32, xf.m[6] as f32, xf.m[7] as f32],
+                    [xf.m[8] as f32, xf.m[9] as f32, xf.m[10] as f32, xf.m[11] as f32],
+                    [xf.m[12] as f32, xf.m[13] as f32, xf.m[14] as f32, xf.m[15] as f32],
+                ];
+                spheres.push(SphereTransform {
+                    transform: matrix_f32,
+                });
+            }
+        }
+    }
 
-    (vertices, indices, batches)
+    (vertices, indices, batches, pipes, spheres)
 }

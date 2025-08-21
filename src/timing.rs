@@ -115,6 +115,10 @@ impl Instant {
             }
         }
     }
+
+    pub fn duration_since(&self, earlier: Instant) -> Duration {
+        *self - earlier
+    }
 }
 
 impl Sub for Instant {

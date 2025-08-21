@@ -984,8 +984,39 @@ impl Mesh {
         out
     }
 
-    /// Create a high-resolution unit pipe (open cylinder):
-    /// - Axis aligned to +Z
+    /// Create a low-resolution unit pipe (cylinder) with radius 0.5.
+    /// - Radius = 0.5
+    /// - Length = 1.0 (z in [-0.5, 0.5])
+    /// - Radial segments = 8 (low-res for performance)
+    pub fn create_unit_pipe_low_res() -> Self {
+        let mut m = Mesh::new();
+        let sides: usize = 8; // Reduced from 32 to 8 for performance
+        let r: f64 = 0.5;
+        let hz: f64 = 0.5;
+
+        let mut ring_bot: Vec<usize> = Vec::with_capacity(sides);
+        let mut ring_top: Vec<usize> = Vec::with_capacity(sides);
+
+        for i in 0..sides {
+            let theta = 2.0 * PI * (i as f64) / (sides as f64);
+            let x = r * theta.cos();
+            let y = r * theta.sin();
+            let vb = m.add_vertex(Point::new(x, y, -hz), None);
+            let vt = m.add_vertex(Point::new(x, y, hz), None);
+            ring_bot.push(vb);
+            ring_top.push(vt);
+        }
+
+        for i in 0..sides {
+            let j = (i + 1) % sides;
+            // Quad face for side wall (ordered to produce outward normals)
+            let _ = m.add_face(vec![ring_bot[i], ring_bot[j], ring_top[j], ring_top[i]], None);
+        }
+
+        m
+    }
+
+    /// Create a high-resolution unit pipe (cylinder) with radius 0.5.
     /// - Radius = 0.5
     /// - Length = 1.0 (z in [-0.5, 0.5])
     /// - Radial segments = 32
@@ -1015,6 +1046,12 @@ impl Mesh {
         }
 
         m
+    }
+
+    /// Create a low-resolution unit sphere (icosphere) with radius 0.5.
+    /// Subdivisions: 1 for performance (low-res)
+    pub fn create_unit_sphere_low_res() -> Self {
+        Self::create_unit_sphere_subdivisions(1) // Reduced from 3 to 1 for performance
     }
 
     /// Create a high-resolution unit sphere (icosphere) with radius 0.5.

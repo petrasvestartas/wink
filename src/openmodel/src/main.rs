@@ -141,14 +141,14 @@ fn make_point_cloud() -> PointCloud {
     
     // Generate 10x10x10 = 1,000 points within 10x10x10 bounds
     let grid_size = 10;
-    let bound = 5.0; // -5 to +5 = 10 units
+    let bound = 1.0; // -5 to +5 = 10 units
     let step = (2.0 * bound) / (grid_size as f64 - 1.0);
     
     for i in 0..grid_size {
         for j in 0..grid_size {
             for k in 0..grid_size {
                 let x = -bound + (i as f64) * step;
-                let y = -bound + (j as f64) * step;
+                let y = -bound + (j as f64) * step+5.0;
                 let z = -bound + (k as f64) * step;
                 
                 points.push(Point::new(x, y, z));
@@ -174,16 +174,16 @@ fn main() {
     let mut lines: Vec<Line> = Vec::new();
     let size: i32 = 5; // -5..=5 => 11 lines => 10x10 cells
 
-    // Horizontal lines (vary X)
-    for i in -size..=size {
-        let y = i as f64;
-        lines.push(Line::from_points(&Point::new(-(size as f64), y, 0.0), &Point::new(size as f64, y, 0.0)));
-    }
-    // Vertical lines (vary Y)
-    for i in -size..=size {
-        let x = i as f64;
-        lines.push(Line::from_points(&Point::new(x, -(size as f64), 0.0), &Point::new(x, size as f64, 0.0)));
-    }
+    // // Horizontal lines (vary X)
+    // for i in -size..=size {
+    //     let y = i as f64;
+    //     lines.push(Line::from_points(&Point::new(-(size as f64), y, 0.0), &Point::new(size as f64, y, 0.0)));
+    // }
+    // // Vertical lines (vary Y)
+    // for i in -size..=size {
+    //     let x = i as f64;
+    //     lines.push(Line::from_points(&Point::new(x, -(size as f64), 0.0), &Point::new(x, size as f64, 0.0)));
+    // }
     // Z axis
     lines.push(Line::from_points(&Point::new(0.0, 0.0, 0.0), &Point::new(0.0, 0.0, 1.0)));
 
@@ -219,7 +219,7 @@ fn main() {
         line_clouds: vec![],
         plines: vec![],
         xforms: vec![],
-        meshes: vec![star, sphere, cube, dodecahedron],
+        meshes: vec![star, cube, dodecahedron], //sphere
         mesh_instances: vec![],
         pipe_mesh_index: None,
         sphere_mesh_index: None,

@@ -73,6 +73,15 @@ impl AllGeometryData {
     /// - The shared unit sphere mesh has radius=0.5; sphere instances use translation-only
     ///   transforms so the final world-space radius stays 0.5 unless further scaled by the user.
     pub fn augment_with_procedural(&mut self) {
+        // DISABLED: Skip all procedural geometry on web for maximum performance
+        // #[cfg(target_arch = "wasm32")]
+        // {
+        //     return; // Complete skip on web - no pipes, no spheres
+        // }
+        
+        // Use low-res procedural geometry for better native performance
+        // Pipes: 8 segments instead of 32 (4x fewer vertices)
+        // Spheres: 1 subdivision instead of 3 (16x fewer vertices)
 
         // Reset procedural indices before augmentation
         self.pipe_mesh_index = None;
@@ -108,7 +117,7 @@ impl AllGeometryData {
 
         if !pipe_transforms.is_empty() {
             let pipe_mesh_index = self.meshes.len();
-            self.meshes.push(Mesh::create_unit_pipe_high_res());
+            self.meshes.push(Mesh::create_unit_pipe_low_res()); // Use low-res for performance
             self.mesh_instances.push(MeshInstances {
                 mesh_index: pipe_mesh_index,
                 transforms: pipe_transforms,
@@ -118,40 +127,40 @@ impl AllGeometryData {
 
 
 
-        // 2) Spheres at segment vertices (deduplicated across all sources)
-        let eps: f64 = 1e-6;
-        let mut all_sphere_points: Vec<Point> = Vec::new();
+        // // 2) Spheres at segment vertices (deduplicated across all sources)
+        // let eps: f64 = 1e-6;
+        // let mut all_sphere_points: Vec<Point> = Vec::new();
 
-        // Mesh boundary vertices (only original meshes)
-        for i in 0..original_mesh_count {
-            all_sphere_points.extend(self.meshes[i].sphere_points());
-        }
+        // // Mesh boundary vertices (only original meshes)
+        // for i in 0..original_mesh_count {
+        //     all_sphere_points.extend(self.meshes[i].sphere_points());
+        // }
 
-        // Pline vertices
-        for pl in &self.plines {
-            all_sphere_points.extend(pl.sphere_points());
-        }
+        // // Pline vertices
+        // for pl in &self.plines {
+        //     all_sphere_points.extend(pl.sphere_points());
+        // }
 
-        // LineCloud endpoints
-        for lc in &self.line_clouds {
-            all_sphere_points.extend(lc.sphere_points());
-        }
+        // // LineCloud endpoints
+        // for lc in &self.line_clouds {
+        //     all_sphere_points.extend(lc.sphere_points());
+        // }
 
-        // Standalone Line endpoints
-        if !self.lines.is_empty() {
-            all_sphere_points.extend(self.lines.sphere_points());
-        }
+        // // Standalone Line endpoints
+        // if !self.lines.is_empty() {
+        //     all_sphere_points.extend(self.lines.sphere_points());
+        // }
 
-        let sphere_transforms: Vec<Xform> = dedupe_sphere_transforms(all_sphere_points, eps);
+        // let sphere_transforms: Vec<Xform> = dedupe_sphere_transforms(all_sphere_points, eps);
 
-        if !sphere_transforms.is_empty() {
-            let sphere_mesh_index = self.meshes.len();
-            self.meshes.push(Mesh::create_unit_sphere_high_res());
-            self.mesh_instances.push(MeshInstances {
-                mesh_index: sphere_mesh_index,
-                transforms: sphere_transforms,
-            });
-            self.sphere_mesh_index = Some(sphere_mesh_index);
-        }
+        // if !sphere_transforms.is_empty() {
+        //     let sphere_mesh_index = self.meshes.len();
+        //     self.meshes.push(Mesh::create_unit_sphere_low_res()); // Use low-res for performance
+        //     self.mesh_instances.push(MeshInstances {
+        //         mesh_index: sphere_mesh_index,
+        //         transforms: sphere_transforms,
+        //     });
+        //     self.sphere_mesh_index = Some(sphere_mesh_index);
+        // }
     }
 }
