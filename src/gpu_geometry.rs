@@ -4,13 +4,13 @@ use bytemuck::{Pod, Zeroable};
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
 pub struct PipeTransform {
-    pub transform: [[f32; 4]; 4], // 4x4 transformation matrix
+    pub transform: [f32; 16], // 4x4 transformation matrix in column-major order
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
 pub struct SphereTransform {
-    pub transform: [[f32; 4]; 4], // 4x4 transformation matrix
+    pub transform: [f32; 16], // 4x4 transformation matrix in column-major order
 }
 
 

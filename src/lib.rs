@@ -542,7 +542,7 @@ impl State{
                     }
 
                     if changed {
-                        let (vertices, indices, batches) = pollster::block_on(get_geometry());
+                        let (vertices, indices, batches, _pointcloud_instances, _pipe_transforms, _sphere_transforms) = pollster::block_on(get_geometry());
                         let _ = tx_geom.send((vertices, indices, batches));
                     }
                     std::thread::sleep(StdDuration::from_millis(GEOMETRY_POLL_INTERVAL_MS));
@@ -825,9 +825,12 @@ impl State{
         for pipe in &mut pipes {
             // Apply radial scaling to the transformation matrix
             // Scale only X, Y components (radius), not Z (length)
-            pipe.transform[0][0] *= self.gpu_geometry_scale;
-            pipe.transform[1][1] *= self.gpu_geometry_scale;
-            // Do NOT scale Z component: pipe.transform[2][2] *= self.gpu_geometry_scale;
+            // Matrix is stored in column-major order: [m00, m10, m20, m30, m01, m11, m21, m31, ...]
+            let scale = self.pipe_px_radius / 10.5;
+            pipe.transform[0] *= scale;  // m00
+            pipe.transform[1] *= scale;  // m10
+            pipe.transform[4] *= scale;  // m01
+            pipe.transform[5] *= scale;  // m11
         }
         pipes
     }
@@ -837,9 +840,14 @@ impl State{
         for sphere in &mut spheres {
             // Apply uniform scaling to the transformation matrix
             // Scale the X, Y, Z components (diagonal elements)
-            sphere.transform[0][0] *= self.gpu_geometry_scale;
-            sphere.transform[1][1] *= self.gpu_geometry_scale;
-            sphere.transform[2][2] *= self.gpu_geometry_scale;
+            // Matrix is stored in column-major order: [m00, m10, m20, m30, m01, m11, m21, m31, ...]
+            let scale = self.pipe_px_radius / 10.5;
+            sphere.transform[0] *= scale;   // m00
+            sphere.transform[1] *= scale;   // m10
+            sphere.transform[4] *= scale;   // m01
+            sphere.transform[5] *= scale;   // m11
+            sphere.transform[8] *= scale;   // m02
+            sphere.transform[9] *= scale;   // m12
         }
         spheres
     }
@@ -1065,7 +1073,7 @@ impl State{
                     
                     if local_changed {
                         // Rebuild full scene using the same logic as initial load
-                        let (vertices, indices, batches, pointcloud_instances) = get_geometry_with_pointclouds().await;
+                        let (vertices, indices, batches, pointcloud_instances, _pipe_transforms, _sphere_transforms) = get_geometry().await;
                         #[cfg(target_arch = "wasm32")]
                         web_sys::console::log_1(&format!("🔄 FILE CHANGED - Reloading geometry: {} vertices, {} indices, {} batches, {} point cloud instances", vertices.len(), indices.len(), batches.len(), pointcloud_instances.len()).into());
                         PENDING_GEOMETRY.with(|p| *p.borrow_mut() = Some((vertices, indices, batches, pointcloud_instances)));
@@ -1438,16 +1446,16 @@ impl State{
                         render_pass.set_vertex_buffer(1, self.pointcloud_instance_buffer.slice(..));
                         if self.pointcloud_num_instances > 0 {
                             // Only log occasionally to avoid spam
-                            static mut _FRAME_COUNT: u32 = 0;
-                            // unsafe {
-                            //     FRAME_COUNT += 1;
-                            //     if FRAME_COUNT % 60 == 0 { // Log every 60 frames
-                            //         #[cfg(target_arch = "wasm32")]
-                            //         web_sys::console::log_1(&format!("🎨 Frame {}: RENDERING {} point cloud instances", FRAME_COUNT, self.pointcloud_num_instances).into());
-                            //         #[cfg(not(target_arch = "wasm32"))]
-                            //         println!("🎨 Frame {}: RENDERING {} point cloud instances", FRAME_COUNT, self.pointcloud_num_instances);
-                            //     }
-                            // }
+                            static mut FRAME_COUNT: u32 = 0;
+                            unsafe {
+                                FRAME_COUNT += 1;
+                                if FRAME_COUNT % 60 == 0 { // Log every 60 frames
+                                    #[cfg(target_arch = "wasm32")]
+                                    web_sys::console::log_1(&format!("🔴 Frame {}: RENDERING {} point cloud instances", FRAME_COUNT, self.pointcloud_num_instances).into());
+                                    #[cfg(not(target_arch = "wasm32"))]
+                                    println!("🔴 Frame {}: RENDERING {} point cloud instances", FRAME_COUNT, self.pointcloud_num_instances);
+                                }
+                            }
                             
                             // Draw 6 vertices (quad) for each instance
                             render_pass.draw(0..6, 0..self.pointcloud_num_instances);
@@ -1680,7 +1688,7 @@ impl ApplicationHandler<State> for App {
         {
             // Native: load full geometry including point clouds so we can render glyphs
             // and ensure a PointCloud batch exists.
-            let (vertices, indices, batches, pointcloud_vertices, _pipe_transforms, _sphere_transforms) = pollster::block_on(get_geometry_with_pointclouds_and_gpu());
+            let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms) = pollster::block_on(get_geometry());
             // Keep App copies in sync (may be used later)
             self.vertices = vertices;
             self.indices = indices;
@@ -1693,8 +1701,8 @@ impl ApplicationHandler<State> for App {
                     &self.indices,
                     &self.batches,
                     &pointcloud_vertices, // Use loaded pointcloud instances
-                    _pipe_transforms,
-                    _sphere_transforms
+                    pipe_transforms,
+                    sphere_transforms
                 ))
                 .expect("Unable to create state")
             );
@@ -1706,10 +1714,10 @@ impl ApplicationHandler<State> for App {
             if let Some(proxy) = self.proxy.take() {
                 wasm_bindgen_futures::spawn_local(async move {
                     // Build geometry on WASM (embedded + grid/axis + local JSON if available)
-                    let (vertices, indices, batches, pointcloud_vertices, _pipe_transforms, _sphere_transforms) = get_geometry_with_pointclouds_and_gpu().await;
+                    let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms) = get_geometry().await;
                     assert!(proxy
                         .send_event(
-                            State::new(window, &vertices, &indices, &batches, &pointcloud_vertices, _pipe_transforms, _sphere_transforms)
+                            State::new(window, &vertices, &indices, &batches, &pointcloud_vertices, pipe_transforms, sphere_transforms)
                                 .await
                                 .expect("Unable to create canvas!!!")
                         )
@@ -1858,7 +1866,7 @@ pub fn run() -> anyhow::Result<()> {
 
 
     #[cfg(not(target_arch = "wasm32"))]
-    let (vertices, indices, batches) = pollster::block_on(get_geometry());
+    let (vertices, indices, batches, _pointcloud_instances, _pipe_transforms, _sphere_transforms) = pollster::block_on(get_geometry());
 
     #[cfg(not(target_arch = "wasm32"))]
     let mut app = App::new(
@@ -1891,159 +1899,10 @@ pub fn run_web() -> Result<(), wasm_bindgen::JsValue> {
     Ok(())
 }
 
-// Enhanced geometry loading with point cloud and GPU geometry support
-pub async fn get_geometry_with_pointclouds_and_gpu() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>) {
-    let (vertices, indices, mut batches, pipe_transforms, sphere_transforms) = get_geometry_with_gpu_data().await;
-    
-    // Load point cloud data from AllGeometryData
-    let mut pointcloud_instances: Vec<PointCloudInstance> = Vec::new();
-    
-    // Parse geometry data again to extract point clouds
-    let local: Option<String> = {
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            let base = env!("CARGO_MANIFEST_DIR");
-            let primary = format!("{}/all_geometry.json", base);
-            std::fs::read_to_string(&primary)
-                .or_else(|_| std::fs::read_to_string(LOCAL_GEOMETRY_PATH))
-                .ok()
-        }
-        #[cfg(target_arch = "wasm32")]
-        {
-            None // Will be handled by fetch below
-        }
-    };
-
-    #[cfg(target_arch = "wasm32")]
-    let wasm_fetched = {
-        use wasm_bindgen_futures::JsFuture;
-        use web_sys::{Request, RequestInit, RequestMode, Response};
-        
-        let mut opts = RequestInit::new();
-        opts.method("GET");
-        opts.mode(RequestMode::Cors);
-        
-        let url = "./all_geometry.json";
-        let request = Request::new_with_str_and_init(url, &opts).unwrap();
-        
-        match JsFuture::from(web_sys::window().unwrap().fetch_with_request(&request)).await {
-            Ok(resp_value) => {
-                let resp: Response = resp_value.dyn_into().unwrap();
-                if resp.ok() {
-                    match JsFuture::from(resp.text().unwrap()).await {
-                        Ok(text) => Some(text.as_string().unwrap()),
-                        Err(_) => None,
-                    }
-                } else {
-                    None
-                }
-            }
-            Err(_) => None,
-        }
-    };
-
-    let json_str = {
-        #[cfg(not(target_arch = "wasm32"))]
-        { local.unwrap_or_else(|| include_str!("openmodel/all_geometry.json").to_string()) }
-        #[cfg(target_arch = "wasm32")]
-        { wasm_fetched.unwrap_or_else(|| include_str!("openmodel/all_geometry.json").to_string()) }
-    };
-
-    if let Ok(all_geom) = serde_json::from_str::<AllGeometryData>(&json_str) {
-        #[cfg(not(target_arch = "wasm32"))]
-        println!("🔍 Found {} point clouds in geometry data", all_geom.point_clouds.len());
-        
-        // Extract point cloud data
-        for pc in &all_geom.point_clouds {
-            #[cfg(not(target_arch = "wasm32"))]
-            println!("🔍 Processing point cloud with {} points", pc.points.len());
-            
-            for (i, point) in pc.points.iter().enumerate() {
-                let color = if i < pc.colors.len() {
-                    let c = &pc.colors[i];
-                    [c.r as f32 / 255.0, c.g as f32 / 255.0, c.b as f32 / 255.0]
-                } else {
-                    [1.0, 1.0, 1.0] // Default white color
-                };
-                
-                let instance = PointCloudInstance {
-                    position: [point.x as f32, point.y as f32, point.z as f32],
-                    size: 1.0, // Smaller size
-                    color,
-                };
-                pointcloud_instances.push(instance);
-            }
-        }
-        
-        #[cfg(not(target_arch = "wasm32"))]
-        println!("✅ Created {} pointcloud instances total", pointcloud_instances.len());
-    } else {
-        #[cfg(not(target_arch = "wasm32"))]
-        println!("❌ Failed to parse AllGeometryData from JSON");
-    }
-
-    // Add PointCloud batch if we have pointcloud instances
-    if !pointcloud_instances.is_empty() {
-        batches.push(DrawBatch {
-            first_index: 0,
-            index_count: 0, // Point clouds use draw() not draw_indexed()
-            base_vertex: 0,
-            instances: Vec::new(), // Point clouds use instanced rendering
-            kind: BatchKind::PointCloud,
-        });
-    }
-
-    (vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms)
-}
-
-// Enhanced geometry loading with point cloud support
-pub async fn get_geometry_with_pointclouds() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>) {
-    let (vertices, indices, batches, pointcloud_instances, _pipe_transforms, _sphere_transforms) = get_geometry_with_pointclouds_and_gpu().await;
-    (vertices, indices, batches, pointcloud_instances)
-}
-
-// Geometry loading: minimal single function using local-or-embedded JSON
-pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
-    let (vertices, indices, batches, _pointcloud_instances, _pipe_transforms, _sphere_transforms) = get_geometry_with_pointclouds_and_gpu().await;
-    (vertices, indices, batches)
-}
-
-// Enhanced geometry loading that also returns GPU geometry data
-pub async fn get_geometry_with_gpu_data() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PipeTransform>, Vec<SphereTransform>) {
-    // Prefer local (native file or WASM fetch); fall back to embedded JSON.
-    let local: Option<String> = {
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            // Try top-level all_geometry.json first, then src/openmodel/all_geometry.json
-            let base = env!("CARGO_MANIFEST_DIR");
-            let primary = format!("{}/all_geometry.json", base);
-            let openmodel_path = format!("{}/src/openmodel/all_geometry.json", base);
-            
-            // Try to copy from openmodel directory if it's newer
-            if let (Ok(openmodel_meta), Ok(primary_meta)) = (
-                std::fs::metadata(&openmodel_path),
-                std::fs::metadata(&primary)
-            ) {
-                if openmodel_meta.modified().unwrap_or(std::time::UNIX_EPOCH) > 
-                   primary_meta.modified().unwrap_or(std::time::UNIX_EPOCH) {
-                    let _ = std::fs::copy(&openmodel_path, &primary);
-                    log::info!("Auto-copied newer geometry from {}", openmodel_path);
-                }
-            } else if std::fs::metadata(&openmodel_path).is_ok() {
-                // Primary doesn't exist but openmodel does, copy it
-                let _ = std::fs::copy(&openmodel_path, &primary);
-                log::info!("Auto-copied geometry from {}", openmodel_path);
-            }
-            
-            std::fs::read_to_string(&primary)
-                .or_else(|_| std::fs::read_to_string(LOCAL_GEOMETRY_PATH))
-                .ok()
-        }
-        #[cfg(target_arch = "wasm32")]
-        { fetch_text(LOCAL_GEOMETRY_HTTP_PATH).await }
-    };
-
-    let mut all_geom: AllGeometryData = match local {
+// Load geometry data from file or embedded JSON
+async fn load_geometry_data() -> AllGeometryData {
+    let local_json = load_local_geometry().await;
+    let mut all_geom: AllGeometryData = match local_json {
         Some(ref s) => serde_json::from_str::<AllGeometryData>(s).unwrap_or_else(|_| {
             serde_json::from_str(include_str!("openmodel/all_geometry.json"))
                 .expect("embedded geometry JSON must be valid")
@@ -2051,31 +1910,120 @@ pub async fn get_geometry_with_gpu_data() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBat
         None => serde_json::from_str(include_str!("openmodel/all_geometry.json"))
             .expect("embedded geometry JSON must be valid"),
     };
-
-    // Augment with procedural unit pipe/sphere meshes and corresponding mesh_instances.
-    // augment_with_procedural() also records their mesh indices for convenience.
     all_geom.augment_with_procedural();
+    all_geom
+}
 
-    // Build vertices, indices, and batches from parsed geometry
+// Handle file loading logic separately
+async fn load_local_geometry() -> Option<String> {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let base = env!("CARGO_MANIFEST_DIR");
+        let primary = format!("{}/all_geometry.json", base);
+        let openmodel_path = format!("{}/src/openmodel/all_geometry.json", base);
+        
+        // Auto-copy newer geometry if available
+        if let (Ok(openmodel_meta), Ok(primary_meta)) = (
+            std::fs::metadata(&openmodel_path),
+            std::fs::metadata(&primary)
+        ) {
+            if openmodel_meta.modified().unwrap_or(std::time::UNIX_EPOCH) > 
+               primary_meta.modified().unwrap_or(std::time::UNIX_EPOCH) {
+                let _ = std::fs::copy(&openmodel_path, &primary);
+            }
+        } else if std::fs::metadata(&openmodel_path).is_ok() {
+            let _ = std::fs::copy(&openmodel_path, &primary);
+        }
+        
+        std::fs::read_to_string(&primary)
+            .or_else(|_| std::fs::read_to_string(LOCAL_GEOMETRY_PATH))
+            .ok()
+    }
+    #[cfg(target_arch = "wasm32")]
+    { fetch_text(LOCAL_GEOMETRY_HTTP_PATH).await }
+}
 
-    let _pipe_transforms: Vec<PipeTransform> = Vec::new();
-    let _sphere_transforms: Vec<SphereTransform> = Vec::new();
-    let mut vertices: Vec<Vertex> = Vec::new();
-    let mut indices: Vec<u16> = Vec::new();
-    let mut batches: Vec<DrawBatch> = Vec::new();
+// Extract pointcloud instances from geometry data
+fn extract_pointclouds(all_geom: &AllGeometryData) -> Vec<PointCloudInstance> {
+    let mut instances = Vec::new();
+    for pc in &all_geom.point_clouds {
+        for (i, point) in pc.points.iter().enumerate() {
+            let color = if i < pc.colors.len() {
+                let c = &pc.colors[i];
+                [c.r as f32 / 255.0, c.g as f32 / 255.0, c.b as f32 / 255.0]
+            } else {
+                [1.0, 1.0, 1.0]
+            };
+            instances.push(PointCloudInstance {
+                position: [point.x as f32, point.y as f32, point.z as f32],
+                size: 0.1,
+                color,
+            });
+        }
+    }
+    instances
+}
 
-    // Track which batch corresponds to which source mesh index (skip procedural unit pipe/sphere meshes)
+// Extract GPU transforms from geometry data
+fn extract_gpu_transforms(all_geom: &AllGeometryData) -> (Vec<PipeTransform>, Vec<SphereTransform>) {
+    let mut pipes = Vec::new();
+    let mut spheres = Vec::new();
+    
+    // Extract pipe transforms
+    if let Some(pipe_idx) = all_geom.pipe_mesh_index {
+        if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == pipe_idx) {
+            for xf in &mi.transforms {
+                pipes.push(PipeTransform {
+                    transform: [
+                        xf.m[0] as f32, xf.m[1] as f32, xf.m[2] as f32, xf.m[3] as f32,
+                        xf.m[4] as f32, xf.m[5] as f32, xf.m[6] as f32, xf.m[7] as f32,
+                        xf.m[8] as f32, xf.m[9] as f32, xf.m[10] as f32, xf.m[11] as f32,
+                        xf.m[12] as f32, xf.m[13] as f32, xf.m[14] as f32, xf.m[15] as f32,
+                    ],
+                });
+            }
+        }
+    }
+    
+    // Extract sphere transforms
+    if let Some(sphere_idx) = all_geom.sphere_mesh_index {
+        if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == sphere_idx) {
+            for xf in &mi.transforms {
+                spheres.push(SphereTransform {
+                    transform: [
+                        xf.m[0] as f32, xf.m[1] as f32, xf.m[2] as f32, xf.m[3] as f32,
+                        xf.m[4] as f32, xf.m[5] as f32, xf.m[6] as f32, xf.m[7] as f32,
+                        xf.m[8] as f32, xf.m[9] as f32, xf.m[10] as f32, xf.m[11] as f32,
+                        xf.m[12] as f32, xf.m[13] as f32, xf.m[14] as f32, xf.m[15] as f32,
+                    ],
+                });
+            }
+        }
+    }
+    
+    (pipes, spheres)
+}
+
+// Build mesh geometry (vertices, indices, batches)
+fn build_mesh_geometry(all_geom: &mut AllGeometryData) -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
+    let mut vertices = Vec::new();
+    let mut indices = Vec::new();
+    let mut batches = Vec::new();
+    
+    // Track mesh to batch mapping
     let mut mesh_to_batch: Vec<Option<usize>> = vec![None; all_geom.meshes.len()];
-    // Cache procedural indices before borrowing meshes mutably
     let pipe_idx = all_geom.pipe_mesh_index;
     let sphere_idx = all_geom.sphere_mesh_index;
+    
+    // Process regular meshes (skip procedural pipe/sphere)
     for (i, m) in all_geom.meshes.iter_mut().enumerate() {
         if Some(i) == pipe_idx || Some(i) == sphere_idx { continue; }
+        
         let first_index = indices.len() as u32;
         append_mesh_as_triangles(m, [0.8, 0.8, 0.8], &mut vertices, &mut indices);
         let index_count = (indices.len() as u32) - first_index;
+        
         if index_count > 0 {
-            // base_vertex must be 0 because indices are global
             batches.push(DrawBatch {
                 first_index,
                 index_count,
@@ -2084,23 +2032,13 @@ pub async fn get_geometry_with_gpu_data() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBat
                 kind: BatchKind::Surface,
             });
             mesh_to_batch[i] = Some(batches.len() - 1);
-            log::info!(
-                "Created surface batch for mesh {}: vertices={}, faces={}, index_count={}",
-                i, m.number_of_vertices(), m.number_of_faces(), index_count
-            );
-        } else {
-            log::warn!("Mesh {} produced no triangles (vertices={}, faces={})", i, m.number_of_vertices(), m.number_of_faces());
         }
     }
-
-    // Pipe instancing from augmented mesh_instances (if any)
-    if let Some(pipe_idx) = all_geom.pipe_mesh_index {
+    
+    // Add pipe batch
+    if let Some(pipe_idx) = pipe_idx {
         if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == pipe_idx) {
-            let mut pipe_instances: Vec<Instance> = mi
-                .transforms
-                .iter()
-                .map(|xf| xform_to_instance(xf))
-                .collect();
+            let pipe_instances: Vec<Instance> = mi.transforms.iter().map(|xf| xform_to_instance(xf)).collect();
             if !pipe_instances.is_empty() {
                 let mut unit_pipe = Mesh::create_unit_pipe_high_res();
                 let first_index = indices.len() as u32;
@@ -2111,27 +2049,18 @@ pub async fn get_geometry_with_gpu_data() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBat
                         first_index,
                         index_count,
                         base_vertex: 0,
-                        instances: pipe_instances.drain(..).collect(),
+                        instances: pipe_instances,
                         kind: BatchKind::Pipe,
                     });
-                    log::info!(
-                        "Created pipe batch (augmented): instances={}, index_count={}",
-                        batches.last().unwrap().instances.len(),
-                        index_count
-                    );
                 }
             }
         }
     }
-
-    // Sphere instancing from augmented mesh_instances (if any)
-    if let Some(sphere_idx) = all_geom.sphere_mesh_index {
+    
+    // Add sphere batch
+    if let Some(sphere_idx) = sphere_idx {
         if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == sphere_idx) {
-            let sphere_instances: Vec<Instance> = mi
-                .transforms
-                .iter()
-                .map(|xf| xform_to_instance(xf))
-                .collect();
+            let sphere_instances: Vec<Instance> = mi.transforms.iter().map(|xf| xform_to_instance(xf)).collect();
             if !sphere_instances.is_empty() {
                 let mut unit_sphere = Mesh::create_unit_sphere_high_res();
                 let first_index = indices.len() as u32;
@@ -2145,69 +2074,39 @@ pub async fn get_geometry_with_gpu_data() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBat
                         instances: sphere_instances,
                         kind: BatchKind::Sphere,
                     });
-                    log::info!(
-                        "Created sphere batch (augmented): instances={}, index_count={}",
-                        batches.last().unwrap().instances.len(),
-                        index_count
-                    );
                 }
             }
         }
     }
-
-    // Populate per-mesh instances into batches
+    
+    // Populate mesh instances into batches
     for mi in &all_geom.mesh_instances {
         if let Some(Some(bi)) = mesh_to_batch.get(mi.mesh_index) {
-            let insts = mi
-                .transforms
-                .iter()
-                .map(|xf| xform_to_instance(xf))
-                .collect::<Vec<_>>();
+            let insts = mi.transforms.iter().map(|xf| xform_to_instance(xf)).collect();
             batches[*bi].instances = insts;
         }
     }
     
-    // Extract GPU geometry data from pipe and sphere transforms
-    let mut pipes = Vec::new();
-    let mut spheres = Vec::new();
-    
-    // Extract pipe transforms directly - no conversion needed!
-    if let Some(pipe_idx) = all_geom.pipe_mesh_index {
-        if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == pipe_idx) {
-            for xf in &mi.transforms {
-                // Use transformation matrix directly - preserves all rotation, scale, and position data
-                // Convert f64 matrix to f32 and reshape from [f64; 16] to [[f32; 4]; 4]
-                let matrix_f32: [[f32; 4]; 4] = [
-                    [xf.m[0] as f32, xf.m[1] as f32, xf.m[2] as f32, xf.m[3] as f32],
-                    [xf.m[4] as f32, xf.m[5] as f32, xf.m[6] as f32, xf.m[7] as f32],
-                    [xf.m[8] as f32, xf.m[9] as f32, xf.m[10] as f32, xf.m[11] as f32],
-                    [xf.m[12] as f32, xf.m[13] as f32, xf.m[14] as f32, xf.m[15] as f32],
-                ];
-                pipes.push(PipeTransform {
-                    transform: matrix_f32,
-                });
-            }
-        }
-    }
-    
-    // Extract sphere transforms directly - no conversion needed!
-    if let Some(sphere_idx) = all_geom.sphere_mesh_index {
-        if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == sphere_idx) {
-            for xf in &mi.transforms {
-                // Use transformation matrix directly - preserves all rotation, scale, and position data
-                // Convert f64 matrix to f32 and reshape from [f64; 16] to [[f32; 4]; 4]
-                let matrix_f32: [[f32; 4]; 4] = [
-                    [xf.m[0] as f32, xf.m[1] as f32, xf.m[2] as f32, xf.m[3] as f32],
-                    [xf.m[4] as f32, xf.m[5] as f32, xf.m[6] as f32, xf.m[7] as f32],
-                    [xf.m[8] as f32, xf.m[9] as f32, xf.m[10] as f32, xf.m[11] as f32],
-                    [xf.m[12] as f32, xf.m[13] as f32, xf.m[14] as f32, xf.m[15] as f32],
-                ];
-                spheres.push(SphereTransform {
-                    transform: matrix_f32,
-                });
-            }
-        }
-    }
+    (vertices, indices, batches)
+}
 
-    (vertices, indices, batches, pipes, spheres)
+// Main geometry loading function - now clean and focused
+pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>) {
+    let mut all_geom = load_geometry_data().await;
+    let (vertices, indices, mut batches) = build_mesh_geometry(&mut all_geom);
+    let pointcloud_instances = extract_pointclouds(&all_geom);
+    let (pipes, spheres) = extract_gpu_transforms(&all_geom);
+    
+    // Add pointcloud batch if needed
+    if !pointcloud_instances.is_empty() {
+        batches.push(DrawBatch {
+            first_index: 0,
+            index_count: 0,
+            base_vertex: 0,
+            instances: Vec::new(),
+            kind: BatchKind::PointCloud,
+        });
+    }
+    
+    (vertices, indices, batches, pointcloud_instances, pipes, spheres)
 }
