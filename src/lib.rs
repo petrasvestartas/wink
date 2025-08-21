@@ -24,11 +24,7 @@ use pointcloud_vertex::{PointCloudInstance, QuadVertex};
 use camera::{Camera, CameraUniform, CameraController};
 use timing::Instant;
 use wgpu::util::DeviceExt;
-use instance::Instance;
-use instance::InstanceRaw;
-use instance::DrawBatch;
-use instance::BatchDraw;
-use instance::BatchKind;
+use instance::{Instance, InstanceRaw, DrawBatch, BatchDraw, BatchKind};
 // OpenModel: JSON geometry + mesh utilities
 use openmodel::AllGeometryData;
 use openmodel::geometry::Mesh;
@@ -116,16 +112,12 @@ thread_local! {
 
 
 #[cfg(target_arch = "wasm32")]
-use wasm_bindgen::prelude::*;
-#[cfg(target_arch = "wasm32")]
-use wasm_bindgen::JsCast;
-#[cfg(target_arch = "wasm32")]
-use wasm_bindgen_futures::JsFuture;
-#[cfg(target_arch = "wasm32")]
-use wasm_bindgen_futures::spawn_local;
-
-#[cfg(target_arch = "wasm32")]
-use web_sys::{Request, RequestInit, RequestCache};
+use {
+    wasm_bindgen::prelude::*,
+    wasm_bindgen::JsCast,
+    wasm_bindgen_futures::{JsFuture, spawn_local},
+    web_sys::{Request, RequestInit, RequestCache},
+};
 
 #[cfg(target_arch = "wasm32")]
 async fn fetch_text(url: &str) -> Option<String> {
@@ -803,7 +795,25 @@ impl State{
         }
     }
 
-    // This function is no longer needed as we use transformation matrices directly
+    // Helper function to update camera uniform and write to buffer
+    fn update_camera_uniform(&mut self) {
+        self.camera_uniform.update_view_proj(&self.camera);
+        self.camera_uniform.set_eye_dir(&self.camera);
+        self.camera_uniform.set_view_params(
+            self.config.width as f32,
+            self.config.height as f32,
+            self.camera.fovy,
+            self.camera.aspect,
+            self.pipe_px_radius,
+            self.camera.is_ortho,
+            self.camera.ortho_half_height,
+        );
+        self.queue.write_buffer(
+            &self.camera_buffer,
+            0,
+            bytemuck::cast_slice(&[self.camera_uniform]),
+        );
+    }
 
     // Update GPU geometry data and recreate buffers if needed
     fn update_gpu_geometry_data(&mut self, pipes: Vec<PipeTransform>, spheres: Vec<SphereTransform>) {
@@ -1245,18 +1255,8 @@ impl State{
         let dt = now - self.last_render_time;
         self.last_render_time = now;
         self.camera_controller.update_camera(&mut self.camera, dt);
-        self.camera_uniform.update_view_proj(&self.camera);
         // Update extended camera/pipe parameters each frame
-        self.camera_uniform.set_eye_dir(&self.camera);
-        self.camera_uniform.set_view_params(
-            self.config.width as f32,
-            self.config.height as f32,
-            self.camera.fovy,
-            self.camera.aspect,
-            self.pipe_px_radius,
-            self.camera.is_ortho,
-            self.camera.ortho_half_height,
-        );
+        self.update_camera_uniform();
         self.queue.write_buffer(
             &self.camera_buffer,
             0,
@@ -1269,17 +1269,7 @@ impl State{
     pub fn apply_camera_om_xform(&mut self, xf: openmodel::primitives::Xform) {
         self.camera.set_om_world_from_camera(xf);
         // Rebuild view-projection and extended fields from the updated camera
-        self.camera_uniform.update_view_proj(&self.camera);
-        self.camera_uniform.set_eye_dir(&self.camera);
-        self.camera_uniform.set_view_params(
-            self.config.width as f32,
-            self.config.height as f32,
-            self.camera.fovy,
-            self.camera.aspect,
-            self.pipe_px_radius,
-            self.camera.is_ortho,
-            self.camera.ortho_half_height,
-        );
+        self.update_camera_uniform();
         // Write updated uniform to GPU so the effect is visible this frame
         self.queue.write_buffer(
             &self.camera_buffer,
@@ -1547,22 +1537,7 @@ impl State{
                 }
                 // Immediately refresh camera uniform and push to GPU so the first frame after the toggle
                 // uses the correct view-projection and ortho parameters.
-                self.camera_uniform.update_view_proj(&self.camera);
-                self.camera_uniform.set_eye_dir(&self.camera);
-                self.camera_uniform.set_view_params(
-                    self.config.width as f32,
-                    self.config.height as f32,
-                    self.camera.fovy,
-                    self.camera.aspect,
-                    self.pipe_px_radius,
-                    self.camera.is_ortho,
-                    self.camera.ortho_half_height,
-                );
-                self.queue.write_buffer(
-                    &self.camera_buffer,
-                    0,
-                    bytemuck::cast_slice(&[self.camera_uniform]),
-                );
+                self.update_camera_uniform();
                 // Ensure a redraw is scheduled immediately
                 self.window.request_redraw();
                 #[cfg(target_arch = "wasm32")]
