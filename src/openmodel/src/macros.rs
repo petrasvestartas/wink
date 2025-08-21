@@ -426,7 +426,7 @@ macro_rules! xform {
     // Pattern for rotation around X axis
     (rotation_x: $angle:expr) => {
         {
-            let angle_rad = $angle * std::f64::consts::PI / 180.0;
+            let angle_rad = $angle * std::f32::consts::PI / 180.0;
             let s = angle_rad.sin();
             let c = angle_rad.cos();
             
@@ -442,7 +442,7 @@ macro_rules! xform {
     // Pattern for rotation around Y axis
     (rotation_y: $angle:expr) => {
         {
-            let angle_rad = $angle * std::f64::consts::PI / 180.0;
+            let angle_rad = $angle * std::f32::consts::PI / 180.0;
             let s = angle_rad.sin();
             let c = angle_rad.cos();
             
@@ -458,7 +458,7 @@ macro_rules! xform {
     // Pattern for rotation around Z axis
     (rotation_z: $angle:expr) => {
         {
-            let angle_rad = $angle * std::f64::consts::PI / 180.0;
+            let angle_rad = $angle * std::f32::consts::PI / 180.0;
             let s = angle_rad.sin();
             let c = angle_rad.cos();
             

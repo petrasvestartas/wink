@@ -114,7 +114,7 @@ impl SphereFromSegments for Mesh {
 }
 
 /// Helper to convert a set of points into translation transforms with epsilon-based deduplication.
-pub fn dedupe_sphere_transforms<I>(points: I, eps: f64) -> Vec<Xform>
+pub fn dedupe_sphere_transforms<I>(points: I, eps: f32) -> Vec<Xform>
 where
     I: IntoIterator<Item = Point>,
 {

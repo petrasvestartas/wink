@@ -16,20 +16,20 @@ pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
 
 // Helpers: convert between cgmath::Matrix4<f32> and openmodel::primitives::Xform (column-major)
 fn mat4f32_to_xform(m: &Matrix4<f32>) -> Xform {
-    let mut out = [0.0f64; 16];
+    let mut out = [0.0f32; 16];
     // Column-major: index = col * 4 + row
-    out[0] = m[0][0] as f64; out[1] = m[0][1] as f64; out[2] = m[0][2] as f64; out[3] = m[0][3] as f64;
-    out[4] = m[1][0] as f64; out[5] = m[1][1] as f64; out[6] = m[1][2] as f64; out[7] = m[1][3] as f64;
-    out[8] = m[2][0] as f64; out[9] = m[2][1] as f64; out[10] = m[2][2] as f64; out[11] = m[2][3] as f64;
-    out[12] = m[3][0] as f64; out[13] = m[3][1] as f64; out[14] = m[3][2] as f64; out[15] = m[3][3] as f64;
+    out[0] = m[0][0]; out[1] = m[0][1]; out[2] = m[0][2]; out[3] = m[0][3];
+    out[4] = m[1][0]; out[5] = m[1][1]; out[6] = m[1][2]; out[7] = m[1][3];
+    out[8] = m[2][0]; out[9] = m[2][1]; out[10] = m[2][2]; out[11] = m[2][3];
+    out[12] = m[3][0]; out[13] = m[3][1]; out[14] = m[3][2]; out[15] = m[3][3];
     Xform { m: out }
 }
 
 fn xform_to_mat4f32(xf: &Xform) -> Matrix4<f32> {
-    let c0 = Vector4::new(xf.m[0] as f32, xf.m[1] as f32, xf.m[2] as f32, xf.m[3] as f32);
-    let c1 = Vector4::new(xf.m[4] as f32, xf.m[5] as f32, xf.m[6] as f32, xf.m[7] as f32);
-    let c2 = Vector4::new(xf.m[8] as f32, xf.m[9] as f32, xf.m[10] as f32, xf.m[11] as f32);
-    let c3 = Vector4::new(xf.m[12] as f32, xf.m[13] as f32, xf.m[14] as f32, xf.m[15] as f32);
+    let c0 = Vector4::new(xf.m[0], xf.m[1], xf.m[2], xf.m[3]);
+    let c1 = Vector4::new(xf.m[4], xf.m[5], xf.m[6], xf.m[7]);
+    let c2 = Vector4::new(xf.m[8], xf.m[9], xf.m[10], xf.m[11]);
+    let c3 = Vector4::new(xf.m[12], xf.m[13], xf.m[14], xf.m[15]);
     Matrix4::from_cols(c0, c1, c2, c3)
 }
 

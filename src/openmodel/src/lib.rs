@@ -128,7 +128,7 @@ impl AllGeometryData {
 
 
         // 2) Spheres at segment vertices (deduplicated across all sources)
-        let eps: f64 = 1e-6;
+        let eps: f32 = 1e-6;
         let mut all_sphere_points: Vec<Point> = Vec::new();
 
         // Mesh boundary vertices (only original meshes)

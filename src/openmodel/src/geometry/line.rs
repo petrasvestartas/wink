@@ -12,17 +12,17 @@ use std::fmt;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Line {
     /// The x coordinate of the start point.
-    pub x0: f64,
+    pub x0: f32,
     /// The y coordinate of the start point.
-    pub y0: f64,
+    pub y0: f32,
     /// The z coordinate of the start point.
-    pub z0: f64,
+    pub z0: f32,
     /// The x coordinate of the end point.
-    pub x1: f64,
+    pub x1: f32,
     /// The y coordinate of the end point.
-    pub y1: f64,
+    pub y1: f32,
     /// The z coordinate of the end point.
-    pub z1: f64,
+    pub z1: f32,
     /// The data associated with the line (includes color and thickness).
     pub data: Data,
     /// Mesh for visualization (pipe)
@@ -55,7 +55,7 @@ impl Line{
     /// assert_eq!(line.z1, 1.0);
     /// 
     /// ```
-    pub fn new(x0: f64, y0: f64, z0:f64, x1: f64, y1: f64, z1:f64) -> Self {
+    pub fn new(x0: f32, y0: f32, z0:f32, x1: f32, y1: f32, z1:f32) -> Self {
         Line {
             x0,
             y0,
@@ -92,7 +92,7 @@ impl Line{
     /// assert_eq!(line.y1, 0.0);
     /// assert_eq!(line.z1, 1.0);
     /// ```
-    pub fn with_name(name: String, x0: f64, y0: f64, z0: f64, x1: f64, y1: f64, z1: f64) -> Self {
+    pub fn with_name(name: String, x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32) -> Self {
         Line {
             x0,
             y0,
@@ -150,7 +150,7 @@ impl Line{
     /// let length = line.length();
     /// assert_eq!(length, 1.0);
     /// ```
-    pub fn length(&self) -> f64 {
+    pub fn length(&self) -> f32 {
         ((self.x0 - self.x1).powi(2) + (self.y0 - self.y1).powi(2) + (self.z0 - self.z1).powi(2))
             .sqrt()
     }
@@ -228,7 +228,7 @@ impl Line{
             Xform::identity()
         } else if (dot + 1.0).abs() < eps {
             // +Z to -Z: 180° around any axis perpendicular to Z (choose X)
-            Xform::rotation_x(std::f64::consts::PI)
+            Xform::rotation_x(std::f32::consts::PI)
         } else {
             let rot_axis = z_axis.cross(&axis).normalize();
             let angle = dot.acos();
@@ -343,7 +343,7 @@ impl AddAssign<&Vector> for Line {
     }
 }
 
-impl Div<f64> for Line {
+impl Div<f32> for Line {
     type Output = Line;
 
     /// Divides the coordinates of the line by a scalar and returns a new line.
@@ -365,14 +365,14 @@ impl Div<f64> for Line {
     /// assert_eq!(line1.y1, 0.0);
     /// assert_eq!(line1.z1, 0.5);
     /// ```
-    fn div(self, factor: f64) -> Line {
+    fn div(self, factor: f32) -> Line {
         let mut result = self;
         result /= factor;
         result
     }
 }
 
-impl DivAssign<f64> for Line {
+impl DivAssign<f32> for Line {
     /// Divides the coordinates of the Line by a scalar.
     ///
     /// # Arguments
@@ -392,7 +392,7 @@ impl DivAssign<f64> for Line {
     /// assert_eq!(line.y1, 0.0);
     /// assert_eq!(line.z1, 0.5);
     /// ```
-    fn div_assign(&mut self, factor: f64) {
+    fn div_assign(&mut self, factor: f32) {
         self.x0 /= factor;
         self.y0 /= factor;
         self.z0 /= factor;
@@ -403,7 +403,7 @@ impl DivAssign<f64> for Line {
 }
 
 impl Index<usize> for Line {
-    type Output = f64;
+    type Output = f32;
 
     /// Provides read-only access to the coordinates of the point using the `[]` operator.
     ///
@@ -483,7 +483,7 @@ impl IndexMut<usize> for Line {
     }
 }
 
-impl MulAssign<f64> for Line {
+impl MulAssign<f32> for Line {
     /// Multiplies the coordinates of the line by a scalar.
     ///
     /// # Arguments
@@ -503,7 +503,7 @@ impl MulAssign<f64> for Line {
     /// assert_eq!(line.y1, 8.0);
     /// assert_eq!(line.z1, 10.0);
     /// ```
-    fn mul_assign(&mut self, factor: f64) {
+    fn mul_assign(&mut self, factor: f32) {
         self.x0 *= factor;
         self.y0 *= factor;
         self.z0 *= factor;
@@ -513,7 +513,7 @@ impl MulAssign<f64> for Line {
     }
 }
 
-impl Mul<f64> for Line {
+impl Mul<f32> for Line {
     type Output = Line;
 
     /// Multiplies the coordinates of line point by a scalar and returns a new line.
@@ -535,7 +535,7 @@ impl Mul<f64> for Line {
     /// assert_eq!(line1.y1, 8.0);
     /// assert_eq!(line1.z1, 10.0);
     /// ```
-    fn mul(self, factor: f64) -> Line {
+    fn mul(self, factor: f32) -> Line {
         let mut result = self;
         result *= factor;
         result

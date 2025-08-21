@@ -18,13 +18,13 @@ pub struct Plane {
     /// The x-axis.
     pub zaxis: Vector,
     /// The normal x coordinate.
-    pub a : f64,
+    pub a : f32,
     /// The normal y coordinate.
-    pub b : f64,
+    pub b : f32,
     /// The normal z coordinate.
-    pub c : f64,
+    pub c : f32,
     /// The plane offset from origin.
-    pub d : f64,
+    pub d : f32,
     /// Associated data - guid and name.
     pub data: Data,
 }
@@ -256,9 +256,9 @@ impl Plane{
             
             if normal_count > 0 {
                 // Average the normals
-                normal_sum.x /= normal_count as f64;
-                normal_sum.y /= normal_count as f64;
-                normal_sum.z /= normal_count as f64;
+                normal_sum.x /= normal_count as f32;
+                normal_sum.y /= normal_count as f32;
+                normal_sum.z /= normal_count as f32;
                 
                 // Create plane from first point and averaged normal
                 Self::from_point_normal(&points[0], &normal_sum)

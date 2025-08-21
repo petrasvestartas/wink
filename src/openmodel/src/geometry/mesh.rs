@@ -4,7 +4,7 @@ use crate::common::{JsonSerializable, FromJsonData};
 use crate::primitives::Xform;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use std::f64::consts::PI;
+use std::f32::consts::PI;
 use uuid::Uuid;
 
 /// Weighting scheme for vertex normal computation
@@ -33,15 +33,15 @@ pub struct Mesh {
     /// Faces: maps face key to list of vertex keys in order
     pub face: HashMap<usize, Vec<usize>>,
     /// Face attributes: maps face key to face attributes
-    pub facedata: HashMap<usize, HashMap<String, f64>>,
+    pub facedata: HashMap<usize, HashMap<String, f32>>,
     /// Edge attributes: maps edge tuple to edge attributes  
-    pub edgedata: HashMap<(usize, usize), HashMap<String, f64>>,
+    pub edgedata: HashMap<(usize, usize), HashMap<String, f32>>,
     /// Default vertex attributes
-    pub default_vertex_attributes: HashMap<String, f64>,
+    pub default_vertex_attributes: HashMap<String, f32>,
     /// Default face attributes
-    pub default_face_attributes: HashMap<String, f64>,
+    pub default_face_attributes: HashMap<String, f32>,
     /// Default edge attributes
-    pub default_edge_attributes: HashMap<String, f64>,
+    pub default_edge_attributes: HashMap<String, f32>,
     /// Optional cached triangulations per face for viewer rendering (triangles only).
     /// Keyed by face key; each triangle stores vertex keys into `self.vertex`.
     /// Skipped in serialization to keep storage minimal; can be recomputed.
@@ -59,11 +59,11 @@ pub struct Mesh {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VertexData {
     /// 3D position of the vertex
-    pub x: f64,
-    pub y: f64, 
-    pub z: f64,
+    pub x: f32,
+    pub y: f32, 
+    pub z: f32,
     /// Vertex attributes organized by type
-    pub attributes: HashMap<String, f64>,
+    pub attributes: HashMap<String, f32>,
 }
 
 impl VertexData {
@@ -90,7 +90,7 @@ impl VertexData {
     }
     
     // Convenience methods for common attributes
-    pub fn color(&self) -> [f64; 3] {
+    pub fn color(&self) -> [f32; 3] {
         [
             self.attributes.get("r").copied().unwrap_or(0.5),
             self.attributes.get("g").copied().unwrap_or(0.5),
@@ -98,42 +98,42 @@ impl VertexData {
         ]
     }
     
-    pub fn set_color(&mut self, r: f64, g: f64, b: f64) {
+    pub fn set_color(&mut self, r: f32, g: f32, b: f32) {
         self.attributes.insert("r".to_string(), r);
         self.attributes.insert("g".to_string(), g);
         self.attributes.insert("b".to_string(), b);
     }
     
-    pub fn normal(&self) -> Option<[f64; 3]> {
+    pub fn normal(&self) -> Option<[f32; 3]> {
         let nx = self.attributes.get("nx")?;
         let ny = self.attributes.get("ny")?;
         let nz = self.attributes.get("nz")?;
         Some([*nx, *ny, *nz])
     }
     
-    pub fn set_normal(&mut self, nx: f64, ny: f64, nz: f64) {
+    pub fn set_normal(&mut self, nx: f32, ny: f32, nz: f32) {
         self.attributes.insert("nx".to_string(), nx);
         self.attributes.insert("ny".to_string(), ny);
         self.attributes.insert("nz".to_string(), nz);
     }
     
-    pub fn tex_coords(&self) -> Option<[f64; 2]> {
+    pub fn tex_coords(&self) -> Option<[f32; 2]> {
         let u = self.attributes.get("u")?;
         let v = self.attributes.get("v")?;
         Some([*u, *v])
     }
     
-    pub fn set_tex_coords(&mut self, u: f64, v: f64) {
+    pub fn set_tex_coords(&mut self, u: f32, v: f32) {
         self.attributes.insert("u".to_string(), u);
         self.attributes.insert("v".to_string(), v);
     }
     
     // Generic attribute access
-    pub fn get_attribute(&self, name: &str) -> Option<f64> {
+    pub fn get_attribute(&self, name: &str) -> Option<f32> {
         self.attributes.get(name).copied()
     }
     
-    pub fn set_attribute(&mut self, name: &str, value: f64) {
+    pub fn set_attribute(&mut self, name: &str, value: f32) {
         self.attributes.insert(name.to_string(), value);
     }
 }
@@ -479,7 +479,7 @@ impl Mesh {
         let ax = nx.abs(); let ay = ny.abs(); let az = nz.abs();
         
         // Project to 2D - choose plane by dropping dominant normal axis
-        let mut p2d: Vec<[f64; 2]> = Vec::with_capacity(pts.len());
+        let mut p2d: Vec<[f32; 2]> = Vec::with_capacity(pts.len());
         for p in &pts {
             let proj = if ax >= ay && ax >= az {
                 [p.y, p.z]  // Drop X, use YZ plane
@@ -497,10 +497,10 @@ impl Mesh {
         if area < 0.0 { idx.reverse(); }
 
         // Reindex 2D points to CCW order for convexity test
-        let p2_ccw: Vec<[f64; 2]> = idx.iter().map(|&i| p2d[i]).collect();
+        let p2_ccw: Vec<[f32; 2]> = idx.iter().map(|&i| p2d[i]).collect();
 
         // Convexity test in 2D (CCW): all consecutive turns must be left turns
-        let is_convex_polygon = |pts2: &Vec<[f64; 2]>| -> bool {
+        let is_convex_polygon = |pts2: &Vec<[f32; 2]>| -> bool {
             let m = pts2.len();
             if m < 3 { return false; }
             let eps = 1e-12;
@@ -566,7 +566,7 @@ impl Mesh {
         let plane = if ax >= ay && ax >= az { Plane::YZ } else if ay >= ax && ay >= az { Plane::XZ } else { Plane::XY };
 
         // Project to 2D
-        let mut p2: Vec<[f64;2]> = Vec::with_capacity(pts.len());
+        let mut p2: Vec<[f32;2]> = Vec::with_capacity(pts.len());
         for p in &pts {
             let q = match plane {
                 Plane::XY => [p.x, p.y],
@@ -601,7 +601,7 @@ impl Mesh {
             let (bx2, by2) = (p2[b][0], p2[b][1]);
             let (cx2, cy2) = (p2[c][0], p2[c][1]);
             let (px2, py2) = (p2[p][0], p2[p][1]);
-            let sign = |x1: f64, y1: f64, x2: f64, y2: f64, x3: f64, y3: f64| -> f64 {
+            let sign = |x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32| -> f32 {
                 (x1 - x3) * (y2 - y3) - (x2 - x3) * (y1 - y3)
             };
             let s1 = sign(px2, py2, ax2, ay2, bx2, by2);
@@ -753,7 +753,7 @@ impl Mesh {
     /// - If `precision` is Some(eps), vertices whose coordinates are within eps are merged
     ///   using integer grid quantization (round(x/eps)).
     /// - If `precision` is None, only exactly equal coordinates are merged (bitwise equality).
-    pub fn from_polygons_with_merge(polygons: Vec<Vec<Point>>, precision: Option<f64>) -> Self {
+    pub fn from_polygons_with_merge(polygons: Vec<Vec<Point>>, precision: Option<f32>) -> Self {
         use std::collections::HashMap;
 
         let mut mesh = Mesh::new();
@@ -776,7 +776,7 @@ impl Mesh {
                 map_eps.insert(key, vk);
                 vk
             } else {
-                let key = (p.x.to_bits(), p.y.to_bits(), p.z.to_bits());
+                let key = (p.x.to_bits() as u64, p.y.to_bits() as u64, p.z.to_bits() as u64);
                 if let Some(&vk) = map_exact.get(&key) { return vk; }
                 let vk = mesh.add_vertex(p.clone(), None);
                 map_exact.insert(key, vk);
@@ -799,7 +799,7 @@ impl Mesh {
     }
 
     /// Convenience wrapper that forwards to `from_polygons_with_merge`.
-    pub fn from_polygons(polygons: Vec<Vec<Point>>, precision: Option<f64>) -> Self {
+    pub fn from_polygons(polygons: Vec<Vec<Point>>, precision: Option<f32>) -> Self {
         Self::from_polygons_with_merge(polygons, precision)
     }
 
@@ -821,7 +821,7 @@ impl Mesh {
 
         let v_count = unique_vkeys.len();
         let mut positions: Vec<f32> = Vec::with_capacity(v_count * 3);
-        let mut normals_acc: Vec<[f64; 3]> = vec![[0.0, 0.0, 0.0]; v_count];
+        let mut normals_acc: Vec<[f32; 3]> = vec![[0.0, 0.0, 0.0]; v_count];
         let mut colors: Vec<f32> = Vec::with_capacity(v_count * 3);
 
         // 2) Fill positions and colors
@@ -991,14 +991,14 @@ impl Mesh {
     pub fn create_unit_pipe_low_res() -> Self {
         let mut m = Mesh::new();
         let sides: usize = 8; // Reduced from 32 to 8 for performance
-        let r: f64 = 0.5;
-        let hz: f64 = 0.5;
+        let r: f32 = 0.5;
+        let hz: f32 = 0.5;
 
         let mut ring_bot: Vec<usize> = Vec::with_capacity(sides);
         let mut ring_top: Vec<usize> = Vec::with_capacity(sides);
 
         for i in 0..sides {
-            let theta = 2.0 * PI * (i as f64) / (sides as f64);
+            let theta = 2.0 * PI * (i as f32) / (sides as f32);
             let x = r * theta.cos();
             let y = r * theta.sin();
             let vb = m.add_vertex(Point::new(x, y, -hz), None);
@@ -1023,14 +1023,14 @@ impl Mesh {
     pub fn create_unit_pipe_high_res() -> Self {
         let mut m = Mesh::new();
         let sides: usize = 32;
-        let r: f64 = 0.5;
-        let hz: f64 = 0.5;
+        let r: f32 = 0.5;
+        let hz: f32 = 0.5;
 
         let mut ring_bot: Vec<usize> = Vec::with_capacity(sides);
         let mut ring_top: Vec<usize> = Vec::with_capacity(sides);
 
         for i in 0..sides {
-            let theta = 2.0 * PI * (i as f64) / (sides as f64);
+            let theta = 2.0 * PI * (i as f32) / (sides as f32);
             let x = r * theta.cos();
             let y = r * theta.sin();
             let vb = m.add_vertex(Point::new(x, y, -hz), None);
@@ -1063,19 +1063,24 @@ impl Mesh {
     /// Create a unit sphere with specified subdivision levels.
     pub fn create_unit_sphere_subdivisions(subdiv: usize) -> Self {
         // Build an icosphere in local space, then load into Mesh.
-        let radius: f64 = 0.5;
+        let radius: f32 = 0.5;
         let _subdiv_param = subdiv;
 
         // Initial icosahedron vertices
-        let t = (1.0 + 5.0_f64.sqrt()) / 2.0;
+        let t = (1.0 + 5.0_f32.sqrt()) / 2.0;
         let mut pts: Vec<Point> = vec![
-            Point::new(-1.0,  t,    0.0),
-            Point::new( 1.0,  t,    0.0),
-            Point::new(-1.0, -t,    0.0),
-            Point::new( 1.0, -t,    0.0),
-            Point::new( 0.0, -1.0,  t  ),
-            Point::new( 0.0,  1.0,  t  ),
-            Point::new( 0.0, -1.0, -t  ),
+            Point::new(-1.0,                        t,    0.0),
+            Point::new( 1.0,                        t,    0.0),
+            Point::new(-1.0,                       -t,    0.0),
+            Point::new( 1.0,                       -t,    0.0),
+            Point::new( 0.0,                       -1.0,  t  ),
+            Point::new( 0.0,                        1.0,  t  ),
+            Point::new( 0.0,                       -1.0, -t  ),
+            Point::new( 0.0,                        1.0, -t  ),
+            Point::new( t,                         0.0, -1.0),
+            Point::new( t,                         0.0,  1.0),
+            Point::new(-t,                         0.0, -1.0),
+            Point::new(-t,                         0.0,  1.0),
             Point::new( 0.0,  1.0, -t  ),
             Point::new(  t,   0.0, -1.0),
             Point::new(  t,   0.0,  1.0),
@@ -1084,7 +1089,7 @@ impl Mesh {
         ];
 
         // Normalize to radius
-        let norm_to_r = |p: &Point, r: f64| -> Point {
+        let norm_to_r = |p: &Point, r: f32| -> Point {
             let len = (p.x*p.x + p.y*p.y + p.z*p.z).sqrt();
             if len > 0.0 { Point::new(p.x/len*r, p.y/len*r, p.z/len*r) } else { Point::new(0.0, 0.0, r) }
         };
@@ -1161,7 +1166,7 @@ impl Mesh {
 
     /// Create a low-resolution pipe mesh for backward compatibility.
     /// 8-sided cylinder with radius and length based on start/end points.
-    pub fn create_pipe(start: Point, end: Point, thickness: f64) -> Self {
+    pub fn create_pipe(start: Point, end: Point, thickness: f32) -> Self {
         let mut m = Mesh::new();
         let sides: usize = 8;
         let r = thickness * 0.5;
@@ -1197,7 +1202,7 @@ impl Mesh {
         let mut ring_end: Vec<usize> = Vec::with_capacity(sides);
         
         for i in 0..sides {
-            let theta = 2.0 * PI * (i as f64) / (sides as f64);
+            let theta = 2.0 * PI * (i as f32) / (sides as f32);
             let cos_t = theta.cos();
             let sin_t = theta.sin();
             
@@ -1361,7 +1366,7 @@ impl Mesh {
                                         vertex_data.get("y").and_then(|v| v.as_f64()),
                                         vertex_data.get("z").and_then(|v| v.as_f64()),
                                     ) {
-                                        polygon.push(Point::new(x, y, z));
+                                        polygon.push(Point::new(x as f32, y as f32, z as f32));
                                     }
                                 }
                                 if !polygon.is_empty() {
@@ -1397,7 +1402,7 @@ impl Mesh {
 
 #[allow(dead_code)]
 /// Project a 3D polygon to 2D for triangulation.
-fn project_polygon_to_2d(polygon: &[Point]) -> Vec<[f64; 2]> {
+fn project_polygon_to_2d(polygon: &[Point]) -> Vec<[f32; 2]> {
     use crate::primitives::Vector;
     
     if polygon.len() < 3 {
@@ -1431,7 +1436,7 @@ fn project_polygon_to_2d(polygon: &[Point]) -> Vec<[f64; 2]> {
     let abs_y = normal.y.abs();
     let abs_z = normal.z.abs();
     
-    let points_2d: Vec<[f64; 2]> = if abs_z >= abs_x && abs_z >= abs_y {
+    let points_2d: Vec<[f32; 2]> = if abs_z >= abs_x && abs_z >= abs_y {
         // Project to XY plane (drop Z)
         polygon.iter().map(|p| [p.x, p.y]).collect()
     } else if abs_y >= abs_x && abs_y >= abs_z {
@@ -1447,7 +1452,7 @@ fn project_polygon_to_2d(polygon: &[Point]) -> Vec<[f64; 2]> {
 
 #[allow(dead_code)]
 /// Triangulate a polygon using the ear clipping algorithm
-fn earclip_triangulate(points: &[[f64; 2]]) -> Result<Vec<[usize; 3]>, &'static str> {
+fn earclip_triangulate(points: &[[f32; 2]]) -> Result<Vec<[usize; 3]>, &'static str> {
     if points.len() < 3 {
         return Err("Polygon must have at least 3 vertices");
     }
@@ -1517,7 +1522,7 @@ fn earclip_triangulate(points: &[[f64; 2]]) -> Result<Vec<[usize; 3]>, &'static 
 
 #[allow(dead_code)]
 /// Check if three consecutive vertices form a valid ear
-fn is_ear(points: &[[f64; 2]], indices: &[usize], prev: usize, curr: usize, next: usize) -> bool {
+fn is_ear(points: &[[f32; 2]], indices: &[usize], prev: usize, curr: usize, next: usize) -> bool {
     let a = points[prev];
     let b = points[curr];
     let c = points[next];
@@ -1545,7 +1550,7 @@ fn is_ear(points: &[[f64; 2]], indices: &[usize], prev: usize, curr: usize, next
 
 #[allow(dead_code)]
 /// Check if a point is inside a triangle using barycentric coordinates
-fn point_in_triangle(p: [f64; 2], a: [f64; 2], b: [f64; 2], c: [f64; 2]) -> bool {
+fn point_in_triangle(p: [f32; 2], a: [f32; 2], b: [f32; 2], c: [f32; 2]) -> bool {
     let d1 = sign(p, a, b);
     let d2 = sign(p, b, c);
     let d3 = sign(p, c, a);
@@ -1558,13 +1563,13 @@ fn point_in_triangle(p: [f64; 2], a: [f64; 2], b: [f64; 2], c: [f64; 2]) -> bool
 
 #[allow(dead_code)]
 /// Helper function for point-in-triangle test
-fn sign(p1: [f64; 2], p2: [f64; 2], p3: [f64; 2]) -> f64 {
+fn sign(p1: [f32; 2], p2: [f32; 2], p3: [f32; 2]) -> f32 {
     (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
 }
 
 #[allow(dead_code)]
 /// Compute the signed area of a 2D polygon
-fn compute_signed_area(points: &[[f64; 2]]) -> f64 {
+fn compute_signed_area(points: &[[f32; 2]]) -> f32 {
     let mut sum = 0.0;
     let n = points.len();
     
@@ -1578,7 +1583,7 @@ fn compute_signed_area(points: &[[f64; 2]]) -> f64 {
 }
 
 /// Compute Newell's normal for a 3D polygon. Returns a (nx, ny, nz) tuple.
-fn newell_normal(points: &[Point]) -> (f64, f64, f64) {
+fn newell_normal(points: &[Point]) -> (f32, f32, f32) {
     if points.len() < 3 { return (0.0, 0.0, 1.0); }
     let mut nx = 0.0;
     let mut ny = 0.0;
@@ -1595,7 +1600,7 @@ fn newell_normal(points: &[Point]) -> (f64, f64, f64) {
 }
 
 /// Compute standard signed area of a 2D polygon (CCW positive).
-fn signed_area_2d(points: &[[f64; 2]]) -> f64 {
+fn signed_area_2d(points: &[[f32; 2]]) -> f32 {
     let n = points.len();
     if n < 3 { return 0.0; }
     let mut sum = 0.0;
@@ -1889,17 +1894,17 @@ mod tests {
         
         // Angle at v0 should be 90 degrees (π/2 radians)
         let angle = mesh.vertex_angle_in_face(v0, f).unwrap();
-        assert!((angle - std::f64::consts::PI / 2.0).abs() < 1e-10);
+        assert!((angle - std::f32::consts::PI / 2.0).abs() < 1e-6);
         
         // Angles at v1 and v2 should be 45 degrees (π/4 radians) each
         let angle1 = mesh.vertex_angle_in_face(v1, f).unwrap();
         let angle2 = mesh.vertex_angle_in_face(v2, f).unwrap();
-        assert!((angle1 - std::f64::consts::PI / 4.0).abs() < 1e-10);
-        assert!((angle2 - std::f64::consts::PI / 4.0).abs() < 1e-10);
+        assert!((angle1 - std::f32::consts::PI / 4.0).abs() < 1e-6);
+        assert!((angle2 - std::f32::consts::PI / 4.0).abs() < 1e-6);
         
         // Sum of angles should be π
         let total_angle = angle + angle1 + angle2;
-        assert!((total_angle - std::f64::consts::PI).abs() < 1e-10);
+        assert!((total_angle - std::f32::consts::PI).abs() < 1e-6);
     }
 
     #[test]

@@ -74,7 +74,7 @@ impl Pline {
     /// let pipe_meshes = pline.to_pipe_meshes(Some(0.1), None);
     /// assert_eq!(pipe_meshes.len(), 2); // Two segments
     /// ```
-    pub fn to_pipe_meshes(&self, radius: Option<f64>, sides: Option<usize>) -> Vec<Mesh> {
+    pub fn to_pipe_meshes(&self, radius: Option<f32>, sides: Option<usize>) -> Vec<Mesh> {
         let mut meshes = Vec::new();
         
         // Need at least 2 points to create segments

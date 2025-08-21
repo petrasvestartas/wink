@@ -8,11 +8,11 @@ use std::fmt;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Point {
     /// The x coordinate of the point.
-    pub x: f64,
+    pub x: f32,
     /// The y coordinate of the point.
-    pub y: f64,
+    pub y: f32,
     /// The z coordinate of the point.
-    pub z: f64,
+    pub z: f32,
     /// Associated data - guid and name.
     pub data: Data,
 }
@@ -35,7 +35,7 @@ impl Point {
     /// assert_eq!(p.y, 2.0);
     /// assert_eq!(p.z, 3.0);
     /// ```
-    pub fn new(x: f64, y: f64, z: f64) -> Self {
+    pub fn new(x: f32, y: f32, z: f32) -> Self {
         Point {
             x,
             y,
@@ -62,7 +62,7 @@ impl Point {
     /// assert_eq!(p.y, 2.0);
     /// assert_eq!(p.z, 3.0);
     /// ```
-    pub fn with_name(name: String, x: f64, y: f64, z: f64) -> Self {
+    pub fn with_name(name: String, x: f32, y: f32, z: f32) -> Self {
         Point {
             x,
             y,
@@ -86,7 +86,7 @@ impl Point {
     /// let distance = p1.distance(&p2);
     /// assert_eq!(distance, 6.4031242374328485);
     /// ```
-    pub fn distance(&self, other: &Point) -> f64 {
+    pub fn distance(&self, other: &Point) -> f32 {
         ((self.x - other.x).powi(2) + (self.y - other.y).powi(2) + (self.z - other.z).powi(2))
             .sqrt()
     }
@@ -256,7 +256,7 @@ impl Add<&Point> for Point {
     }
 }
 
-impl DivAssign<f64> for Point {
+impl DivAssign<f32> for Point {
     /// Divides the coordinates of the point by a scalar.
     ///
     /// # Arguments
@@ -273,14 +273,14 @@ impl DivAssign<f64> for Point {
     /// assert_eq!(p.y, 1.0);
     /// assert_eq!(p.z, 1.5);
     /// ```
-    fn div_assign(&mut self, factor: f64) {
+    fn div_assign(&mut self, factor: f32) {
         self.x /= factor;
         self.y /= factor;
         self.z /= factor;
     }
 }
 
-impl Div<f64> for Point {
+impl Div<f32> for Point {
     type Output = Point;
 
     /// Divides the coordinates of the point by a scalar and returns a new point.
@@ -299,7 +299,7 @@ impl Div<f64> for Point {
     /// assert_eq!(p2.y, 1.0);
     /// assert_eq!(p2.z, 1.5);
     /// ```
-    fn div(self, factor: f64) -> Point {
+    fn div(self, factor: f32) -> Point {
         let mut result = self;
         result /= factor;
         result
@@ -340,7 +340,7 @@ impl IndexMut<usize> for Point {
 }
 
 impl Index<usize> for Point {
-    type Output = f64;
+    type Output = f32;
 
     /// Provides read-only access to the coordinates of the point using the `[]` operator.
     ///
@@ -371,7 +371,7 @@ impl Index<usize> for Point {
     }
 }
 
-impl MulAssign<f64> for Point {
+impl MulAssign<f32> for Point {
     /// Multiplies the coordinates of the point by a scalar.
     ///
     /// # Arguments
@@ -388,14 +388,14 @@ impl MulAssign<f64> for Point {
     /// assert_eq!(p.y, 4.0);
     /// assert_eq!(p.z, 6.0);
     /// ```
-    fn mul_assign(&mut self, factor: f64) {
+    fn mul_assign(&mut self, factor: f32) {
         self.x *= factor;
         self.y *= factor;
         self.z *= factor;
     }
 }
 
-impl Mul<f64> for Point {
+impl Mul<f32> for Point {
     type Output = Point;
 
     /// Multiplies the coordinates of the point by a scalar and returns a new point.
@@ -414,7 +414,7 @@ impl Mul<f64> for Point {
     /// assert_eq!(p2.y, 4.0);
     /// assert_eq!(p2.z, 6.0);
     /// ```
-    fn mul(self, factor: f64) -> Point {
+    fn mul(self, factor: f32) -> Point {
         let mut result = self;
         result *= factor;
         result
@@ -642,9 +642,9 @@ impl FromJsonData for Point {
     /// assert_eq!(point.x, 1.0);
     /// ```
     fn from_json_data(data: &Value) -> Option<Self> {
-        let x = data["data"]["x"].as_f64()?;
-        let y = data["data"]["y"].as_f64()?;
-        let z = data["data"]["z"].as_f64()?;
+        let x = data["data"]["x"].as_f64()? as f32;
+        let y = data["data"]["y"].as_f64()? as f32;
+        let z = data["data"]["z"].as_f64()? as f32;
         
         let mut point = Point::new(x, y, z);
         

@@ -18,15 +18,15 @@ pub struct Data {
     adjacency_indices: Vec<Uuid>,
     /// List of strings representing adjacency types
     adjacency_types: Vec<String>,
-    /// Transformation as a flattened 4x4 matrix (column-major, 16 f64 values)
+    /// Transformation as a flattened 4x4 matrix (column-major, 16 f32 values)
     /// Default is identity matrix
-    transformation: [f64; 16],
+    transformation: [f32; 16],
     /// Color as RGB components [r, g, b] where each component is 0-255
     /// Default is [0, 0, 0] (black)
     color: [u8; 3],
     /// Thickness value (typically used for lines, curves, etc.)
     /// Default is 1.0
-    thickness: f64,
+    thickness: f32,
 }
 
 // Custom serialization to make JSON more readable
@@ -89,9 +89,9 @@ impl<'de> Deserialize<'de> for Data {
                 let mut parent: Option<Option<Uuid>> = None;
                 let mut adjacency_indices: Option<Vec<Uuid>> = None;
                 let mut adjacency_types: Option<Vec<String>> = None;
-                let mut transformation: Option<[f64; 16]> = None;
+                let mut transformation: Option<[f32; 16]> = None;
                 let mut color: Option<[u8; 3]> = None;
-                let mut thickness: Option<f64> = None;
+                let mut thickness: Option<f32> = None;
 
                 while let Some(key) = map.next_key()? {
                     match key {
@@ -137,7 +137,7 @@ impl<'de> Deserialize<'de> for Data {
                                 let mut matrix = [0.0; 16];
                                 for (i, val) in arr.iter().enumerate().take(16) {
                                     if let Some(num_val) = val.as_f64() {
-                                        matrix[i] = num_val;
+                                        matrix[i] = num_val as f32;
                                     }
                                 }
                                 transformation = Some(matrix);
@@ -165,7 +165,7 @@ impl<'de> Deserialize<'de> for Data {
                             // Handle thickness as a float
                             let value = map.next_value::<serde_json::Value>()?;
                             if let Some(val) = value.as_f64() {
-                                thickness = Some(val);
+                                thickness = Some(val as f32);
                             } else {
                                 // Default to 1.0 if not provided or malformed
                                 thickness = Some(1.0);
@@ -271,7 +271,7 @@ impl Data {
 
     
     /// Create a 4x4 identity matrix flattened to 16 values (column-major)
-    pub fn identity_matrix() -> [f64; 16] {
+    pub fn identity_matrix() -> [f32; 16] {
         [
             1.0, 0.0, 0.0, 0.0,  // First column
             0.0, 1.0, 0.0, 0.0,  // Second column
@@ -281,12 +281,12 @@ impl Data {
     }
     
     /// Get the transformation matrix
-    pub fn transformation(&self) -> &[f64; 16] {
+    pub fn transformation(&self) -> &[f32; 16] {
         &self.transformation
     }
     
     /// Set the transformation matrix
-    pub fn set_transformation(&mut self, matrix: [f64; 16]) {
+    pub fn set_transformation(&mut self, matrix: [f32; 16]) {
         self.transformation = matrix;
     }
     
@@ -311,12 +311,12 @@ impl Data {
     }
     
     /// Get the thickness value
-    pub fn get_thickness(&self) -> f64 {
+    pub fn get_thickness(&self) -> f32 {
         self.thickness
     }
     
     /// Set the thickness value
-    pub fn set_thickness(&mut self, thickness: f64) {
+    pub fn set_thickness(&mut self, thickness: f32) {
         self.thickness = thickness;
     }
     
@@ -378,7 +378,7 @@ impl Data {
                 let mut matrix = [0.0; 16];
                 for (i, val) in transform.iter().enumerate().take(16) {
                     if let Some(num) = val.as_f64() {
-                        matrix[i] = num;
+                        matrix[i] = num as f32;
                     }
                 }
                 self.transformation = matrix;
@@ -403,7 +403,7 @@ impl Data {
         
         // Set thickness if available
         if let Some(thickness) = data["thickness"].as_f64() {
-            self.thickness = thickness;
+            self.thickness = thickness as f32;
         }
     }
     
@@ -453,8 +453,8 @@ impl fmt::Display for Data {
             self.parent,
             self.adjacency_indices.len(),
             !self.transformation.iter().enumerate().all(|(i, &val)| {
-                (i % 5 == 0 && (val - 1.0).abs() < f64::EPSILON) || // Diagonal elements are 1.0
-                (i % 5 != 0 && val.abs() < f64::EPSILON) // Non-diagonal elements are 0.0
+                (i % 5 == 0 && (val - 1.0).abs() < f32::EPSILON) || // Diagonal elements are 1.0
+                (i % 5 != 0 && val.abs() < f32::EPSILON) // Non-diagonal elements are 0.0
             })
         )
     }
