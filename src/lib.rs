@@ -1,5 +1,10 @@
 use std::{iter, sync::Arc}; // Arc is a thread-safe reference-counted pointer
 use anyhow::Result;
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen_futures::spawn_local;
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::prelude::*;
 use winit::{
     application::ApplicationHandler, 
     event::{WindowEvent, KeyEvent, MouseButton, ElementState}, //* - import everythingi is skipped due to warnings
@@ -13,6 +18,9 @@ pub mod timing;
 pub mod instance;
 pub mod pointcloud_vertex;
 pub mod merged_geometry;
+pub mod error_handling;
+pub mod buffer_utils;
+pub mod wasm_utils;
 use gpu_geometry::{GpuGeometryPipeline, PipeTransform, SphereTransform};
 pub mod shader_color_pipeline;
 pub mod shader_solid_pipeline;
@@ -23,8 +31,9 @@ use vertex::Vertex;
 use pointcloud_vertex::{PointCloudInstance, QuadVertex};
 use camera::{Camera, CameraUniform, CameraController};
 use timing::Instant;
-use wgpu::util::DeviceExt;
 use instance::{Instance, InstanceRaw, DrawBatch, BatchDraw, BatchKind};
+use error_handling::ErrorHandler;
+use buffer_utils::BufferUtils;
 // OpenModel: JSON geometry + mesh utilities
 use openmodel::AllGeometryData;
 use openmodel::geometry::Mesh;
@@ -100,63 +109,6 @@ const _MSAA_SAMPLE_COUNT: u32 = 4;
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum PipelineMode { Color, Solid, Lights }
 
-#[cfg(target_arch = "wasm32")]
-use std::cell::{Cell, RefCell};
-
-#[cfg(target_arch = "wasm32")]
-thread_local! {
-    static PENDING_GEOMETRY: RefCell<Option<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>)>> = RefCell::new(None);
-    static LOCAL_HASH: RefCell<Option<u64>> = RefCell::new(None);
-    static LOCAL_FETCHING: Cell<bool> = Cell::new(false);
-}
-
-
-#[cfg(target_arch = "wasm32")]
-use {
-    wasm_bindgen::prelude::*,
-    wasm_bindgen::JsCast,
-    wasm_bindgen_futures::{JsFuture, spawn_local},
-    web_sys::{Request, RequestInit, RequestCache},
-};
-
-#[cfg(target_arch = "wasm32")]
-async fn fetch_text(url: &str) -> Option<String> {
-    let window = web_sys::window()?;
-    // Cache-busting: append a timestamp to avoid stale caches
-    let ts = window.performance()?.now() as u64;
-    let sep = if url.contains('?') { "&" } else { "?" };
-    let bust = format!("{}{}ts={}", url, sep, ts);
-
-    // Prefer no-store to bypass intermediary caches in dev
-    let mut init = RequestInit::new();
-    init.set_method("GET");
-    init.set_cache(RequestCache::NoStore);
-    let req = Request::new_with_str_and_init(&bust, &init).ok()?;
-
-    let resp_value = JsFuture::from(window.fetch_with_request(&req)).await.ok()?;
-    let resp: web_sys::Response = resp_value.dyn_into().ok()?;
-    if !resp.ok() {
-        #[cfg(target_arch = "wasm32")]
-        {
-            web_sys::console::error_1(&format!("Fetch failed: {} for {}", resp.status(), bust).into());
-        }
-        return None;
-    }
-    let text_promise = resp.text().ok()?;
-    let text = JsFuture::from(text_promise).await.ok()?;
-    text.as_string()
-}
-
-// Tiny FNV-1a hash for quick change detection
-#[cfg(target_arch = "wasm32")]
-fn fnv1a64(bytes: &[u8]) -> u64 {
-    let mut hash: u64 = 0xcbf29ce484222325;
-    for b in bytes {
-        hash ^= *b as u64;
-        hash = hash.wrapping_mul(0x100000001b3);
-    }
-    hash
-}
 // Helper: push mesh faces as triangles using cached triangulation with per-vertex or default color
 fn append_mesh_as_triangles(
     mesh: &mut Mesh,
@@ -543,30 +495,14 @@ impl State{
         }
 
         // Create GPU buffers from provided geometry
-        let vertex_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(vertices),
-                usage: wgpu::BufferUsages::VERTEX,
-            }
-        );
+        let vertex_buffer = BufferUtils::create_vertex_buffer(&device, vertices);
 
-        let index_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Index Buffer"),
-                contents: bytemuck::cast_slice(indices),
-                usage: wgpu::BufferUsages::INDEX,
-            }
-        );
+        let index_buffer = BufferUtils::create_index_buffer(&device, indices);
         
         let num_indices = indices.len() as u32;
         
         // Create shared quad geometry buffer for point cloud rendering
-        let pointcloud_quad_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Point Cloud Quad Buffer"),
-            contents: bytemuck::cast_slice(QuadVertex::VERTICES),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
+        let pointcloud_quad_buffer = BufferUtils::create_quad_buffer(&device, QuadVertex::VERTICES);
         
         // Create point cloud instance buffer - ensure we have at least one dummy instance to avoid GPU crashes
         let buffer_data = if pointcloud_instances.is_empty() {
@@ -579,11 +515,7 @@ impl State{
             pointcloud_instances.to_vec()
         };
         
-        let pointcloud_instance_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Point Cloud Instance Buffer"),
-            contents: bytemuck::cast_slice(&buffer_data),
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-        });
+        let pointcloud_instance_buffer = BufferUtils::create_pointcloud_buffer(&device, &buffer_data);
         let pointcloud_num_instances = pointcloud_instances.len() as u32;
         
         #[cfg(target_arch = "wasm32")]
@@ -620,11 +552,7 @@ impl State{
         }
 
         let instance_data = flat_instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
-        let instance_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Instance Buffer"),
-            contents: bytemuck::cast_slice(&instance_data),
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-        });
+        let instance_buffer = BufferUtils::create_instance_buffer(&device, &instance_data);
 
         // Initialize camera system
         let camera = Camera::new(init_width as f32, init_height as f32);
@@ -643,11 +571,7 @@ impl State{
             camera.ortho_half_height,
         );
 
-        let camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Camera Buffer"),
-            contents: bytemuck::cast_slice(&[camera_uniform]),
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        });
+        let camera_buffer = BufferUtils::create_uniform_buffer(&device, &[camera_uniform]);
 
         // Debug: log the first row of the view-proj on Web to ensure it isn't zeros/NaNs
         #[cfg(target_arch = "wasm32")]
@@ -808,12 +732,18 @@ impl State{
             self.camera.is_ortho,
             self.camera.ortho_half_height,
         );
+        self.write_camera_buffer();
+    }
+
+    // Helper function to write camera uniform to GPU buffer
+    fn write_camera_buffer(&self) {
         self.queue.write_buffer(
             &self.camera_buffer,
             0,
             bytemuck::cast_slice(&[self.camera_uniform]),
         );
     }
+
 
     // Update GPU geometry data and recreate buffers if needed
     fn update_gpu_geometry_data(&mut self, pipes: Vec<PipeTransform>, spheres: Vec<SphereTransform>) {
@@ -879,11 +809,7 @@ impl State{
         }
         
         // Create new instance buffer only when needed
-        let pointcloud_instance_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Point Cloud Instance Buffer"),
-            contents: bytemuck::cast_slice(pointcloud_instances),
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-        });
+        let pointcloud_instance_buffer = BufferUtils::create_pointcloud_buffer(&self.device, pointcloud_instances);
         
         #[cfg(target_arch = "wasm32")]
         web_sys::console::log_1(&format!("🔄 UPDATING point cloud buffer: {} -> {} instances", self.pointcloud_num_instances, new_count).into());
@@ -908,16 +834,8 @@ impl State{
         #[cfg(not(target_arch = "wasm32"))]
         println!("🔄 REPLACING SCENE: {} vertices, {} indices, {} batches, {} point cloud instances", vertices.len(), indices.len(), batches_in.len(), pointcloud_instances.len());
         // Replace vertex/index buffers
-        let new_vertex_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(vertices),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
-        let new_index_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(indices),
-            usage: wgpu::BufferUsages::INDEX,
-        });
+        let new_vertex_buffer = BufferUtils::create_vertex_buffer(&self.device, vertices);
+        let new_index_buffer = BufferUtils::create_index_buffer(&self.device, indices);
         self.vertex_buffer = new_vertex_buffer;
         self.index_buffer = new_index_buffer;
         self.num_indices = indices.len() as u32;
@@ -949,11 +867,7 @@ impl State{
         }
 
         let instance_data = flat_instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
-        let new_instance_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Instance Buffer"),
-            contents: bytemuck::cast_slice(&instance_data),
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-        });
+        let new_instance_buffer = BufferUtils::create_instance_buffer(&self.device, &instance_data);
         // Update point cloud buffer only if new data is provided; otherwise preserve existing
         if !pointcloud_instances.is_empty() {
             #[cfg(target_arch = "wasm32")]
@@ -1048,19 +962,22 @@ impl State{
             }
             self.last_poll_time = now;
             // If a fetch is already running, just try to apply pending result
-            let already_fetching = LOCAL_FETCHING.with(|f| f.get());
+            let already_fetching = WasmUtils::is_fetching();
             if !already_fetching {
-                LOCAL_FETCHING.with(|f| f.set(true));
+                WasmUtils::set_fetching(true);
                 // Spawn async poll for local JSON; only apply if content hash changed
                 spawn_local(async move {
                     // Fetch local-served JSON
-                    let local_text = fetch_text(LOCAL_GEOMETRY_HTTP_PATH).await;
+                    let local_text = WasmUtils::fetch_text(WasmUtils::LOCAL_GEOMETRY_HTTP_PATH).await;
                     let local_changed = if let Some(ref t) = local_text {
-                        let new_hash = fnv1a64(t.as_bytes());
-                        LOCAL_HASH.with(|h| {
-                            let mut hb = h.borrow_mut();
-                            if hb.map_or(true, |old| old != new_hash) { *hb = Some(new_hash); true } else { false }
-                        })
+                        let new_hash = WasmUtils::fnv1a64(t.as_bytes());
+                        let old_hash = WasmUtils::get_local_hash();
+                        if old_hash.map_or(true, |old| old != new_hash) {
+                            WasmUtils::set_local_hash(new_hash);
+                            true
+                        } else {
+                            false
+                        }
                     } else { false };
                     
                     if local_changed {
@@ -1068,15 +985,15 @@ impl State{
                         let (vertices, indices, batches, pointcloud_instances, _pipe_transforms, _sphere_transforms) = get_geometry().await;
                         #[cfg(target_arch = "wasm32")]
                         web_sys::console::log_1(&format!("🔄 FILE CHANGED - Reloading geometry: {} vertices, {} indices, {} batches, {} point cloud instances", vertices.len(), indices.len(), batches.len(), pointcloud_instances.len()).into());
-                        PENDING_GEOMETRY.with(|p| *p.borrow_mut() = Some((vertices, indices, batches, pointcloud_instances)));
+                        WasmUtils::set_pending_geometry((vertices, indices, batches, pointcloud_instances));
                         web_sys::console::log_1(&"Geometry changed; source: local".into());
                     }
-                    LOCAL_FETCHING.with(|f| f.set(false));
+                    WasmUtils::set_fetching(false);
                 });
             }
 
             // Apply any pending geometry prepared by the async task
-            let pending = PENDING_GEOMETRY.with(|p| p.borrow_mut().take());
+            let pending = WasmUtils::take_pending_geometry();
             if let Some((vertices, indices, batches, pointcloud_instances)) = pending {
                 #[cfg(target_arch = "wasm32")]
                 web_sys::console::log_1(&format!("🔄 APPLYING PENDING GEOMETRY: {} vertices, {} indices, {} batches, {} point cloud instances", vertices.len(), indices.len(), batches.len(), pointcloud_instances.len()).into());
@@ -1257,11 +1174,7 @@ impl State{
         self.camera_controller.update_camera(&mut self.camera, dt);
         // Update extended camera/pipe parameters each frame
         self.update_camera_uniform();
-        self.queue.write_buffer(
-            &self.camera_buffer,
-            0,
-            bytemuck::cast_slice(&[self.camera_uniform]),
-        );
+        self.write_camera_buffer();
     }
 
     /// Apply an external OpenModel world_from_camera transform to the camera
@@ -1271,11 +1184,7 @@ impl State{
         // Rebuild view-projection and extended fields from the updated camera
         self.update_camera_uniform();
         // Write updated uniform to GPU so the effect is visible this frame
-        self.queue.write_buffer(
-            &self.camera_buffer,
-            0,
-            bytemuck::cast_slice(&[self.camera_uniform]),
-        );
+        self.write_camera_buffer();
     }
 
     /// Get scene bounds for camera framing
@@ -1627,7 +1536,7 @@ impl ApplicationHandler<State> for App {
 
         #[cfg(target_arch = "wasm32")]
         {
-            use wasm_bindgen::JsCast;
+            use wasm_bindgen::{JsCast, UnwrapThrowExt};
             use winit::platform::web::WindowAttributesExtWebSys;
             
             const CANVAS_ID: &str = "canvas";
@@ -1847,57 +1756,21 @@ pub fn run() -> anyhow::Result<()> {
 // Function to run code on the web.
 // This will set up the panic hook so that when our code panics, we will see in browser console.
 // Then it will run our code.
+// WASM entry point
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
 pub fn run_web() -> Result<(), wasm_bindgen::JsValue> {
     console_error_panic_hook::set_once();
     run().unwrap_throw();
-
     Ok(())
 }
 
-// Load geometry data from file or embedded JSON
-async fn load_geometry_data() -> AllGeometryData {
-    let local_json = load_local_geometry().await;
-    let mut all_geom: AllGeometryData = match local_json {
-        Some(ref s) => serde_json::from_str::<AllGeometryData>(s).unwrap_or_else(|_| {
-            serde_json::from_str(include_str!("openmodel/all_geometry.json"))
-                .expect("embedded geometry JSON must be valid")
-        }),
-        None => serde_json::from_str(include_str!("openmodel/all_geometry.json"))
-            .expect("embedded geometry JSON must be valid"),
-    };
-    all_geom.augment_with_procedural();
-    all_geom
-}
+#[cfg(target_arch = "wasm32")]
+pub use wasm_utils::WasmUtils;
 
-// Handle file loading logic separately
-async fn load_local_geometry() -> Option<String> {
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        let base = env!("CARGO_MANIFEST_DIR");
-        let primary = format!("{}/all_geometry.json", base);
-        let openmodel_path = format!("{}/src/openmodel/all_geometry.json", base);
-        
-        // Auto-copy newer geometry if available
-        if let (Ok(openmodel_meta), Ok(primary_meta)) = (
-            std::fs::metadata(&openmodel_path),
-            std::fs::metadata(&primary)
-        ) {
-            if openmodel_meta.modified().unwrap_or(std::time::UNIX_EPOCH) > 
-               primary_meta.modified().unwrap_or(std::time::UNIX_EPOCH) {
-                let _ = std::fs::copy(&openmodel_path, &primary);
-            }
-        } else if std::fs::metadata(&openmodel_path).is_ok() {
-            let _ = std::fs::copy(&openmodel_path, &primary);
-        }
-        
-        std::fs::read_to_string(&primary)
-            .or_else(|_| std::fs::read_to_string(LOCAL_GEOMETRY_PATH))
-            .ok()
-    }
-    #[cfg(target_arch = "wasm32")]
-    { fetch_text(LOCAL_GEOMETRY_HTTP_PATH).await }
+// Load geometry data using error handler
+async fn load_geometry_data() -> AllGeometryData {
+    ErrorHandler::load_geometry_with_fallback().await
 }
 
 // Extract pointcloud instances from geometry data
