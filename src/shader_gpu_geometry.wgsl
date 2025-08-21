@@ -29,10 +29,15 @@ struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
     @location(0) world_normal: vec3<f32>,
     @location(1) color: vec3<f32>,
+    @location(2) quad_coord: vec2<f32>, // For sphere circular rendering
 }
 
 fn radians(deg: f32) -> f32 {
     return deg * 3.141592653589793 / 180.0;
+}
+
+fn tan(x: f32) -> f32 {
+    return sin(x) / cos(x);
 }
 
 // Storage buffers
@@ -103,41 +108,85 @@ fn get_pipe_vertex(vertex_id: u32) -> vec3<f32> {
     }
 }
 
-// Simple icosphere vertices (12 vertices)
+// Sphere vertices (26 vertices) - scaled to match pipe radius
 fn get_sphere_vertex_position(vertex_id: u32) -> vec3<f32> {
-    let vertices = array<vec3<f32>, 12>(
-        vec3<f32>(0.0, 0.525731, 0.850651),
-        vec3<f32>(0.0, -0.525731, 0.850651),
-        vec3<f32>(0.0, 0.525731, -0.850651),
-        vec3<f32>(0.0, -0.525731, -0.850651),
-        vec3<f32>(0.850651, 0.0, 0.525731),
-        vec3<f32>(-0.850651, 0.0, 0.525731),
-        vec3<f32>(0.850651, 0.0, -0.525731),
-        vec3<f32>(-0.850651, 0.0, -0.525731),
-        vec3<f32>(0.525731, 0.850651, 0.0),
-        vec3<f32>(-0.525731, 0.850651, 0.0),
-        vec3<f32>(0.525731, -0.850651, 0.0),
-        vec3<f32>(-0.525731, -0.850651, 0.0)
+    let vertices = array<vec3<f32>, 26>(
+        vec3<f32>(-0.27823, -0.293484, -0.291871),
+        vec3<f32>(-0.338033, 0.0, -0.36762),
+        vec3<f32>(0.0, 0.0, -0.5),
+        vec3<f32>(0.0, -0.361367, -0.344456),
+        vec3<f32>(-0.357907, -0.347646, 0.0),
+        vec3<f32>(-0.5, 0.0, 0.0),
+        vec3<f32>(0.0, -0.5, 0.0),
+        vec3<f32>(0.27823, -0.293484, -0.291871),
+        vec3<f32>(0.338033, 0.0, -0.36762),
+        vec3<f32>(0.357907, -0.347646, 0.0),
+        vec3<f32>(0.5, 0.0, 0.0),
+        vec3<f32>(-0.27823, 0.293484, -0.291871),
+        vec3<f32>(0.0, 0.361367, -0.344456),
+        vec3<f32>(-0.357907, 0.347646, 0.0),
+        vec3<f32>(0.0, 0.5, 0.0),
+        vec3<f32>(0.27823, 0.293484, -0.291871),
+        vec3<f32>(0.357907, 0.347646, 0.0),
+        vec3<f32>(-0.27823, -0.293484, 0.291871),
+        vec3<f32>(-0.338033, 0.0, 0.36762),
+        vec3<f32>(0.0, 0.0, 0.5),
+        vec3<f32>(0.0, -0.361367, 0.344456),
+        vec3<f32>(0.27823, -0.293484, 0.291871),
+        vec3<f32>(0.338033, 0.0, 0.36762),
+        vec3<f32>(-0.27823, 0.293484, 0.291871),
+        vec3<f32>(0.0, 0.361367, 0.344456),
+        vec3<f32>(0.27823, 0.293484, 0.291871)
     );
-    return normalize(vertices[vertex_id]) * 0.5;
+    // Scale to match pipe radius: pipes use 0.5 radius, spheres should match
+    return vertices[vertex_id]; // No scaling - vertices already have 0.5 radius
 }
 
-// Simple icosphere faces (20 triangles)
+// Sphere faces (24 quads, each rendered as 2 triangles)
 fn get_sphere_vertex(vertex_id: u32) -> vec3<f32> {
-    let vertices_per_triangle = 3u;
-    let triangle_id = vertex_id / vertices_per_triangle;
-    let vertex_in_triangle = vertex_id % vertices_per_triangle;
+    let vertices_per_quad = 6u; // 2 triangles per quad = 6 vertices
+    let quad_id = vertex_id / vertices_per_quad;
+    let vertex_in_quad = vertex_id % vertices_per_quad;
     
-    // 20 triangle faces for icosphere
-    let faces = array<array<u32, 3>, 20>(
-        array<u32, 3>(0u, 1u, 4u), array<u32, 3>(0u, 4u, 8u), array<u32, 3>(0u, 8u, 9u), array<u32, 3>(0u, 9u, 5u), array<u32, 3>(0u, 5u, 1u),
-        array<u32, 3>(1u, 5u, 11u), array<u32, 3>(5u, 9u, 7u), array<u32, 3>(9u, 8u, 2u), array<u32, 3>(8u, 4u, 6u), array<u32, 3>(4u, 1u, 10u),
-        array<u32, 3>(1u, 11u, 10u), array<u32, 3>(11u, 5u, 7u), array<u32, 3>(5u, 7u, 9u), array<u32, 3>(7u, 2u, 9u), array<u32, 3>(2u, 8u, 9u),
-        array<u32, 3>(8u, 6u, 2u), array<u32, 3>(6u, 4u, 8u), array<u32, 3>(4u, 10u, 6u), array<u32, 3>(10u, 1u, 4u), array<u32, 3>(3u, 7u, 2u)
+    // 24 quads with counter-clockwise winding
+    let quads = array<array<u32, 4>, 24>(
+        array<u32, 4>(0u, 1u, 2u, 3u),     // Q0
+        array<u32, 4>(0u, 4u, 5u, 1u),     // Q1
+        array<u32, 4>(6u, 4u, 0u, 3u),     // Q2
+        array<u32, 4>(3u, 2u, 8u, 7u),     // Q3
+        array<u32, 4>(8u, 10u, 9u, 7u),    // Q4
+        array<u32, 4>(3u, 7u, 9u, 6u),     // Q5
+        array<u32, 4>(12u, 2u, 1u, 11u),   // Q6
+        array<u32, 4>(1u, 5u, 13u, 11u),   // Q7
+        array<u32, 4>(12u, 11u, 13u, 14u), // Q8
+        array<u32, 4>(15u, 8u, 2u, 12u),   // Q9
+        array<u32, 4>(15u, 16u, 10u, 8u),  // Q10
+        array<u32, 4>(14u, 16u, 15u, 12u), // Q11
+        array<u32, 4>(20u, 19u, 18u, 17u), // Q12
+        array<u32, 4>(18u, 5u, 4u, 17u),   // Q13
+        array<u32, 4>(20u, 17u, 4u, 6u),   // Q14
+        array<u32, 4>(21u, 22u, 19u, 20u), // Q15
+        array<u32, 4>(21u, 9u, 10u, 22u),  // Q16
+        array<u32, 4>(6u, 9u, 21u, 20u),   // Q17
+        array<u32, 4>(23u, 18u, 19u, 24u), // Q18
+        array<u32, 4>(23u, 13u, 5u, 18u),  // Q19
+        array<u32, 4>(14u, 13u, 23u, 24u), // Q20
+        array<u32, 4>(24u, 19u, 22u, 25u), // Q21
+        array<u32, 4>(22u, 10u, 16u, 25u), // Q22
+        array<u32, 4>(24u, 25u, 16u, 14u)  // Q23
     );
     
-    let face = faces[triangle_id];
-    let vertex_index = face[vertex_in_triangle];
+    let quad = quads[quad_id];
+    
+    // Convert quad to triangles: (0,1,2) and (0,2,3)
+    var vertex_index: u32;
+    if vertex_in_quad == 0u { vertex_index = quad[0]; }      // Triangle 1, vertex 0
+    else if vertex_in_quad == 1u { vertex_index = quad[1]; } // Triangle 1, vertex 1
+    else if vertex_in_quad == 2u { vertex_index = quad[2]; } // Triangle 1, vertex 2
+    else if vertex_in_quad == 3u { vertex_index = quad[0]; } // Triangle 2, vertex 0
+    else if vertex_in_quad == 4u { vertex_index = quad[2]; } // Triangle 2, vertex 1
+    else { vertex_index = quad[3]; }                         // Triangle 2, vertex 2
+    
     return get_sphere_vertex_position(vertex_index);
 }
 
@@ -158,54 +207,44 @@ fn vs_pipes(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
         return out;
     }
     
-    let pipe_transform = pipes[pipe_index].transform;
+    let pipe_data = pipes[pipe_index];
+    let pipe_transform = pipe_data.transform;
     
     // Get unit pipe vertex
     let local_pos = get_pipe_vertex(local_vertex_index);
     
-    // Apply pipe thickness scaling in LOCAL coordinate system (before rotation)
-    // Scale only XY (radius), preserve Z (length) - this respects pipe orientation
-    // Compute world-space radius from desired pixel radius in the camera uniform
-    let viewport = camera.viewport_fovy_aspect_pipe_px_radius.xy;
-    let viewport_w = max(viewport.x, 1.0);
-    let viewport_h = max(viewport.y, 1.0);
-    let px_radius = max(camera.pipe_params.x, 0.0);
-    let ortho_half_h = max(camera.pipe_params.y, 1e-6);
-    let is_ortho = camera.pipe_params.z > 0.5;
-
-    // Centerline world position at this local z (x=y=0)
-    let axis_world = pipe_transform * vec4<f32>(0.0, 0.0, local_pos.z, 1.0);
-    let eye = camera.eye_pos.xyz;
-    let vdir = normalize(camera.view_dir.xyz);
-    let depth = max(abs(dot(axis_world.xyz - eye, vdir)), 1e-6);
-
-    // Axis direction in world space (column 2 of transform: local Z)
-    let axis_world_dir = normalize(pipe_transform[2].xyz);
-
-    // Convert pixel radius to world radius at this depth and projection
-    let fovy_rad = radians(camera.viewport_fovy_aspect_pipe_px_radius.z);
-    var world_per_pixel: f32;
-    if (is_ortho) {
-        world_per_pixel = (2.0 * ortho_half_h) / viewport_h;
-    } else {
-        world_per_pixel = (2.0 * depth * tan(0.5 * fovy_rad)) / viewport_h;
-    }
-    let desired_world_r = max(px_radius * world_per_pixel, 1e-6);
-
-    // Simple consistent scaling - no orientation compensation
-    // This matches the reference shader approach for consistent pipe thickness
-    let pipe_scale_xy = 2.0 * desired_world_r;
-    let scaled_local_pos = vec3<f32>(
-        local_pos.x * pipe_scale_xy,
-        local_pos.y * pipe_scale_xy,
-        local_pos.z
-    );
-    
     // Calculate proper cylindrical normal for lighting (before scaling)
     let local_normal = normalize(vec3<f32>(local_pos.x, local_pos.y, 0.0));
     
-    // Transform to world space - OpenModel matrices are T*R*S (Translation*Rotation*Scale)
-    let world_position = pipe_transform * vec4<f32>(scaled_local_pos, 1.0);
+    // Apply pixel-based radius scaling to local position BEFORE transformation
+    // This preserves pipe length while scaling only the radius
+    let px_radius = camera.pipe_params.x;
+    let viewport_h = camera.viewport_fovy_aspect_pipe_px_radius.y;
+    let is_ortho = camera.pipe_params.z > 0.5;
+    
+    // Use fixed reference distance for consistent scaling across all objects
+    var world_per_pixel: f32;
+    if is_ortho {
+        let ortho_half_height = camera.pipe_params.y;
+        world_per_pixel = (2.0 * ortho_half_height) / viewport_h;
+    } else {
+        // Use a fixed reference distance for consistent perspective scaling
+        let reference_distance = 10.0; // Fixed distance for consistent scaling
+        let fovy_rad = radians(camera.viewport_fovy_aspect_pipe_px_radius.z);
+        world_per_pixel = (2.0 * reference_distance * tan(fovy_rad * 0.5)) / viewport_h;
+    }
+    
+    let desired_world_r = px_radius * world_per_pixel;
+    
+    // Scale ONLY the radius (X,Y) while preserving length (Z)
+    let scaled_local_pos = vec3<f32>(
+        local_pos.x * desired_world_r * 2.0,  // Scale radius
+        local_pos.y * desired_world_r * 2.0,  // Scale radius  
+        local_pos.z                           // Preserve length
+    );
+    
+    // Transform to world space with scaled radius but original length
+    let final_world_position = pipe_transform * vec4<f32>(scaled_local_pos, 1.0);
     
     // Transform normal properly (use upper 3x3 of transform matrix)
     let normal_matrix = mat3x3<f32>(
@@ -216,16 +255,17 @@ fn vs_pipes(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
     let world_normal = normalize(normal_matrix * local_normal);
     
     var out: VertexOutput;
-    out.clip_position = camera.view_proj * world_position;
+    out.clip_position = camera.view_proj * final_world_position;
     out.world_normal = world_normal;
-    out.color = vec3<f32>(0.3, 0.7, 0.4); // Green pipe color
+    out.color = vec3<f32>(0.0, 0.0, 0.0); // Black pipe color
+    out.quad_coord = vec2<f32>(0.0, 0.0); // Not used for pipes
     return out;
 }
 
-// Vertex shader for spheres - NO INSTANCING, direct geometry generation
+// Vertex shader for spheres - 3D geometry with proper lighting
 @vertex
 fn vs_spheres(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
-    let vertices_per_sphere = 60u; // 20 triangles * 3 vertices
+    let vertices_per_sphere = 144u; // 24 quads * 6 vertices (2 triangles per quad)
     let sphere_index = vertex_index / vertices_per_sphere;
     let local_vertex_index = vertex_index % vertices_per_sphere;
     
@@ -240,15 +280,37 @@ fn vs_spheres(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
     
     let sphere_transform = spheres[sphere_index].transform;
     
-    // Get unit sphere vertex
+    // Get unit sphere vertex using the same geometry we defined earlier
     let local_pos = get_sphere_vertex(local_vertex_index);
     let local_normal = normalize(local_pos); // Sphere normal is normalized position
     
-    // Transform to world space - OpenModel matrices are column-major
-    let world_position = sphere_transform * vec4<f32>(local_pos, 1.0);
+    // Use IDENTICAL scaling logic as pipes
+    let px_radius = camera.pipe_params.x;
+    let viewport_h = camera.viewport_fovy_aspect_pipe_px_radius.y;
+    let is_ortho = camera.pipe_params.z > 0.5;
     
-    // Transform normal properly (use transpose of inverse for non-uniform scaling)
-    // For uniform scaling, we can use the upper 3x3 of the transform matrix
+    // Use fixed reference distance for consistent scaling (identical to pipes)
+    var world_per_pixel: f32;
+    if is_ortho {
+        let ortho_half_height = camera.pipe_params.y;
+        world_per_pixel = (2.0 * ortho_half_height) / viewport_h;
+    } else {
+        // Use same fixed reference distance as pipes
+        let reference_distance = 10.0; // Fixed distance for consistent scaling
+        let fovy_rad = radians(camera.viewport_fovy_aspect_pipe_px_radius.z);
+        world_per_pixel = (2.0 * reference_distance * tan(fovy_rad * 0.5)) / viewport_h;
+    }
+    
+    let desired_world_r = px_radius * world_per_pixel;
+    
+    // Scale sphere to match pipe radius exactly: pipes use desired_world_r * 2.0
+    let sphere_scale = desired_world_r * 2.0;
+    let scaled_local_pos = local_pos * sphere_scale;
+    
+    // Transform to world space
+    let world_position = sphere_transform * vec4<f32>(scaled_local_pos, 1.0);
+    
+    // Transform normal properly
     let normal_matrix = mat3x3<f32>(
         sphere_transform[0].xyz,
         sphere_transform[1].xyz,
@@ -259,15 +321,14 @@ fn vs_spheres(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
     var out: VertexOutput;
     out.clip_position = camera.view_proj * world_position;
     out.world_normal = world_normal;
-    out.color = vec3<f32>(0.8, 0.4, 0.2); // Orange-ish sphere color
+    out.color = vec3<f32>(0.0, 0.0, 0.0); // Black sphere color
+    out.quad_coord = vec2<f32>(0.0, 0.0); // Not used for 3D spheres
     return out;
 }
 
-// Fragment shader with simple lighting
+// Fragment shader with flat colors - no shading for both pipes and spheres
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let light_dir = normalize(vec3<f32>(1.0, 1.0, 1.0));
-    let ndotl = max(dot(normalize(in.world_normal), light_dir), 0.1);
-    let color = in.color * ndotl;
-    return vec4<f32>(color, 1.0);
+    // Flat black color for both pipes and spheres - no lighting
+    return vec4<f32>(in.color, 1.0);
 }

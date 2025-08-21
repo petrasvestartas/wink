@@ -34,6 +34,7 @@ use openmodel::AllGeometryData;
 use openmodel::geometry::{Mesh, PointCloud};
 
 /// Scene bounding box for orthographic camera framing
+
 #[derive(Debug, Clone, Copy)]
 pub struct SceneBounds {
     pub min: cgmath::Point3<f32>,
@@ -1302,12 +1303,12 @@ impl State{
                     },
                 ..
             } => {
-                // Intercept '[' and ']' to adjust pipe thickness (in pixels)
+                // Intercept 'N' and 'M' to adjust pipe thickness (in pixels)
                 if *state == ElementState::Pressed {
                     match key {
-                        KeyCode::BracketLeft => {
+                        KeyCode::KeyN => {
                             // Decrease pipe pixel radius, clamp to a sensible minimum
-                            self.pipe_px_radius = (self.pipe_px_radius * 0.9).max(0.1);
+                            self.pipe_px_radius = self.pipe_px_radius * 0.9;
                             // Update camera uniform immediately; the render loop also updates each frame
                             self.camera_uniform.set_eye_dir(&self.camera);
                             self.camera_uniform.set_view_params(
@@ -1326,9 +1327,9 @@ impl State{
                             );
                             true
                         }
-                        KeyCode::BracketRight => {
+                        KeyCode::KeyM => {
                             // Increase pipe pixel radius, clamp to a sensible maximum
-                            self.pipe_px_radius = (self.pipe_px_radius * 1.1111).min(10.0);
+                            self.pipe_px_radius = self.pipe_px_radius * 1.1111;
                             // Update camera uniform immediately; the render loop also updates each frame
                             self.camera_uniform.set_eye_dir(&self.camera);
                             self.camera_uniform.set_view_params(
@@ -1727,7 +1728,7 @@ impl State{
                 );
             }
             // Adjust GPU geometry scale (affects pipes and spheres in GPU geometry shader)
-            (KeyCode::BracketLeft, true) => {
+            (KeyCode::KeyN, true) => {
                 self.gpu_geometry_scale = (self.gpu_geometry_scale * 0.9).max(0.1);
                 self.update_gpu_geometry_scale();
                 #[cfg(target_arch = "wasm32")]
@@ -1735,7 +1736,7 @@ impl State{
                 #[cfg(not(target_arch = "wasm32"))]
                 log::info!("GPU geometry scale = {:.2}", self.gpu_geometry_scale);
             }
-            (KeyCode::BracketRight, true) => {
+            (KeyCode::KeyM, true) => {
                 self.gpu_geometry_scale = (self.gpu_geometry_scale * 1.1111).min(10.0);
                 self.update_gpu_geometry_scale();
                 #[cfg(target_arch = "wasm32")]

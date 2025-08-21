@@ -256,8 +256,8 @@ impl GpuGeometryPipeline {
             render_pass.set_pipeline(&self.sphere_render_pipeline);
             render_pass.set_bind_group(0, data_bind_group, &[]);
             render_pass.set_bind_group(1, camera_bind_group, &[]);
-            // 60 vertices per sphere (20 triangles * 3 vertices)
-            let total_vertices = num_spheres * 60;
+            // 144 vertices per sphere (24 quads * 6 vertices)
+            let total_vertices = num_spheres * 144;
             render_pass.draw(0..total_vertices, 0..1);
         }
     }
