@@ -36,15 +36,15 @@ pub fn create_merged_geometry(all_geom: &AllGeometryData) -> (Vec<Vertex>, Vec<u
                             default_color
                         } else if let Some(vd) = mesh.vertex.get(&vk) {
                             let c = vd.color();
-                            [c[0] as f32, c[1] as f32, c[2] as f32]
+                            [c[0], c[1], c[2]]
                         } else { default_color };
 
                         // Resolve vertex normal via OpenModel (authored -> computed -> face -> +Z)
                         let n = mesh.vertex_normal_resolved(vk, Some(face_key));
-                        let normal = [n.x as f32, n.y as f32, n.z as f32];
+                        let normal = [n.x, n.y, n.z];
 
                         if vertices.len() >= u16::MAX as usize { break; }
-                        vertices.push(Vertex { position: [pos.x as f32, pos.y as f32, pos.z as f32], color, normal });
+                        vertices.push(Vertex { position: [pos.x, pos.y, pos.z], color, normal });
                         indices.push((vertices.len() - 1) as u16);
                     }
                 }

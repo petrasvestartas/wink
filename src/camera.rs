@@ -299,10 +299,10 @@ impl Camera {
             return;
         }
         // Extract basis vectors and translation from column-major matrix
-        let right_ws = Vector3::new(xf.m[0] as f32, xf.m[1] as f32, xf.m[2] as f32).normalize();
-        let up_ws    = Vector3::new(xf.m[4] as f32, xf.m[5] as f32, xf.m[6] as f32).normalize();
-        let cam_z_ws = Vector3::new(xf.m[8] as f32, xf.m[9] as f32, xf.m[10] as f32).normalize();
-        let pos_ws   = Point3::new(xf.m[12] as f32, xf.m[13] as f32, xf.m[14] as f32);
+        let right_ws = Vector3::new(xf.m[0], xf.m[1], xf.m[2]).normalize();
+        let up_ws    = Vector3::new(xf.m[4], xf.m[5], xf.m[6]).normalize();
+        let cam_z_ws = Vector3::new(xf.m[8], xf.m[9], xf.m[10]).normalize();
+        let pos_ws   = Point3::new(xf.m[12], xf.m[13], xf.m[14]);
 
         // Camera looks along -Z in its local space; world forward is therefore -cam_z column
         let forward_ws = (-cam_z_ws).normalize();

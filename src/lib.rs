@@ -193,15 +193,15 @@ fn append_mesh_as_triangles(
                         default_color
                     } else if let Some(vd) = mesh.vertex.get(&vk) {
                         let c = vd.color();
-                        [c[0] as f32, c[1] as f32, c[2] as f32]
+                        [c[0], c[1], c[2]]
                     } else { default_color };
 
                     // Resolve vertex normal via OpenModel (authored -> computed -> face -> +Z)
                     let n = mesh.vertex_normal_resolved(vk, Some(face_key));
-                    let normal = [n.x as f32, n.y as f32, n.z as f32];
+                    let normal = [n.x, n.y, n.z];
 
                     if vertices.len() >= u16::MAX as usize { break; }
-                    vertices.push(Vertex { position: [pos.x as f32, pos.y as f32, pos.z as f32], color, normal });
+                    vertices.push(Vertex { position: [pos.x, pos.y, pos.z], color, normal });
                     indices.push((vertices.len() - 1) as u16);
                 }
             }
@@ -1937,7 +1937,7 @@ fn extract_pointclouds(all_geom: &AllGeometryData) -> Vec<PointCloudInstance> {
                 [1.0, 1.0, 1.0]
             };
             instances.push(PointCloudInstance {
-                position: [point.x as f32, point.y as f32, point.z as f32],
+                position: [point.x, point.y, point.z],
                 size: 0.1,
                 color,
             });
@@ -1955,14 +1955,7 @@ fn extract_gpu_transforms(all_geom: &AllGeometryData) -> (Vec<PipeTransform>, Ve
     if let Some(pipe_idx) = all_geom.pipe_mesh_index {
         if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == pipe_idx) {
             for xf in &mi.transforms {
-                pipes.push(PipeTransform {
-                    transform: [
-                        xf.m[0] as f32, xf.m[1] as f32, xf.m[2] as f32, xf.m[3] as f32,
-                        xf.m[4] as f32, xf.m[5] as f32, xf.m[6] as f32, xf.m[7] as f32,
-                        xf.m[8] as f32, xf.m[9] as f32, xf.m[10] as f32, xf.m[11] as f32,
-                        xf.m[12] as f32, xf.m[13] as f32, xf.m[14] as f32, xf.m[15] as f32,
-                    ],
-                });
+                pipes.push(PipeTransform::from(xf));
             }
         }
     }
@@ -1971,14 +1964,7 @@ fn extract_gpu_transforms(all_geom: &AllGeometryData) -> (Vec<PipeTransform>, Ve
     if let Some(sphere_idx) = all_geom.sphere_mesh_index {
         if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == sphere_idx) {
             for xf in &mi.transforms {
-                spheres.push(SphereTransform {
-                    transform: [
-                        xf.m[0] as f32, xf.m[1] as f32, xf.m[2] as f32, xf.m[3] as f32,
-                        xf.m[4] as f32, xf.m[5] as f32, xf.m[6] as f32, xf.m[7] as f32,
-                        xf.m[8] as f32, xf.m[9] as f32, xf.m[10] as f32, xf.m[11] as f32,
-                        xf.m[12] as f32, xf.m[13] as f32, xf.m[14] as f32, xf.m[15] as f32,
-                    ],
-                });
+                spheres.push(SphereTransform::from(xf));
             }
         }
     }

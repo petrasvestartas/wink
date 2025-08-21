@@ -7,10 +7,22 @@ pub struct PipeTransform {
     pub transform: [f32; 16], // 4x4 transformation matrix in column-major order
 }
 
+impl From<&openmodel::primitives::Xform> for PipeTransform {
+    fn from(xf: &openmodel::primitives::Xform) -> Self {
+        Self { transform: xf.m }
+    }
+}
+
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
 pub struct SphereTransform {
     pub transform: [f32; 16], // 4x4 transformation matrix in column-major order
+}
+
+impl From<&openmodel::primitives::Xform> for SphereTransform {
+    fn from(xf: &openmodel::primitives::Xform) -> Self {
+        Self { transform: xf.m }
+    }
 }
 
 

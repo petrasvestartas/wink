@@ -338,7 +338,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let lighting = ambient + diffuse * 0.7;
     
     // Base color - dark gray for better visibility
-    let base_color = vec3<f32>(0.4, 0.4, 0.4);
+    let base_color = vec3<f32>(1.0, 0.0, 0.0);
     let final_color = base_color * lighting;
     
     return vec4<f32>(final_color, 1.0);

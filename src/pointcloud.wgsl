@@ -55,7 +55,7 @@ fn vs_main(
     
     // Calculate world-space size based on distance for perspective
     let distance_to_camera = length(world_center - camera.eye_pos.xyz);
-    let world_size = instance.size * 0.1 * max(distance_to_camera * 0.1, 0.05);
+    let world_size = instance.size * 1.0 * max(distance_to_camera * 0.1, 0.05);
     
     // Create billboard quad in world space
     let world_pos = world_center + 

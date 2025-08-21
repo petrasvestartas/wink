@@ -19,10 +19,10 @@ impl Instance {
         let m = &xf.m;
         Self {
             model: [
-                [m[0] as f32, m[1] as f32, m[2] as f32, m[3] as f32],
-                [m[4] as f32, m[5] as f32, m[6] as f32, m[7] as f32],
-                [m[8] as f32, m[9] as f32, m[10] as f32, m[11] as f32],
-                [m[12] as f32, m[13] as f32, m[14] as f32, m[15] as f32],
+                [m[0], m[1], m[2], m[3]],
+                [m[4], m[5], m[6], m[7]],
+                [m[8], m[9], m[10], m[11]],
+                [m[12], m[13], m[14], m[15]],
             ],
         }
     }
