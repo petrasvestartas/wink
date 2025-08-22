@@ -1,0 +1,1 @@
+- [ ] reload all geometry when any json input is changed

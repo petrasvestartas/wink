@@ -4,6 +4,7 @@ use anyhow::Result;
 use wasm_bindgen_futures::spawn_local;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 use winit::{
     application::ApplicationHandler, 
@@ -16,27 +17,22 @@ pub mod vertex;
 pub mod camera;
 pub mod timing;
 pub mod instance;
-pub mod pointcloud_vertex;
-pub mod merged_geometry;
 pub mod error_handling;
-pub mod buffer_utils;
-pub mod wasm_utils;
-use gpu_geometry::{GpuGeometryPipeline, PipeTransform, SphereTransform};
+pub mod buffer_factory;
+pub mod geometry_loader;
+use shader_geometry_pipeline::{GpuGeometryPipeline, PipeTransform, SphereTransform};
 pub mod shader_color_pipeline;
 pub mod shader_solid_pipeline;
 pub mod shader_lights_pipeline;
 pub mod shader_pointcloud_pipeline;
-pub mod gpu_geometry;
+pub mod shader_geometry_pipeline;
 use vertex::Vertex;
-use pointcloud_vertex::{PointCloudInstance, QuadVertex};
+use shader_pointcloud_pipeline::{PointCloudInstance, QuadVertex};
 use camera::{Camera, CameraUniform, CameraController};
 use timing::Instant;
 use instance::{Instance, InstanceRaw, DrawBatch, BatchDraw, BatchKind};
-use error_handling::ErrorHandler;
-use buffer_utils::BufferUtils;
-// OpenModel: JSON geometry + mesh utilities
-use openmodel::AllGeometryData;
-use openmodel::geometry::Mesh;
+use buffer_factory::BufferFactory;
+use geometry_loader::GeometryLoader;
 
 /// Scene bounding box for orthographic camera framing
 
@@ -92,7 +88,7 @@ const LOCAL_GEOMETRY_HTTP_PATH: &str = "/geometry/all_geometry.json"; // served 
 const LOCAL_GEOMETRY_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/openmodel/all_geometry.json");
 
 // Polling interval for change detection (ms)
-const GEOMETRY_POLL_INTERVAL_MS: u64 = 1000;
+const GEOMETRY_POLL_INTERVAL_MS: u64 = 100;
 
 // ADDED (depth): Depth buffer format used by pipelines and depth texture
 #[cfg(target_arch = "wasm32")]
@@ -103,69 +99,12 @@ const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 // MSAA sample count (disable on WebGL path)
 #[cfg(target_arch = "wasm32")]
 const _MSAA_SAMPLE_COUNT: u32 = 4;
-#[cfg(not(target_arch = "wasm32"))]
-const _MSAA_SAMPLE_COUNT: u32 = 4;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-enum PipelineMode { Color, Solid, Lights }
+enum PipelineMode { Color, Solid, Lights, PointCloud }
 
-// Helper: push mesh faces as triangles using cached triangulation with per-vertex or default color
-fn append_mesh_as_triangles(
-    mesh: &mut Mesh,
-    default_color: [f32; 3],
-    vertices: &mut Vec<Vertex>,
-    indices: &mut Vec<u16>,
-) {
-    // Collect face keys first to avoid holding an immutable borrow while mutably triangulating
-    let face_keys: Vec<usize> = mesh.get_face_data().map(|(fk, _)| fk).collect();
-    for face_key in face_keys {
-        let triangles: Vec<[usize; 3]> = if let Some(tri_ref) = mesh.triangulate_face(face_key) {
-            tri_ref.clone()
-        } else {
-            Vec::new()
-        };
 
-        log::debug!("Face {} triangulated into {} triangles", face_key, triangles.len());
 
-        for tri in triangles {
-            for &vk in &tri {
-                if let Some(pos) = mesh.vertex_position(vk) {
-                    let use_default = if let Some(vd) = mesh.vertex.get(&vk) {
-                        !(vd.attributes.contains_key("r") && vd.attributes.contains_key("g") && vd.attributes.contains_key("b"))
-                    } else { true };
-                    let color = if use_default {
-                        default_color
-                    } else if let Some(vd) = mesh.vertex.get(&vk) {
-                        let c = vd.color();
-                        [c[0], c[1], c[2]]
-                    } else { default_color };
-
-                    // Resolve vertex normal via OpenModel (authored -> computed -> face -> +Z)
-                    let n = mesh.vertex_normal_resolved(vk, Some(face_key));
-                    let normal = [n.x, n.y, n.z];
-
-                    if vertices.len() >= u16::MAX as usize { break; }
-                    vertices.push(Vertex { position: [pos.x, pos.y, pos.z], color, normal });
-                    indices.push((vertices.len() - 1) as u16);
-                }
-            }
-        }
-    }
-}
-
-// Helper: convert openmodel Xform (column-major) to Instance (matrix pass-through)
-fn xform_to_instance(xf: &openmodel::primitives::Xform) -> Instance {
-    Instance::from_xform(xf)
-}
-
-// Helper: convert an OpenModel PointCloud to PointCloudInstance records used by the point-cloud pipeline
-
-// Helper: generate a small test set of point cloud instances (3x3x3 grid)
-
-// Helper: convert point cloud to instances for instanced rendering
-// Convert point cloud data to unified geometry (vertices + indices + instances)
-
-// Helper: create test point cloud geometry using unified system
 
 pub struct State{
     surface: wgpu::Surface<'static>,
@@ -206,7 +145,7 @@ pub struct State{
     window: Arc<Window>,
     // Native-only: background poller delivers geometry here to avoid blocking the render thread
     #[cfg(not(target_arch = "wasm32"))]
-    geom_rx: std::sync::mpsc::Receiver<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>)>,
+    geom_rx: std::sync::mpsc::Receiver<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>)>,
     // Instance data
     instances: Vec<Instance>,
     instance_buffer: wgpu::Buffer,
@@ -465,7 +404,7 @@ impl State{
         // Native: spawn a background poller thread that watches for local geometry file changes (mtime)
         // and sends rebuilt vertex/index buffers through a channel. This prevents UI freezes from blocking I/O.
         #[cfg(not(target_arch = "wasm32"))]
-        let (tx_geom, rx_geom) = std::sync::mpsc::channel::<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>)>();
+        let (tx_geom, rx_geom) = std::sync::mpsc::channel::<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>)>();
 
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -486,8 +425,8 @@ impl State{
                     }
 
                     if changed {
-                        let (vertices, indices, batches, _pointcloud_instances, _pipe_transforms, _sphere_transforms) = pollster::block_on(get_geometry());
-                        let _ = tx_geom.send((vertices, indices, batches));
+                        let (vertices, indices, batches, pointcloud_instances, _pipe_transforms, _sphere_transforms) = pollster::block_on(GeometryLoader::get_geometry());
+                        let _ = tx_geom.send((vertices, indices, batches, pointcloud_instances));
                     }
                     std::thread::sleep(StdDuration::from_millis(GEOMETRY_POLL_INTERVAL_MS));
                 }
@@ -495,14 +434,14 @@ impl State{
         }
 
         // Create GPU buffers from provided geometry
-        let vertex_buffer = BufferUtils::create_vertex_buffer(&device, vertices);
+        let vertex_buffer = BufferFactory::create_vertex_buffer(&device, vertices);
 
-        let index_buffer = BufferUtils::create_index_buffer(&device, indices);
+        let index_buffer = BufferFactory::create_index_buffer(&device, indices);
         
         let num_indices = indices.len() as u32;
         
         // Create shared quad geometry buffer for point cloud rendering
-        let pointcloud_quad_buffer = BufferUtils::create_quad_buffer(&device, QuadVertex::VERTICES);
+        let pointcloud_quad_buffer = BufferFactory::create_quad_buffer(&device, QuadVertex::VERTICES);
         
         // Create point cloud instance buffer - ensure we have at least one dummy instance to avoid GPU crashes
         let buffer_data = if pointcloud_instances.is_empty() {
@@ -515,7 +454,7 @@ impl State{
             pointcloud_instances.to_vec()
         };
         
-        let pointcloud_instance_buffer = BufferUtils::create_pointcloud_buffer(&device, &buffer_data);
+        let pointcloud_instance_buffer = BufferFactory::create_pointcloud_buffer(&device, &buffer_data);
         let pointcloud_num_instances = pointcloud_instances.len() as u32;
         
         #[cfg(target_arch = "wasm32")]
@@ -552,7 +491,7 @@ impl State{
         }
 
         let instance_data = flat_instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
-        let instance_buffer = BufferUtils::create_instance_buffer(&device, &instance_data);
+        let instance_buffer = BufferFactory::create_instance_buffer(&device, &instance_data);
 
         // Initialize camera system
         let camera = Camera::new(init_width as f32, init_height as f32);
@@ -571,7 +510,7 @@ impl State{
             camera.ortho_half_height,
         );
 
-        let camera_buffer = BufferUtils::create_uniform_buffer(&device, &[camera_uniform]);
+        let camera_buffer = BufferFactory::create_uniform_buffer(&device, &[camera_uniform]);
 
         // Debug: log the first row of the view-proj on Web to ensure it isn't zeros/NaNs
         #[cfg(target_arch = "wasm32")]
@@ -790,26 +729,11 @@ impl State{
     fn update_pointcloud_instances(&mut self, pointcloud_instances: &[PointCloudInstance]) {
         let new_count = pointcloud_instances.len() as u32;
         
-        // Skip update if count is the same (assume data is identical)
-        if new_count == self.pointcloud_num_instances {
-            // Reduce logging frequency on web to improve performance
-            #[cfg(target_arch = "wasm32")]
-            {
-                static mut LOG_COUNTER: u32 = 0;
-                unsafe {
-                    LOG_COUNTER += 1;
-                    if LOG_COUNTER % 100 == 0 { // Log every 100th skip
-                        web_sys::console::log_1(&format!("⏭️ SKIPPED {} point cloud buffer updates: {} instances unchanged", LOG_COUNTER, new_count).into());
-                    }
-                }
-            }
-            #[cfg(not(target_arch = "wasm32"))]
-            println!("⏭️ SKIPPING point cloud buffer update: {} instances unchanged", new_count);
-            return;
-        }
+        // Always update when new data is provided - don't assume identical data based on count alone
+        // This ensures geometry changes are reflected even when instance count stays the same
         
         // Create new instance buffer only when needed
-        let pointcloud_instance_buffer = BufferUtils::create_pointcloud_buffer(&self.device, pointcloud_instances);
+        let pointcloud_instance_buffer = BufferFactory::create_pointcloud_buffer(&self.device, pointcloud_instances);
         
         #[cfg(target_arch = "wasm32")]
         web_sys::console::log_1(&format!("🔄 UPDATING point cloud buffer: {} -> {} instances", self.pointcloud_num_instances, new_count).into());
@@ -834,8 +758,8 @@ impl State{
         #[cfg(not(target_arch = "wasm32"))]
         println!("🔄 REPLACING SCENE: {} vertices, {} indices, {} batches, {} point cloud instances", vertices.len(), indices.len(), batches_in.len(), pointcloud_instances.len());
         // Replace vertex/index buffers
-        let new_vertex_buffer = BufferUtils::create_vertex_buffer(&self.device, vertices);
-        let new_index_buffer = BufferUtils::create_index_buffer(&self.device, indices);
+        let new_vertex_buffer = BufferFactory::create_vertex_buffer(&self.device, vertices);
+        let new_index_buffer = BufferFactory::create_index_buffer(&self.device, indices);
         self.vertex_buffer = new_vertex_buffer;
         self.index_buffer = new_index_buffer;
         self.num_indices = indices.len() as u32;
@@ -867,7 +791,7 @@ impl State{
         }
 
         let instance_data = flat_instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
-        let new_instance_buffer = BufferUtils::create_instance_buffer(&self.device, &instance_data);
+        let new_instance_buffer = BufferFactory::create_instance_buffer(&self.device, &instance_data);
         // Update point cloud buffer only if new data is provided; otherwise preserve existing
         if !pointcloud_instances.is_empty() {
             #[cfg(target_arch = "wasm32")]
@@ -905,6 +829,21 @@ impl State{
         self.instance_buffer = new_instance_buffer;
         self.batches = batch_draws;
 
+        // CRITICAL: Recreate GPU geometry bind group after buffer updates
+        if let Some(pipeline) = &self.gpu_geometry_pipeline {
+            let bind_group = pipeline.update_data(
+                &self.device,
+                self.apply_scale_to_pipes(self.gpu_pipes_data.clone()),
+                self.apply_scale_to_spheres(self.gpu_spheres_data.clone()),
+            );
+            self.gpu_geometry_bind_group = Some(bind_group);
+            
+            #[cfg(target_arch = "wasm32")]
+            web_sys::console::log_1(&"🔄 GPU bind group recreated after geometry update".into());
+            #[cfg(not(target_arch = "wasm32"))]
+            println!("🔄 GPU bind group recreated after geometry update");
+        }
+
         // Recompute scene bounds after geometry update
         self.scene_bounds = if !vertices.is_empty() {
             let mut bounds = SceneBounds::new();
@@ -939,14 +878,9 @@ impl State{
         // Native: drain background updates without throttling or blocking the render thread
         #[cfg(not(target_arch = "wasm32"))]
         {
-            while let Ok((vertices, indices, batches)) = self.geom_rx.try_recv() {
-                // Preserve existing point cloud instances during native updates
-                // Don't regenerate - keep the current point cloud data
-                println!("🔄 Native geometry update - preserving {} existing point cloud instances", self.pointcloud_num_instances);
-                
-                // Create empty vec to preserve existing point clouds
-                let empty_pointcloud_instances = Vec::new();
-                self.replace_scene_with_pointclouds(&vertices, &indices, &batches, &empty_pointcloud_instances);
+            while let Ok((vertices, indices, batches, pointcloud_instances)) = self.geom_rx.try_recv() {
+                println!("🔄 Native geometry update - loading {} new point cloud instances", pointcloud_instances.len());
+                self.replace_scene_with_pointclouds(&vertices, &indices, &batches, &pointcloud_instances);
             }
             return;
         }
@@ -956,49 +890,61 @@ impl State{
         {
             let now = Instant::now();
             let elapsed = now.duration_since(self.last_poll_time);
-            let web_poll_interval = GEOMETRY_POLL_INTERVAL_MS * 3; // 3x slower polling on web
+            let web_poll_interval = GEOMETRY_POLL_INTERVAL_MS; // Real-time polling on web
             if elapsed.as_millis() < web_poll_interval as u128 {
                 return; // Skip this frame
             }
             self.last_poll_time = now;
+            web_sys::console::log_1(&"🔍 Starting geometry poll cycle".into());
             // If a fetch is already running, just try to apply pending result
-            let already_fetching = WasmUtils::is_fetching();
+            let already_fetching = GeometryLoader::is_fetching();
             if !already_fetching {
-                WasmUtils::set_fetching(true);
+                GeometryLoader::set_fetching(true);
                 // Spawn async poll for local JSON; only apply if content hash changed
                 spawn_local(async move {
                     // Fetch local-served JSON
-                    let local_text = WasmUtils::fetch_text(WasmUtils::LOCAL_GEOMETRY_HTTP_PATH).await;
+                    web_sys::console::log_1(&format!("🔍 Fetching geometry from: {}", LOCAL_GEOMETRY_HTTP_PATH).into());
+                    let local_text = GeometryLoader::fetch_text(LOCAL_GEOMETRY_HTTP_PATH).await;
                     let local_changed = if let Some(ref t) = local_text {
-                        let new_hash = WasmUtils::fnv1a64(t.as_bytes());
-                        let old_hash = WasmUtils::get_local_hash();
+                        let new_hash = GeometryLoader::fnv1a64(t.as_bytes());
+                        let old_hash = GeometryLoader::get_local_hash();
+                        web_sys::console::log_1(&format!("🔍 Hash comparison - Old: {:?}, New: {}, Size: {} bytes", old_hash, new_hash, t.len()).into());
                         if old_hash.map_or(true, |old| old != new_hash) {
-                            WasmUtils::set_local_hash(new_hash);
+                            GeometryLoader::set_local_hash(new_hash);
+                            web_sys::console::log_1(&"✅ Hash changed - will reload geometry".into());
                             true
                         } else {
+                            web_sys::console::log_1(&"⏭️ Hash unchanged - skipping reload".into());
                             false
                         }
-                    } else { false };
+                    } else { 
+                        web_sys::console::log_1(&"❌ Failed to fetch geometry file".into());
+                        false 
+                    };
                     
                     if local_changed {
                         // Rebuild full scene using the same logic as initial load
-                        let (vertices, indices, batches, pointcloud_instances, _pipe_transforms, _sphere_transforms) = get_geometry().await;
+                        let (vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms) = GeometryLoader::get_geometry().await;
                         #[cfg(target_arch = "wasm32")]
-                        web_sys::console::log_1(&format!("🔄 FILE CHANGED - Reloading geometry: {} vertices, {} indices, {} batches, {} point cloud instances", vertices.len(), indices.len(), batches.len(), pointcloud_instances.len()).into());
-                        WasmUtils::set_pending_geometry((vertices, indices, batches, pointcloud_instances));
+                        web_sys::console::log_1(&format!("🔄 FILE CHANGED - Reloading geometry: {} vertices, {} indices, {} batches, {} point cloud instances, {} pipes, {} spheres", vertices.len(), indices.len(), batches.len(), pointcloud_instances.len(), pipe_transforms.len(), sphere_transforms.len()).into());
+                        GeometryLoader::set_pending_geometry_with_gpu_data((vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms));
                         web_sys::console::log_1(&"Geometry changed; source: local".into());
                     }
-                    WasmUtils::set_fetching(false);
+                    GeometryLoader::set_fetching(false);
                 });
             }
 
             // Apply any pending geometry prepared by the async task
-            let pending = WasmUtils::take_pending_geometry();
-            if let Some((vertices, indices, batches, pointcloud_instances)) = pending {
+            let pending = GeometryLoader::take_pending_geometry();
+            if let Some((vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms)) = pending {
                 #[cfg(target_arch = "wasm32")]
-                web_sys::console::log_1(&format!("🔄 APPLYING PENDING GEOMETRY: {} vertices, {} indices, {} batches, {} point cloud instances", vertices.len(), indices.len(), batches.len(), pointcloud_instances.len()).into());
+                web_sys::console::log_1(&format!("🔄 APPLYING PENDING GEOMETRY: {} vertices, {} indices, {} batches, {} point cloud instances, {} pipes, {} spheres", vertices.len(), indices.len(), batches.len(), pointcloud_instances.len(), pipe_transforms.len(), sphere_transforms.len()).into());
                 #[cfg(not(target_arch = "wasm32"))]
-                println!("🔄 APPLYING PENDING GEOMETRY: {} vertices, {} indices, {} batches, {} point cloud instances", vertices.len(), indices.len(), batches.len(), pointcloud_instances.len());
+                println!("🔄 APPLYING PENDING GEOMETRY: {} vertices, {} indices, {} batches, {} point cloud instances, {} pipes, {} spheres", vertices.len(), indices.len(), batches.len(), pointcloud_instances.len(), pipe_transforms.len(), sphere_transforms.len());
+                
+                // Update GPU geometry data
+                self.gpu_pipes_data = pipe_transforms;
+                self.gpu_spheres_data = sphere_transforms;
                 
                 self.replace_scene_with_pointclouds(&vertices, &indices, &batches, &pointcloud_instances);
             }
@@ -1151,6 +1097,18 @@ impl State{
     fn update(&mut self) {
         // Poll for geometry changes periodically and hot-reload buffers if needed
         self.poll_geometry_changes();
+        
+        // Debug: Log that update is being called
+        #[cfg(target_arch = "wasm32")]
+        {
+            static mut UPDATE_COUNTER: u32 = 0;
+            unsafe {
+                UPDATE_COUNTER += 1;
+                if UPDATE_COUNTER % 300 == 0 { // Log every 5 seconds at 60fps
+                    web_sys::console::log_1(&format!("🔄 Update loop running ({})", UPDATE_COUNTER).into());
+                }
+            }
+        }
         // WASM: keep surface config synced with actual canvas backing size set by JS
         #[cfg(target_arch = "wasm32")]
         {
@@ -1225,10 +1183,6 @@ impl State{
         let pipes = self.gpu_pipes_data.clone();
         let spheres = self.gpu_spheres_data.clone();
         
-        #[cfg(target_arch = "wasm32")]
-        web_sys::console::log_1(&format!("📊 Creating GPU geometry: {} pipes, {} spheres", pipes.len(), spheres.len()).into());
-        #[cfg(not(target_arch = "wasm32"))]
-        println!("📊 Creating GPU geometry: {} pipes, {} spheres", pipes.len(), spheres.len());
         
         self.update_gpu_geometry_data(pipes, spheres);
 
@@ -1306,6 +1260,7 @@ impl State{
                         match self.pipeline_mode {
                             PipelineMode::Color => render_pass.set_pipeline(&self.render_pipeline_color),
                             PipelineMode::Lights => render_pass.set_pipeline(&self.render_pipeline_lights),
+                            PipelineMode::PointCloud => render_pass.set_pipeline(&self.render_pipeline_pointcloud),
                             PipelineMode::Solid => render_pass.set_pipeline(&self.render_pipeline_solid),
                         }
                     }
@@ -1331,10 +1286,6 @@ impl State{
                             unsafe {
                                 FRAME_COUNT += 1;
                                 if FRAME_COUNT % 60 == 0 { // Log every 60 frames
-                                    #[cfg(target_arch = "wasm32")]
-                                    web_sys::console::log_1(&format!("🔴 Frame {}: RENDERING {} point cloud instances", FRAME_COUNT, self.pointcloud_num_instances).into());
-                                    #[cfg(not(target_arch = "wasm32"))]
-                                    println!("🔴 Frame {}: RENDERING {} point cloud instances", FRAME_COUNT, self.pointcloud_num_instances);
                                 }
                             }
                             
@@ -1371,25 +1322,13 @@ impl State{
                 let num_pipes = self.gpu_pipes_data.len() as u32;
                 let num_spheres = self.gpu_spheres_data.len() as u32;
                 
-                #[cfg(target_arch = "wasm32")]
-                web_sys::console::log_1(&format!("🔧 GPU Geometry: {} pipes, {} spheres", num_pipes, num_spheres).into());
-                #[cfg(not(target_arch = "wasm32"))]
-                println!("🔧 GPU Geometry: {} pipes, {} spheres", num_pipes, num_spheres);
                 
                 if num_pipes > 0 {
-                    #[cfg(target_arch = "wasm32")]
-                    web_sys::console::log_1(&format!("🔵 Rendering {} pipes", num_pipes).into());
-                    #[cfg(not(target_arch = "wasm32"))]
-                    println!("🔵 Rendering {} pipes", num_pipes);
                     pipeline.render_pipes(&mut render_pass, bind_group, &self.camera_bind_group, num_pipes);
                 }
                 
                 // Render spheres using embedded geometry in shader
                 if num_spheres > 0 {
-                    #[cfg(target_arch = "wasm32")]
-                    web_sys::console::log_1(&format!("🟡 Rendering {} spheres", num_spheres).into());
-                    #[cfg(not(target_arch = "wasm32"))]
-                    println!("🟡 Rendering {} spheres", num_spheres);
                     pipeline.render_spheres(&mut render_pass, bind_group, &self.camera_bind_group, num_spheres);
                 }
             }
@@ -1413,7 +1352,8 @@ impl State{
                 self.pipeline_mode = match self.pipeline_mode {
                     PipelineMode::Solid => PipelineMode::Lights,
                     PipelineMode::Color => PipelineMode::Solid,
-                    PipelineMode::Lights => PipelineMode::Color,
+                    PipelineMode::Lights => PipelineMode::PointCloud,
+                    PipelineMode::PointCloud => PipelineMode::Color,
                 };
                 #[cfg(target_arch = "wasm32")]
                 {
@@ -1554,7 +1494,7 @@ impl ApplicationHandler<State> for App {
         {
             // Native: load full geometry including point clouds so we can render glyphs
             // and ensure a PointCloud batch exists.
-            let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms) = pollster::block_on(get_geometry());
+            let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms) = pollster::block_on(GeometryLoader::get_geometry());
             // Keep App copies in sync (may be used later)
             self.vertices = vertices;
             self.indices = indices;
@@ -1580,7 +1520,7 @@ impl ApplicationHandler<State> for App {
             if let Some(proxy) = self.proxy.take() {
                 wasm_bindgen_futures::spawn_local(async move {
                     // Build geometry on WASM (embedded + grid/axis + local JSON if available)
-                    let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms) = get_geometry().await;
+                    let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms) = GeometryLoader::get_geometry().await;
                     assert!(proxy
                         .send_event(
                             State::new(window, &vertices, &indices, &batches, &pointcloud_vertices, pipe_transforms, sphere_transforms)
@@ -1732,7 +1672,7 @@ pub fn run() -> anyhow::Result<()> {
 
 
     #[cfg(not(target_arch = "wasm32"))]
-    let (vertices, indices, batches, _pointcloud_instances, _pipe_transforms, _sphere_transforms) = pollster::block_on(get_geometry());
+    let (vertices, indices, batches, _pointcloud_instances, _pipe_transforms, _sphere_transforms) = pollster::block_on(GeometryLoader::get_geometry());
 
     #[cfg(not(target_arch = "wasm32"))]
     let mut app = App::new(
@@ -1765,164 +1705,4 @@ pub fn run_web() -> Result<(), wasm_bindgen::JsValue> {
     Ok(())
 }
 
-#[cfg(target_arch = "wasm32")]
-pub use wasm_utils::WasmUtils;
 
-// Load geometry data using error handler
-async fn load_geometry_data() -> AllGeometryData {
-    ErrorHandler::load_geometry_with_fallback().await
-}
-
-// Extract pointcloud instances from geometry data
-fn extract_pointclouds(all_geom: &AllGeometryData) -> Vec<PointCloudInstance> {
-    let mut instances = Vec::new();
-    for pc in &all_geom.point_clouds {
-        for (i, point) in pc.points.iter().enumerate() {
-            let color = if i < pc.colors.len() {
-                let c = &pc.colors[i];
-                [c.r as f32 / 255.0, c.g as f32 / 255.0, c.b as f32 / 255.0]
-            } else {
-                [1.0, 1.0, 1.0]
-            };
-            instances.push(PointCloudInstance {
-                position: [point.x, point.y, point.z],
-                size: 0.1,
-                color,
-            });
-        }
-    }
-    instances
-}
-
-// Extract GPU transforms from geometry data
-fn extract_gpu_transforms(all_geom: &AllGeometryData) -> (Vec<PipeTransform>, Vec<SphereTransform>) {
-    let mut pipes = Vec::new();
-    let mut spheres = Vec::new();
-    
-    // Extract pipe transforms
-    if let Some(pipe_idx) = all_geom.pipe_mesh_index {
-        if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == pipe_idx) {
-            for xf in &mi.transforms {
-                pipes.push(PipeTransform::from(xf));
-            }
-        }
-    }
-    
-    // Extract sphere transforms
-    if let Some(sphere_idx) = all_geom.sphere_mesh_index {
-        if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == sphere_idx) {
-            for xf in &mi.transforms {
-                spheres.push(SphereTransform::from(xf));
-            }
-        }
-    }
-    
-    (pipes, spheres)
-}
-
-// Build mesh geometry (vertices, indices, batches)
-fn build_mesh_geometry(all_geom: &mut AllGeometryData) -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
-    let mut vertices = Vec::new();
-    let mut indices = Vec::new();
-    let mut batches = Vec::new();
-    
-    // Track mesh to batch mapping
-    let mut mesh_to_batch: Vec<Option<usize>> = vec![None; all_geom.meshes.len()];
-    let pipe_idx = all_geom.pipe_mesh_index;
-    let sphere_idx = all_geom.sphere_mesh_index;
-    
-    // Process regular meshes (skip procedural pipe/sphere)
-    for (i, m) in all_geom.meshes.iter_mut().enumerate() {
-        if Some(i) == pipe_idx || Some(i) == sphere_idx { continue; }
-        
-        let first_index = indices.len() as u32;
-        append_mesh_as_triangles(m, [0.8, 0.8, 0.8], &mut vertices, &mut indices);
-        let index_count = (indices.len() as u32) - first_index;
-        
-        if index_count > 0 {
-            batches.push(DrawBatch {
-                first_index,
-                index_count,
-                base_vertex: 0,
-                instances: vec![],
-                kind: BatchKind::Surface,
-            });
-            mesh_to_batch[i] = Some(batches.len() - 1);
-        }
-    }
-    
-    // Add pipe batch
-    if let Some(pipe_idx) = pipe_idx {
-        if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == pipe_idx) {
-            let pipe_instances: Vec<Instance> = mi.transforms.iter().map(|xf| xform_to_instance(xf)).collect();
-            if !pipe_instances.is_empty() {
-                let mut unit_pipe = Mesh::create_unit_pipe_high_res();
-                let first_index = indices.len() as u32;
-                append_mesh_as_triangles(&mut unit_pipe, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
-                let index_count = (indices.len() as u32) - first_index;
-                if index_count > 0 {
-                    batches.push(DrawBatch {
-                        first_index,
-                        index_count,
-                        base_vertex: 0,
-                        instances: pipe_instances,
-                        kind: BatchKind::Pipe,
-                    });
-                }
-            }
-        }
-    }
-    
-    // Add sphere batch
-    if let Some(sphere_idx) = sphere_idx {
-        if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == sphere_idx) {
-            let sphere_instances: Vec<Instance> = mi.transforms.iter().map(|xf| xform_to_instance(xf)).collect();
-            if !sphere_instances.is_empty() {
-                let mut unit_sphere = Mesh::create_unit_sphere_high_res();
-                let first_index = indices.len() as u32;
-                append_mesh_as_triangles(&mut unit_sphere, [0.3, 0.3, 0.3], &mut vertices, &mut indices);
-                let index_count = (indices.len() as u32) - first_index;
-                if index_count > 0 {
-                    batches.push(DrawBatch {
-                        first_index,
-                        index_count,
-                        base_vertex: 0,
-                        instances: sphere_instances,
-                        kind: BatchKind::Sphere,
-                    });
-                }
-            }
-        }
-    }
-    
-    // Populate mesh instances into batches
-    for mi in &all_geom.mesh_instances {
-        if let Some(Some(bi)) = mesh_to_batch.get(mi.mesh_index) {
-            let insts = mi.transforms.iter().map(|xf| xform_to_instance(xf)).collect();
-            batches[*bi].instances = insts;
-        }
-    }
-    
-    (vertices, indices, batches)
-}
-
-// Main geometry loading function - now clean and focused
-pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>) {
-    let mut all_geom = load_geometry_data().await;
-    let (vertices, indices, mut batches) = build_mesh_geometry(&mut all_geom);
-    let pointcloud_instances = extract_pointclouds(&all_geom);
-    let (pipes, spheres) = extract_gpu_transforms(&all_geom);
-    
-    // Add pointcloud batch if needed
-    if !pointcloud_instances.is_empty() {
-        batches.push(DrawBatch {
-            first_index: 0,
-            index_count: 0,
-            base_vertex: 0,
-            instances: Vec::new(),
-            kind: BatchKind::PointCloud,
-        });
-    }
-    
-    (vertices, indices, batches, pointcloud_instances, pipes, spheres)
-}

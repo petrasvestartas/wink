@@ -1,5 +1,4 @@
 use openmodel::geometry::{Point, Line, Mesh, PointCloud, Vector, Color};
-use openmodel::common::json_dump;
 use openmodel::AllGeometryData;
 
 // Minimal star polygon mesh (concave, non-self-intersecting)
@@ -75,8 +74,8 @@ fn make_cube_mesh() -> Mesh{
 
 fn make_dodecahedron_mesh() -> Mesh {
     // Golden ratio
-    let phi = (1.0 + 5.0_f64.sqrt()) / 2.0;
-    let edge_length = 1.0; // L = 2.0
+    let phi = (1.0 + 5.0_f32.sqrt()) / 2.0;
+    let edge_length = 1.0f32; // L = 2.0
     let a = edge_length / 2.0;
     let b = a * phi;
     let c = a + b;
@@ -141,15 +140,15 @@ fn make_point_cloud() -> PointCloud {
     
     // Generate 10x10x10 = 1,000 points within 10x10x10 bounds
     let grid_size = 10;
-    let bound = 1.0; // -5 to +5 = 10 units
-    let step = (2.0 * bound) / (grid_size as f64 - 1.0);
+    let bound = 1.0f32; // -5 to +5 = 10 units
+    let step = (2.0 * bound) / (grid_size as f32 - 1.0);
     
     for i in 0..grid_size {
         for j in 0..grid_size {
             for k in 0..grid_size {
-                let x = -bound + (i as f64) * step;
-                let y = -bound + (j as f64) * step+5.0;
-                let z = -bound + (k as f64) * step;
+                let x = -bound + (i as f32) * step;
+                let y = -bound + (j as f32) * step + 5.0;
+                let z = -bound + (k as f32) * step;
                 
                 points.push(Point::new(x, y, z));
                 
@@ -157,9 +156,9 @@ fn make_point_cloud() -> PointCloud {
                 normals.push(Vector::new(0.0, 0.0, 1.0));
                 
                 // Generate colors based on position (rainbow gradient)
-                let r = ((i as f64 / grid_size as f64) * 255.0) as u8;
-                let g = ((j as f64 / grid_size as f64) * 255.0) as u8;
-                let b = ((k as f64 / grid_size as f64) * 255.0) as u8;
+                let r = ((i as f32 / grid_size as f32) * 255.0) as u8;
+                let g = ((j as f32 / grid_size as f32) * 255.0) as u8;
+                let b = ((k as f32 / grid_size as f32) * 255.0) as u8;
                 colors.push(Color::new(r, g, b, 255));
             }
         }
@@ -172,7 +171,7 @@ fn make_point_cloud() -> PointCloud {
 fn main() {
     // Minimal: 10x10 grid (11 lines per direction) on Z=0 plus Z axis line
     let mut lines: Vec<Line> = Vec::new();
-    let size: i32 = 5; // -5..=5 => 11 lines => 10x10 cells
+    let _size: i32 = 5; // -5..=5 => 11 lines => 10x10 cells
 
     // // Horizontal lines (vary X)
     // for i in -size..=size {
