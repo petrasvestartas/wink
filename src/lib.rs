@@ -1,11 +1,12 @@
 use std::{iter, sync::Arc}; // Arc is a thread-safe reference-counted pointer
 use anyhow::Result;
+
 #[cfg(target_arch = "wasm32")]
-use wasm_bindgen_futures::spawn_local;
-#[cfg(target_arch = "wasm32")]
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
-#[cfg(target_arch = "wasm32")]
-use wasm_bindgen::prelude::*;
+use {
+    wasm_bindgen_futures::spawn_local,
+    wasm_bindgen::{JsCast, UnwrapThrowExt},
+    wasm_bindgen::prelude::*,
+};
 use winit::{
     application::ApplicationHandler, 
     event::{WindowEvent, KeyEvent, MouseButton, ElementState}, //* - import everythingi is skipped due to warnings
@@ -36,25 +37,21 @@ use buffer_factory::BufferFactory;
 use geometry_loader::GeometryLoader;
 use scene_bounds::SceneBounds;
 
+// Platform-specific constants
 #[cfg(target_arch = "wasm32")]
 const LOCAL_GEOMETRY_HTTP_PATH: &str = "/geometry/all_geometry.json"; // served by docs dev server
-
-// Native-only: absolute path to local JSON for fast runtime reloads (fallbacks to include_str! if not found)
-#[cfg(not(target_arch = "wasm32"))]
-const LOCAL_GEOMETRY_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/openmodel/all_geometry.json");
-
-// Polling interval for change detection (ms)
-const GEOMETRY_POLL_INTERVAL_MS: u64 = 100;
-
-// ADDED (depth): Depth buffer format used by pipelines and depth texture
 #[cfg(target_arch = "wasm32")]
 const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24Plus;
+#[cfg(target_arch = "wasm32")]
+const _MSAA_SAMPLE_COUNT: u32 = 4;
+
+#[cfg(not(target_arch = "wasm32"))]
+const LOCAL_GEOMETRY_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/openmodel/all_geometry.json");
 #[cfg(not(target_arch = "wasm32"))]
 const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 
-// MSAA sample count (disable on WebGL path)
-#[cfg(target_arch = "wasm32")]
-const _MSAA_SAMPLE_COUNT: u32 = 4;
+// Polling interval for change detection (ms)
+const GEOMETRY_POLL_INTERVAL_MS: u64 = 100;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum PipelineMode { Color, Solid, Lights, PointCloud }
