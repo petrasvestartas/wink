@@ -9,16 +9,16 @@ use {
 use crate::vertex::Vertex;
 use crate::instance::{DrawBatch, BatchKind, Instance};
 use crate::shader_pointcloud_pipeline::PointCloudInstance;
-use crate::shader_geometry_pipeline::{PipeTransform, SphereTransform};
+use crate::shader_primitives_pipeline::{PipeTransform, SphereTransform};
 use crate::error_handling::ErrorHandler;
-use openmodel::{AllGeometryData, geometry::Mesh};
+use openmodel::{AllGeometryData, geometry::{Mesh, SphereFromSegments, PipeFromSegments, Point}};
 
 /// Geometry loading and processing utilities
 pub struct GeometryLoader;
 
 #[cfg(target_arch = "wasm32")]
 thread_local! {
-    pub static PENDING_GEOMETRY: RefCell<Option<(Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_geometry_pipeline::PipeTransform>, Vec<crate::shader_geometry_pipeline::SphereTransform>, [[f32; 4]; 4])>> = RefCell::new(None);
+    pub static PENDING_GEOMETRY: RefCell<Option<(Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_primitives_pipeline::PipeTransform>, Vec<crate::shader_primitives_pipeline::SphereTransform>, [[f32; 4]; 4])>> = RefCell::new(None);
     pub static LOCAL_HASH: RefCell<Option<u64>> = RefCell::new(None);
     pub static LOCAL_FETCHING: Cell<bool> = Cell::new(false);
 }
@@ -43,7 +43,7 @@ impl GeometryLoader {
     }
 
     /// Get pending geometry data
-    pub fn take_pending_geometry() -> Option<(Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_geometry_pipeline::PipeTransform>, Vec<crate::shader_geometry_pipeline::SphereTransform>, [[f32; 4]; 4])> {
+    pub fn take_pending_geometry() -> Option<(Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_primitives_pipeline::PipeTransform>, Vec<crate::shader_primitives_pipeline::SphereTransform>, [[f32; 4]; 4])> {
         PENDING_GEOMETRY.with(|pg| pg.borrow_mut().take())
     }
 
@@ -59,7 +59,7 @@ impl GeometryLoader {
     }
 
     /// Set pending geometry data with GPU data
-    pub fn set_pending_geometry_with_gpu_data(data: (Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_geometry_pipeline::PipeTransform>, Vec<crate::shader_geometry_pipeline::SphereTransform>, [[f32; 4]; 4])) {
+    pub fn set_pending_geometry_with_gpu_data(data: (Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_primitives_pipeline::PipeTransform>, Vec<crate::shader_primitives_pipeline::SphereTransform>, [[f32; 4]; 4])) {
         PENDING_GEOMETRY.with(|pg| *pg.borrow_mut() = Some(data));
     }
 
@@ -170,7 +170,7 @@ impl GeometryLoader {
     /// Extract pointcloud instances from geometry data
     pub fn extract_pointclouds(all_geom: &AllGeometryData) -> (Vec<PointCloudInstance>, [[f32; 4]; 4]) {
         let mut instances = Vec::new();
-        let mut transform_matrix = [
+        let identity_matrix = [
             [1.0, 0.0, 0.0, 0.0],
             [0.0, 1.0, 0.0, 0.0],
             [0.0, 0.0, 1.0, 0.0],
@@ -178,17 +178,14 @@ impl GeometryLoader {
         ];
         
         for pc in &all_geom.point_clouds {
-            // Extract transformation matrix from the first point cloud
-            if instances.is_empty() {
-                // Convert from column-major array to row-major 4x4 matrix
-                let m = &pc.xform.m;
-                transform_matrix = [
-                    [m[0], m[4], m[8], m[12]],
-                    [m[1], m[5], m[9], m[13]],
-                    [m[2], m[6], m[10], m[14]],
-                    [m[3], m[7], m[11], m[15]],
-                ];
-            }
+            // Extract transformation matrix from point cloud
+            let m = &pc.xform.m;
+            let transform_matrix = [
+                [m[0], m[4], m[8], m[12]],
+                [m[1], m[5], m[9], m[13]],
+                [m[2], m[6], m[10], m[14]],
+                [m[3], m[7], m[11], m[15]],
+            ];
             
             for (i, point) in pc.points.iter().enumerate() {
                 let color = if i < pc.colors.len() {
@@ -197,14 +194,23 @@ impl GeometryLoader {
                 } else {
                     [1.0, 1.0, 1.0]
                 };
+                
+                // Apply transformation matrix to point position
+                let x = point.x;
+                let y = point.y;
+                let z = point.z;
+                let transformed_x = transform_matrix[0][0] * x + transform_matrix[0][1] * y + transform_matrix[0][2] * z + transform_matrix[0][3];
+                let transformed_y = transform_matrix[1][0] * x + transform_matrix[1][1] * y + transform_matrix[1][2] * z + transform_matrix[1][3];
+                let transformed_z = transform_matrix[2][0] * x + transform_matrix[2][1] * y + transform_matrix[2][2] * z + transform_matrix[2][3];
+                
                 instances.push(PointCloudInstance {
-                    position: [point.x, point.y, point.z],
+                    position: [transformed_x, transformed_y, transformed_z],
                     size: 0.1,
                     color,
                 });
             }
         }
-        (instances, transform_matrix)
+        (instances, identity_matrix)
     }
 
     /// Extract GPU transforms from geometry data
@@ -212,23 +218,68 @@ impl GeometryLoader {
         let mut pipes = Vec::new();
         let mut spheres = Vec::new();
         
-        // Extract pipe transforms
-        if let Some(pipe_idx) = all_geom.pipe_mesh_index {
-            if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == pipe_idx) {
-                for xf in &mi.transforms {
-                    pipes.push(PipeTransform::from(xf));
-                }
+        // Extract pipe transforms from lines with color data preserved
+        for (i, line) in all_geom.lines.iter().enumerate() {
+            if let Some(xf) = line.to_pipe_transform() {
+                let color = line.data.get_color();
+                let gpu_color = [color[0] as f32 / 255.0, color[1] as f32 / 255.0, color[2] as f32 / 255.0];
+                let thickness = line.data.get_thickness();
+                println!("🎨 Line {}: JSON color {:?} -> GPU color {:?}, thickness: {}", i, color, gpu_color, thickness);
+                pipes.push(PipeTransform {
+                    transform: xf.m,
+                    color: gpu_color,
+                    thickness,
+                });
             }
         }
         
-        // Extract sphere transforms
-        if let Some(sphere_idx) = all_geom.sphere_mesh_index {
-            if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == sphere_idx) {
-                for xf in &mi.transforms {
-                    spheres.push(SphereTransform::from(xf));
+        // Extract sphere transforms from individual points
+        for point in &all_geom.points {
+            // Use default color and size for individual points
+            let color = [0.8, 0.8, 0.8]; // Light gray
+            let thickness = 1.0; // Default size
+            spheres.push(SphereTransform::from_point_with_data(point, color, thickness));
+        }
+        
+        // Add spheres at line endpoints
+        for line in &all_geom.lines {
+            let color = line.data.get_color();
+            let gpu_color = [color[0] as f32 / 255.0, color[1] as f32 / 255.0, color[2] as f32 / 255.0];
+            let thickness = line.data.get_thickness(); // Slightly smaller than default
+            
+            // Start point sphere
+            let start_point = Point { x: line.x0, y: line.y0, z: line.z0 };
+            spheres.push(SphereTransform::from_point_with_data(&start_point, gpu_color, thickness));
+            
+            // End point sphere  
+            let end_point = Point { x: line.x1, y: line.y1, z: line.z1 };
+            spheres.push(SphereTransform::from_point_with_data(&end_point, gpu_color, thickness));
+        }
+        
+        // Add pipes for mesh edges and spheres for mesh vertices
+        for mesh in &all_geom.meshes {
+            // Extract mesh edges as pipes
+            let edge_lines = mesh.extract_edges_as_lines();
+            for line in &edge_lines {
+                if let Some(xf) = line.to_pipe_transform() {
+                    pipes.push(PipeTransform {
+                        transform: xf.m,
+                        color: [0.5, 0.5, 0.5], // Gray for mesh edges
+                        thickness: 0.7, // Thinner than main lines
+                    });
                 }
             }
+            
+            // Extract mesh vertices as spheres
+            let vertex_points = mesh.sphere_points();
+            for point in vertex_points {
+                let color = [0.7, 0.7, 0.7]; // Gray for mesh vertices
+                let thickness = 0.6; // Small spheres
+                spheres.push(SphereTransform::from_point_with_data(&point, color, thickness));
+            }
         }
+        
+        println!("📊 Total pipes: {} (from individual lines)", pipes.len());
         
         (pipes, spheres)
     }

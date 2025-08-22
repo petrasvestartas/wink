@@ -22,12 +22,12 @@ pub mod error_handling;
 pub mod buffer_factory;
 pub mod geometry_loader;
 pub mod scene_bounds;
-use shader_geometry_pipeline::{GpuGeometryPipeline, PipeTransform, SphereTransform};
+use crate::shader_primitives_pipeline::{GpuGeometryPipeline, PipeTransform, SphereTransform};
 pub mod shader_color_pipeline;
 pub mod shader_solid_pipeline;
 pub mod shader_lights_pipeline;
 pub mod shader_pointcloud_pipeline;
-pub mod shader_geometry_pipeline;
+pub mod shader_primitives_pipeline;
 use vertex::Vertex;
 use shader_pointcloud_pipeline::{PointCloudInstance, QuadVertex};
 use camera::{Camera, CameraUniform, CameraController};
@@ -93,10 +93,7 @@ pub struct State{
     camera_bind_group: wgpu::BindGroup,
     camera_bind_group_layout: wgpu::BindGroupLayout,
     camera_controller: CameraController,
-    // Point cloud transformation matrix
-    pointcloud_transform_buffer: wgpu::Buffer,
-    pointcloud_bind_group: wgpu::BindGroup,
-    pointcloud_bind_group_layout: wgpu::BindGroupLayout,
+    // Point cloud uses camera bind group directly
     last_render_time: Instant,
     // Change detection throttle timestamp
     #[cfg(target_arch = "wasm32")]
@@ -348,7 +345,7 @@ impl State{
             &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, msaa_sample_count,
         );
 
-        let (render_pipeline_pointcloud, pointcloud_bind_group_layout) = crate::shader_pointcloud_pipeline::create(
+        let render_pipeline_pointcloud = crate::shader_pointcloud_pipeline::create(
             &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, msaa_sample_count,
         );
 
@@ -482,28 +479,7 @@ impl State{
             label: Some("camera_bind_group"),
         });
 
-        // Create transformation matrix buffer for point clouds using the provided matrix
-        let pointcloud_transform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Point Cloud Transform Buffer"),
-            contents: bytemuck::cast_slice(&[transform_matrix]),
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        });
-
-        // Create point cloud bind group with camera and transformation matrix
-        let pointcloud_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &pointcloud_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: camera_buffer.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: pointcloud_transform_buffer.as_entire_binding(),
-                },
-            ],
-            label: Some("pointcloud_bind_group"),
-        });
+        // Point clouds will use the camera bind group directly
 
         let camera_controller = CameraController::new(4.0, 0.4);
 
@@ -588,9 +564,7 @@ impl State{
             camera_bind_group,
             camera_bind_group_layout,
             camera_controller,
-            pointcloud_transform_buffer,
-            pointcloud_bind_group,
-            pointcloud_bind_group_layout,
+            // Point cloud uses camera bind group directly
             // Instance data
             instances: flat_instances,
             instance_buffer,
@@ -652,6 +626,17 @@ impl State{
             self.camera.is_ortho,
             self.camera.ortho_half_height,
         );
+        
+        // Debug camera uniform values
+        println!("🎥 Camera Debug - px_radius: {}, viewport: {}x{}, fovy: {}, is_ortho: {}, ortho_half_height: {}", 
+            self.pipe_px_radius, 
+            self.config.width, 
+            self.config.height, 
+            self.camera.fovy, 
+            self.camera.is_ortho, 
+            self.camera.ortho_half_height
+        );
+        
         self.write_camera_buffer();
     }
 
@@ -939,13 +924,13 @@ impl State{
         }
     }
 
-    pub fn update_point_cloud_transform(&mut self, transform_matrix: [[f32; 4]; 4]) {
-        // Update the transformation matrix buffer
-        self.queue.write_buffer(
-            &self.pointcloud_transform_buffer,
-            0,
-            bytemuck::cast_slice(&[transform_matrix]),
-        );
+    pub fn update_point_cloud_transform(&mut self, _transform_matrix: [[f32; 4]; 4]) {
+        // Point cloud transformations are now applied during geometry loading
+        // No GPU buffer update needed since transformation is baked into instance positions
+        
+        #[cfg(target_arch = "wasm32")]
+        web_sys::console::log_1(&"🔄 Updated point cloud transformation matrix".into());
+        #[cfg(not(target_arch = "wasm32"))]
         println!("🔄 Updated point cloud transformation matrix");
     }
 
@@ -1274,8 +1259,8 @@ impl State{
                 // Set bind groups based on pipeline type
                 match d.kind {
                     BatchKind::PointCloud => {
-                        // Point clouds use their own bind group with camera + transformation matrix
-                        render_pass.set_bind_group(0, &self.pointcloud_bind_group, &[]);
+                        // Point clouds use the camera bind group directly
+                        render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
                     }
                     _ => {
                         // Other pipelines use the camera bind group

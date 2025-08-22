@@ -33,17 +33,13 @@ struct VertexOutput {
 @group(0) @binding(0)
 var<uniform> camera: CameraUniform;
 
-@group(0) @binding(1)
-var<uniform> transform: mat4x4<f32>;
-
 @vertex
 fn vs_main(
     vertex: VertexInput,
     instance: InstanceInput,
 ) -> VertexOutput {
-    // Apply transformation matrix to the point position
-    let transformed_pos = transform * vec4<f32>(instance.position, 1.0);
-    let world_center = transformed_pos.xyz;
+    // Use point position directly (transformation handled in instance data)
+    let world_center = instance.position;
     
     // Get camera forward direction and create camera-facing basis vectors
     let camera_forward = normalize(camera.view_dir.xyz);

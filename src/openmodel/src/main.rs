@@ -186,23 +186,62 @@ fn make_point_cloud() -> PointCloud {
 }
 
 fn main() {
-    // Minimal: 10x10 grid (11 lines per direction) on Z=0 plus Z axis line
+    // Create lines with varying thickness and color
     let mut lines: Vec<Line> = Vec::new();
-    let size: i32 = 5; // -5..=5 => 11 lines => 10x10 cells
 
-    // Horizontal lines (vary X)
+    
+    
+    // Test lines at different depths to verify consistent radius scaling
+    // Add 3 horizontal lines at different Z depths with same thickness
+    let mut test_line_near = Line::from_points(&Point::new(-2.0, 0.0, -1.0), &Point::new(2.0, 0.0, -1.0));
+    test_line_near.data.set_thickness(1.0);
+    test_line_near.data.set_color([255, 0, 0]); // Red - near
+    lines.push(test_line_near);
+    
+    let mut test_line_mid = Line::from_points(&Point::new(-2.0, 1.0, -5.0), &Point::new(2.0, 1.0, -5.0));
+    test_line_mid.data.set_thickness(1.0);
+    test_line_mid.data.set_color([0, 255, 0]); // Green - middle
+    lines.push(test_line_mid);
+    
+    let mut test_line_far = Line::from_points(&Point::new(-2.0, 2.0, -10.0), &Point::new(2.0, 2.0, -10.0));
+    test_line_far.data.set_thickness(1.0);
+    test_line_far.data.set_color([0, 0, 255]); // Blue - far
+    lines.push(test_line_far);
+
+    // Grid lines with default thickness
+    let size: i32 = 40; // -5..=5 => 11 lines => 10x10 cells
+    let thickness = 0.05;
+
+    // Horizontal lines (vary X) - red for x-axis (y=0), black for others
     for i in -size..=size {
         let y = i as f32;
-        lines.push(Line::from_points(&Point::new(-(size as f32), y, 0.0), &Point::new(size as f32, y, 0.0)));
+        let mut line = Line::from_points(&Point::new(-(size as f32), y, 0.0), &Point::new(size as f32, y, 0.0));
+        line.data.set_thickness(thickness);
+        line.data.set_color([0, 0, 0]); // Red for x-axis (y=0)
+        lines.push(line);
     }
-    // Vertical lines (vary Y)
+    // Vertical lines (vary Y) - green for y-axis (x=0), black for others
     for i in -size..=size {
         let x = i as f32;
-        lines.push(Line::from_points(&Point::new(x, -(size as f32), 0.0), &Point::new(x, size as f32, 0.0)));
+        let mut line = Line::from_points(&Point::new(x, -(size as f32), 0.0), &Point::new(x, size as f32, 0.0));
+        line.data.set_thickness(thickness);
+        line.data.set_color([0, 0, 0]); // Green for y-axis (x=0)
+        lines.push(line);
     }
-    // Z axis
-    lines.push(Line::from_points(&Point::new(0.0, 0.0, 0.0), &Point::new(0.0, 0.0, 1.0)));
+    let mut line_x = Line::from_points(&Point::new(0.0, 0.0, 0.0), &Point::new(size as f32, 0.0, 0.0));
+    line_x.data.set_thickness(thickness*1.1);
+    line_x.data.set_color([255, 0, 0]); // Red for x-axis (y=0)
+    lines.push(line_x);
+    let mut line_y = Line::from_points(&Point::new(0.0, 0.0, 0.0), &Point::new(0.0, size as f32, 0.0));
+    line_y.data.set_thickness(thickness*1.1);
+    line_y.data.set_color([0, 255, 0]); // Green for y-axis (x=0)
+    lines.push(line_y);
+    let mut line_z = Line::from_points(&Point::new(0.0, 0.0, 0.0), &Point::new(0.0, 0.0, size as f32));
+    line_z.data.set_thickness(thickness*1.1);
+    line_z.data.set_color([0, 0, 255]); // Blue for z-axis (x=0)
+    lines.push(line_z);
 
+    
     // Star polygon mesh alongside the grid
     let star = make_star_mesh();
 
@@ -225,6 +264,8 @@ fn main() {
     println!("  Dodecahedron: {} vertices, {} faces", dodecahedron.number_of_vertices(), dodecahedron.number_of_faces());
     println!("  Point Cloud: {} points", point_cloud.points.len());
 
+    println!("Created {} lines with varying thickness and color", lines.len());
+    
     let all_geometry = AllGeometryData {
         points: vec![],
         vectors: vec![],

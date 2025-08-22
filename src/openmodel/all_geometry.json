@@ -3,15 +3,1380 @@
   "vectors": [],
   "lines": [
     {
-      "x0": -5.0,
+      "x0": -40.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "4aa5d510-2823-4369-a282-0a6612de0010",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -39.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -39.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "4705ebdf-9f1c-427d-ba3e-c0df04f23fe9",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -38.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -38.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "d51c7d9c-9bf3-416b-a9bc-cfc6827b1a8d",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -37.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -37.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "500e800d-58be-4c3d-a2ba-2d6e4e432321",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -36.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -36.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "bef3806c-0fab-4014-bbdb-bac83fd9ec39",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -35.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -35.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "f8a60fed-4642-4f6c-be1c-d6d4ece6bb38",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -34.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -34.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "5eb6ff98-1c0b-4951-b28d-702aa2874bc9",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -33.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -33.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "bdf87d33-5345-4d9f-83a4-22f0465c1db9",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -32.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -32.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "da73a55a-b5ee-47fe-8bb6-80b831623fb3",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -31.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -31.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "3632e7e8-8c61-4ebd-8814-39e452812ab2",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -30.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -30.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "e6d85ae7-a3e0-4348-b8d9-03dc59785681",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -29.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -29.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "dfa01f93-7c04-4e7d-b5e9-589af45d25f3",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -28.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -28.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "00daaa0f-eb12-40d0-aa57-f6482b587b2b",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -27.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -27.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "256b19cf-8c96-42da-b13e-a9bbf2cf2cc4",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -26.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -26.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "00885e16-9b70-4fa5-b010-5d64df034ec1",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -25.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -25.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "fa661b7e-68cf-4026-a3c0-a8c120d26647",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -24.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -24.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "ce821280-6946-4dc7-9bb3-78e0d38486f4",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -23.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -23.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "48435294-46c8-41ec-a212-93aacf6848bd",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -22.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -22.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "4b7aab36-346c-4b5e-af86-194eb21862a1",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -21.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -21.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "3385f644-ae48-4c98-b621-1a5adedbf163",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -20.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -20.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "1d523507-0d10-4cca-a949-d871c8958cc4",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -19.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -19.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "5e7cda0e-e103-4325-a4c7-6de3e6645dcd",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -18.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -18.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "4ee93487-88a8-4a78-9286-f8662cd116bd",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -17.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -17.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "6ebe12ca-23cc-41c8-9580-d10af6bfd32d",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -16.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -16.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "c928088d-ea29-40f2-a16a-2a246fe4fca1",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -15.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -15.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "7b1d729c-2bf5-4524-b783-2395cefa1f66",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -14.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -14.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "2a6d2d1a-2fb5-4342-8779-61bdbd152be5",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -13.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -13.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "01c524b1-f435-47c8-920e-6e3a21fcd861",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -12.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -12.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "d40392ad-d6ae-4a96-8405-4f7108f953bc",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -11.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -11.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "05c58aa1-9761-462a-88dc-fe6455f3c5fd",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -10.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -10.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "e08f1e04-9b42-4afa-93e1-8399fc2d91ad",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -9.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -9.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "8b00c1a5-81e9-4b3f-a473-7048dbb7e0b1",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -8.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -8.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "0e392fb7-450c-459c-a19c-b5f486bb4e6b",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -7.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -7.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "c7aa35ac-9d64-4a2e-83e1-e762994b2f32",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -6.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": -6.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "c2b1d1e0-22b7-4d7d-89e7-417381ed2ec4",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
       "y0": -5.0,
       "z0": 0.0,
-      "x1": 5.0,
+      "x1": 40.0,
       "y1": -5.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "ac9dd335-2172-48c5-868a-d8c83b36d840",
+        "guid": "2df3424e-c631-476b-9fdd-deb289604ee0",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -38,19 +1403,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
-      "x0": -5.0,
+      "x0": -40.0,
       "y0": -4.0,
       "z0": 0.0,
-      "x1": 5.0,
+      "x1": 40.0,
       "y1": -4.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "1faa15e9-3f6c-4de2-82c1-eedbb76a1290",
+        "guid": "f7a79c06-9223-416e-b7f8-5f4c666e3ac1",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -77,19 +1442,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
-      "x0": -5.0,
+      "x0": -40.0,
       "y0": -3.0,
       "z0": 0.0,
-      "x1": 5.0,
+      "x1": 40.0,
       "y1": -3.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "e9eecc3a-e238-4852-9dde-df4bf28a7d74",
+        "guid": "acafb6d8-6a28-414d-8275-c253f088fcc7",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -116,19 +1481,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
-      "x0": -5.0,
+      "x0": -40.0,
       "y0": -2.0,
       "z0": 0.0,
-      "x1": 5.0,
+      "x1": 40.0,
       "y1": -2.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "7860dc9f-f9bb-40b6-af4b-0daa603c8639",
+        "guid": "cef53406-532d-4b35-995f-744b01226ec7",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -155,19 +1520,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
-      "x0": -5.0,
+      "x0": -40.0,
       "y0": -1.0,
       "z0": 0.0,
-      "x1": 5.0,
+      "x1": 40.0,
       "y1": -1.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "8866a901-636d-4c89-bc0a-d20edef7fd08",
+        "guid": "068d4457-56af-4720-bfd4-b505630cae1c",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -194,19 +1559,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
-      "x0": -5.0,
+      "x0": -40.0,
       "y0": 0.0,
       "z0": 0.0,
-      "x1": 5.0,
+      "x1": 40.0,
       "y1": 0.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "32b402f1-95b6-4dbf-adbc-26244959ae8c",
+        "guid": "27e4b318-4e1a-440a-bf63-fd3e6233c644",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -233,19 +1598,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
-      "x0": -5.0,
+      "x0": -40.0,
       "y0": 1.0,
       "z0": 0.0,
-      "x1": 5.0,
+      "x1": 40.0,
       "y1": 1.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "96b582b0-ad77-473c-a360-a483cf165d93",
+        "guid": "96336d4d-ae27-4d39-8346-066a337cf32a",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -272,19 +1637,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
-      "x0": -5.0,
+      "x0": -40.0,
       "y0": 2.0,
       "z0": 0.0,
-      "x1": 5.0,
+      "x1": 40.0,
       "y1": 2.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "b177afc6-a56e-4db1-8f06-6768c5205d8b",
+        "guid": "d30378e8-6950-488a-b718-b20800282823",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -311,19 +1676,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
-      "x0": -5.0,
+      "x0": -40.0,
       "y0": 3.0,
       "z0": 0.0,
-      "x1": 5.0,
+      "x1": 40.0,
       "y1": 3.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "dc41a4d0-edfe-43b6-bb6b-d00be056fd46",
+        "guid": "4328c46d-30e1-4e0b-85f0-b53096d93013",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -350,19 +1715,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
-      "x0": -5.0,
+      "x0": -40.0,
       "y0": 4.0,
       "z0": 0.0,
-      "x1": 5.0,
+      "x1": 40.0,
       "y1": 4.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "151e8f45-806a-4d8d-990c-e3651a1e2ac6",
+        "guid": "03644829-56ac-4740-a002-dc007a894ddd",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -389,19 +1754,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
-      "x0": -5.0,
+      "x0": -40.0,
       "y0": 5.0,
       "z0": 0.0,
-      "x1": 5.0,
+      "x1": 40.0,
       "y1": 5.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "b51c96ab-945a-45bc-b809-0a79e6f71641",
+        "guid": "357ab758-53e9-4420-9dff-c5e9135b8384",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -428,19 +1793,2749 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 6.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 6.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "90700d70-3477-494e-834a-12d62c1833a6",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 7.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 7.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "37017bb3-4e30-442e-b870-b580ac0e1058",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 8.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 8.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "c84d1c48-8c2d-490a-a126-ed8f534e2867",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 9.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 9.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "da9e16c8-ec07-44c1-af97-0be5c52379be",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 10.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 10.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "06af7f4a-1ca2-4ce3-9e8f-c9ccb6999f8e",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 11.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 11.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "c873fe4e-da64-494e-885c-e1bbf79e44dc",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 12.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 12.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "31b6a101-4f75-4144-a099-1f15f628b89f",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 13.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 13.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "991f5c32-0c2b-43ca-af1e-cb2d7a9cb016",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 14.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 14.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "541a7df0-813f-42cf-bd51-d60de83aca93",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 15.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 15.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "45d7f7ab-a4ae-441d-818a-2b209fc47a1b",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 16.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 16.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "04a86c34-c880-4717-805e-c009264f593a",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 17.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 17.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "bfa60c38-3cb2-40d1-b2bf-1015b72d4d52",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 18.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 18.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "28041d34-bed6-4559-b4fb-fcf8d33dd068",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 19.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 19.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "941e678c-d460-49ee-be26-006fb62948c7",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 20.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 20.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "f8da16f7-9eb5-4e86-b87b-ab126c81e253",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 21.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 21.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "bd7ce338-af98-4922-908e-a23ddabd0f17",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 22.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 22.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "efbbd900-eba1-4b06-9d6a-e19e13f4bd39",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 23.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 23.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "7755ec98-552b-4430-a27b-43406c0c86ec",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 24.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 24.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "87b648af-8d31-480b-96e2-62bc866fa3f6",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 25.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 25.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "80bb7e0b-4051-411d-b47e-87cd9c788e1e",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 26.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 26.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "88cb88ca-c7bd-4035-858a-11e38d7d7686",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 27.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 27.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "87862b80-8430-40c7-a161-4b7ead7d85ec",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 28.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 28.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "2115275b-15e2-48e0-b717-da0e6f398aa0",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 29.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 29.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "4646bb20-8717-4715-8395-bc22daf45926",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 30.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 30.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "a8bf4553-daed-411f-a839-ddff1f66ff06",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 31.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 31.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "7e10f8f8-9831-4642-9c3a-78c1b3d104f2",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 32.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 32.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "856ed03b-c90a-4300-ad8e-e979749d16f6",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 33.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 33.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "8d754996-4aec-43f3-91bd-8bef0ce764d4",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 34.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 34.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "16251bf4-2990-41fa-8ee9-3d80bc20da03",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 35.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 35.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "9529cf88-5304-49ca-897b-4ec7f14b30a7",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 36.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 36.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "2847b4c1-854f-439f-aec7-e4f031711ac4",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 37.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 37.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "cd67e43b-a130-4993-84c5-563e72ccd353",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 38.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 38.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "4d2b5e1c-d0d3-475f-b14b-6922d87d721e",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 39.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 39.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "063d70dd-f35b-4e8c-9221-ee52c026aa29",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": 40.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "5e6b8aec-d718-47a3-8f45-ab98033cfbe8",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -40.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -40.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "18364387-b6cd-4e0b-bec9-29ca00d5d178",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -39.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -39.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "5f437315-984e-4b8d-835d-34fbcaa5cd1f",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -38.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -38.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "5adf260b-5465-43cf-a88d-2096e87c4694",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -37.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -37.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "b3299d76-c9be-46c2-becb-46875e099ad9",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -36.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -36.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "dc2e853b-70b8-4285-9f72-af5dfc2931d5",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -35.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -35.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "4f4b0ff6-c1a0-474d-80a3-1939491ba273",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -34.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -34.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "45d420c5-1156-4846-8d54-f00d9159ee24",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -33.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -33.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "c07c05a4-1770-4329-b567-aa482f38e8b3",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -32.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -32.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "10f2a98a-2ee6-4206-b975-7448ccc5b96d",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -31.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -31.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "1a7b8d15-9f9d-49dc-9e0a-249f7537be12",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -30.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -30.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "f0e5395c-556b-4acc-8a2a-1b36c409d016",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -29.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -29.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "6a6919fd-b3e7-42c9-9dda-43e4e6e5b7da",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -28.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -28.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "6cf37470-45c0-4afa-a570-420ac9a22117",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -27.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -27.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "35251e48-d190-4c8a-bfcd-2b123546e81f",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -26.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -26.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "9590e3fc-7a0a-4bc1-8f87-a518c904943e",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -25.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -25.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "9d8d2ec6-6f6e-4902-987f-80dc59d567e9",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -24.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -24.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "285513f4-817b-4249-9e6d-7fcdc51896e7",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -23.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -23.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "f9d0f38b-8a2c-4d74-af71-d993ba39100b",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -22.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -22.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "15df31dd-9153-4838-9329-d8c518616de0",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -21.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -21.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "82a14029-5a23-46e1-ae7a-2a6f5921e848",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -20.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -20.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "2726a78e-d86e-431a-8b5a-2188943c2cd4",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -19.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -19.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "feacd9b8-4010-48f2-a200-c71bbdf4901a",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -18.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -18.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "9935ce2e-87b0-443a-83f5-ac038c2e2976",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -17.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -17.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "cc9f61b3-ae04-4d09-ba8f-ed086e32d736",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -16.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -16.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "0bee35e3-fd8a-423a-b086-f5bafdb715a6",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -15.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -15.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "43819e56-fa79-4243-b49f-5ff24fa64d33",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -14.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -14.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "05de0604-17e5-4ea2-8cdc-572bee575a3f",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -13.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -13.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "6261f5d2-049b-44b5-8e15-b7a8c241df80",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -12.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -12.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "7b652862-94aa-476a-a95b-0435e24e2ff0",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -11.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -11.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "8583c487-4cac-418b-bce6-09f1e3d02162",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -10.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -10.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "f36b9df5-5b34-4c09-aa1c-7fcf30799a3c",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -9.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -9.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "c4bf43f9-7bee-4a43-917b-fbff7a6e8ec1",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -8.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -8.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "1c9e8f89-6723-40b3-82b8-5fe19d4ed4ed",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -7.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -7.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "697105b9-27c2-4f6c-9a53-945d0ec7c3e4",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": -6.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": -6.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "9e805205-18af-407b-963e-d6befb437ac7",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
       }
     },
     {
       "x0": -5.0,
-      "y0": -5.0,
+      "y0": -40.0,
       "z0": 0.0,
       "x1": -5.0,
-      "y1": 5.0,
+      "y1": 40.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "b509b12f-0a86-4f2d-a394-34669a4930fc",
+        "guid": "96d314ac-dc35-4957-a4a6-8e0679e5286e",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -467,19 +4562,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
       "x0": -4.0,
-      "y0": -5.0,
+      "y0": -40.0,
       "z0": 0.0,
       "x1": -4.0,
-      "y1": 5.0,
+      "y1": 40.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "c0d8aaf3-af6f-4156-a7f9-cba23ab0a602",
+        "guid": "3e3b4450-2230-45eb-9ca1-f8973b919025",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -506,19 +4601,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
       "x0": -3.0,
-      "y0": -5.0,
+      "y0": -40.0,
       "z0": 0.0,
       "x1": -3.0,
-      "y1": 5.0,
+      "y1": 40.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "77f17646-10ed-4c2e-8bc5-a9c530ec8918",
+        "guid": "f64f816c-943d-4e9f-9613-a0a2b5045421",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -545,19 +4640,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
       "x0": -2.0,
-      "y0": -5.0,
+      "y0": -40.0,
       "z0": 0.0,
       "x1": -2.0,
-      "y1": 5.0,
+      "y1": 40.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "b5566148-e9fa-45c9-9815-cd83682eee96",
+        "guid": "011fddf1-70a5-4fe8-83d6-aba412db5ade",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -584,19 +4679,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
       "x0": -1.0,
-      "y0": -5.0,
+      "y0": -40.0,
       "z0": 0.0,
       "x1": -1.0,
-      "y1": 5.0,
+      "y1": 40.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "b82fd405-f9fb-4b23-9d45-21c9cae5b8d0",
+        "guid": "4ebf47e1-2246-4bd2-bd16-7fb977774ffd",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -623,19 +4718,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
       "x0": 0.0,
-      "y0": -5.0,
+      "y0": -40.0,
       "z0": 0.0,
       "x1": 0.0,
-      "y1": 5.0,
+      "y1": 40.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "1a318317-71ba-4dad-9053-3ac62ac66aa2",
+        "guid": "a35141ce-a1bc-495a-b1e6-1903664fba9b",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -662,19 +4757,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
       "x0": 1.0,
-      "y0": -5.0,
+      "y0": -40.0,
       "z0": 0.0,
       "x1": 1.0,
-      "y1": 5.0,
+      "y1": 40.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "ff728d01-f2f9-47e9-a34c-75fa2b4daf39",
+        "guid": "feff958a-d5d3-4ace-bb7b-eb46fd3b13f4",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -701,19 +4796,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
       "x0": 2.0,
-      "y0": -5.0,
+      "y0": -40.0,
       "z0": 0.0,
       "x1": 2.0,
-      "y1": 5.0,
+      "y1": 40.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "7c66ada3-b8e7-445c-aaf8-91da31019b7e",
+        "guid": "1a99497b-a591-4387-b878-a9b366d42cac",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -740,19 +4835,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
       "x0": 3.0,
-      "y0": -5.0,
+      "y0": -40.0,
       "z0": 0.0,
       "x1": 3.0,
-      "y1": 5.0,
+      "y1": 40.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "e3ab492e-15b0-4378-992b-d27f4486f42a",
+        "guid": "b3a4e0a5-dc98-4a0e-9af2-4085ef54336e",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -779,19 +4874,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
       "x0": 4.0,
-      "y0": -5.0,
+      "y0": -40.0,
       "z0": 0.0,
       "x1": 4.0,
-      "y1": 5.0,
+      "y1": 40.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "8097b0b5-e856-478e-9b80-ecc3942bf21a",
+        "guid": "7b99fd58-d5d0-4b2d-b746-48f15a191eb6",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -818,19 +4913,19 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
       }
     },
     {
       "x0": 5.0,
-      "y0": -5.0,
+      "y0": -40.0,
       "z0": 0.0,
       "x1": 5.0,
-      "y1": 5.0,
+      "y1": 40.0,
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "55ad4204-8332-4a21-8b71-8a792c1d48af",
+        "guid": "a72896e6-0aba-4688-b0d6-e878eb537b9e",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -857,7 +4952,1450 @@
           0,
           0
         ],
-        "thickness": 1.0
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 6.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 6.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "5966795c-1488-4b5b-9b40-9f32a4e10c6d",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 7.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 7.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "f0b648eb-fa4c-4288-b6dc-c84e58938a05",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 8.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 8.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "2ed12ff6-ca71-4007-9352-5d99d2f2a1fa",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 9.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 9.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "dc9f0ebf-b224-4e34-ac4b-5f79bd93b729",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 10.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 10.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "2adb3faa-c1c1-4b06-b940-697ba3b0e206",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 11.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 11.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "4ab8ccd0-c4a1-428e-9816-4e06e8edd1b6",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 12.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 12.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "e748c61c-ef4d-4edd-ab94-8996412aaf18",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 13.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 13.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "b2bba722-8948-4bee-9537-29ada3c2ae84",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 14.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 14.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "651a417c-13e1-4aea-8a82-5a2c66ebe632",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 15.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 15.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "1d742d52-4ed1-4a44-8e33-983b2858f6ab",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 16.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 16.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "af055eb6-4af0-4bc6-ad46-54fe129e1ebd",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 17.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 17.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "71d5a461-5843-4cdf-887a-6ef28e01b1a3",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 18.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 18.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "c298eaf6-d37f-4439-aaf6-764b479e0ebc",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 19.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 19.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "f8b70c2e-42f6-48cf-8230-c34de638b613",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 20.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 20.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "eaa2d884-3106-4821-bed0-48be68ce0a81",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 21.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 21.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "145d9b78-ff79-463d-832e-6b94bc047f48",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 22.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 22.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "a2502ab6-1911-4691-9d31-f1105a31a2d9",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 23.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 23.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "23f8e8ac-3119-44d4-b4e8-2dc7445e23c3",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 24.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 24.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "14ee2878-6a7f-4718-a2a9-9ebfd8b50633",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 25.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 25.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "3a73c034-8063-42fc-b47e-7e205dd0df02",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 26.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 26.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "6095d3a3-e358-4cf4-9a23-3b6669d2cb62",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 27.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 27.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "341530df-95f8-4d4f-89b8-19807cfa9b4e",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 28.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 28.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "657363c4-5c4f-4ffa-8528-0678c7c248ee",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 29.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 29.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "5c1bef69-195e-4452-9055-1ca8fd0ebfa2",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 30.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 30.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "c556a8cb-007f-4d36-8fdf-c48b15727ab3",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 31.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 31.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "4b2bf8c6-e07c-4497-a605-0c3d16753910",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 32.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 32.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "5a82fb43-90e5-4e0a-8ab0-32664dcbc1e4",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 33.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 33.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "8d43bed7-3e67-4d31-bc38-a4d31ab2e07b",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 34.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 34.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "50f6e061-9f29-46e3-b147-cc9c8635b802",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 35.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 35.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "87ed7d18-af8f-4df9-b3ba-b285734081d7",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 36.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 36.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "91bfb9b3-41a4-4f35-bb9b-934755dbfd68",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 37.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 37.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "ac4f5238-a7e3-40a2-ace4-33d8545372fd",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 38.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 38.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "aa331679-fa0b-4c6b-b27a-cbb5cb359d62",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 39.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 39.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "dad4e23f-3d30-4320-b5bd-6131eb3afdb9",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 40.0,
+      "y0": -40.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "4aea5ce1-5c97-4fbd-a3d3-082c7fa9ff9c",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 0.05
+      }
+    },
+    {
+      "x0": 0.0,
+      "y0": 0.0,
+      "z0": 0.0,
+      "x1": 40.0,
+      "y1": 0.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "f50416e3-9b04-49bd-a7e5-b56bd2aeb461",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          255,
+          0,
+          0
+        ],
+        "thickness": 0.055000003
+      }
+    },
+    {
+      "x0": 0.0,
+      "y0": 0.0,
+      "z0": 0.0,
+      "x1": 0.0,
+      "y1": 40.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Line",
+        "guid": "d8bffb6a-7473-4fc0-9a55-ba3fed6b9249",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          255,
+          0
+        ],
+        "thickness": 0.055000003
       }
     },
     {
@@ -866,10 +6404,10 @@
       "z0": 0.0,
       "x1": 0.0,
       "y1": 0.0,
-      "z1": 1.0,
+      "z1": 40.0,
       "data": {
         "name": "Line",
-        "guid": "198e00f4-4d50-4757-baa0-3a06dc73a6ed",
+        "guid": "864a7520-3f5f-4097-b076-df7fd95c209e",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -894,9 +6432,9 @@
         "color": [
           0,
           0,
-          0
+          255
         ],
-        "thickness": 1.0
+        "thickness": 0.055000003
       }
     }
   ],
@@ -16932,7 +22470,7 @@
       },
       "data": {
         "name": "Data",
-        "guid": "72240faf-220e-43e3-b91f-cd7933455733",
+        "guid": "3cd672ec-b528-4d61-8d34-bcbda8148dd3",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -16969,30 +22507,6 @@
   "meshes": [
     {
       "halfedge": {
-        "5": {
-          "3": null,
-          "7": 1
-        },
-        "9": {
-          "7": null,
-          "11": 1
-        },
-        "19": {
-          "17": null,
-          "1": 1
-        },
-        "11": {
-          "9": null,
-          "13": 1
-        },
-        "15": {
-          "13": null,
-          "17": 1
-        },
-        "7": {
-          "5": null,
-          "9": 1
-        },
         "13": {
           "11": null,
           "15": 1
@@ -17001,13 +22515,37 @@
           "3": 1,
           "19": null
         },
+        "9": {
+          "11": 1,
+          "7": null
+        },
+        "11": {
+          "9": null,
+          "13": 1
+        },
+        "15": {
+          "17": 1,
+          "13": null
+        },
         "17": {
-          "15": null,
-          "19": 1
+          "19": 1,
+          "15": null
         },
         "3": {
-          "1": null,
-          "5": 1
+          "5": 1,
+          "1": null
+        },
+        "19": {
+          "1": 1,
+          "17": null
+        },
+        "5": {
+          "3": null,
+          "7": 1
+        },
+        "7": {
+          "5": null,
+          "9": 1
         }
       },
       "vertex": {
@@ -17016,14 +22554,14 @@
           "y": 0.514321,
           "z": 3.0,
           "attributes": {
+            "b": 0.0,
             "r": 1.0,
-            "g": 0.84,
-            "b": 0.0
+            "g": 0.84
           }
         },
-        "11": {
-          "x": -0.041799,
-          "y": -0.292234,
+        "17": {
+          "x": 0.538228,
+          "y": 0.0605,
           "z": 3.0,
           "attributes": {
             "r": 1.0,
@@ -17031,14 +22569,14 @@
             "b": 0.0
           }
         },
-        "19": {
-          "x": 0.246482,
-          "y": 0.209046,
+        "5": {
+          "x": -0.430101,
+          "y": 0.264609,
           "z": 3.0,
           "attributes": {
             "g": 0.84,
-            "r": 1.0,
-            "b": 0.0
+            "b": 0.0,
+            "r": 1.0
           }
         },
         "9": {
@@ -17051,29 +22589,29 @@
             "r": 1.0
           }
         },
-        "5": {
-          "x": -0.430101,
-          "y": 0.264609,
+        "11": {
+          "x": -0.041799,
+          "y": -0.292234,
           "z": 3.0,
           "attributes": {
             "b": 0.0,
             "g": 0.84,
-            "r": 1.0
-          }
-        },
-        "13": {
-          "x": 0.233322,
-          "y": -0.469688,
-          "z": 3.0,
-          "attributes": {
-            "g": 0.84,
-            "b": 0.0,
             "r": 1.0
           }
         },
         "3": {
           "x": -0.103219,
           "y": 0.282757,
+          "z": 3.0,
+          "attributes": {
+            "g": 0.84,
+            "r": 1.0,
+            "b": 0.0
+          }
+        },
+        "7": {
+          "x": -0.281387,
+          "y": -0.02705,
           "z": 3.0,
           "attributes": {
             "r": 1.0,
@@ -17091,24 +22629,24 @@
             "g": 0.84
           }
         },
-        "7": {
-          "x": -0.281387,
-          "y": -0.02705,
+        "13": {
+          "x": 0.233322,
+          "y": -0.469688,
+          "z": 3.0,
+          "attributes": {
+            "r": 1.0,
+            "b": 0.0,
+            "g": 0.84
+          }
+        },
+        "19": {
+          "x": 0.246482,
+          "y": 0.209046,
           "z": 3.0,
           "attributes": {
             "r": 1.0,
             "g": 0.84,
             "b": 0.0
-          }
-        },
-        "17": {
-          "x": 0.538228,
-          "y": 0.0605,
-          "z": 3.0,
-          "attributes": {
-            "b": 0.0,
-            "g": 0.84,
-            "r": 1.0
           }
         }
       },
@@ -17129,9 +22667,9 @@
       "facedata": {},
       "edgedata": {},
       "default_vertex_attributes": {
+        "x": 0.0,
         "z": 0.0,
-        "y": 0.0,
-        "x": 0.0
+        "y": 0.0
       },
       "default_face_attributes": {},
       "default_edge_attributes": {},
@@ -17139,7 +22677,7 @@
       "max_face": 2,
       "data": {
         "name": "Mesh",
-        "guid": "bc6bac5a-ddf2-4e67-9333-f55b187af783",
+        "guid": "59070cef-6fb0-4ac7-a875-472448061c3c",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -17171,51 +22709,63 @@
     },
     {
       "halfedge": {
-        "3": {
-          "1": 9,
-          "15": 7,
-          "5": 1
+        "9": {
+          "11": 3,
+          "15": 9,
+          "1": 5
         },
-        "15": {
-          "13": 7,
-          "9": 3,
-          "3": 9
-        },
-        "11": {
-          "7": 11,
-          "9": 5,
-          "13": 3
-        },
-        "5": {
-          "7": 1,
-          "3": 7,
-          "13": 11
+        "13": {
+          "15": 3,
+          "5": 7,
+          "11": 11
         },
         "7": {
           "1": 1,
-          "5": 11,
-          "11": 5
+          "11": 5,
+          "5": 11
         },
-        "9": {
-          "15": 9,
-          "1": 5,
-          "11": 3
+        "3": {
+          "1": 9,
+          "5": 1,
+          "15": 7
         },
-        "13": {
-          "5": 7,
-          "11": 11,
-          "15": 3
+        "15": {
+          "3": 9,
+          "13": 7,
+          "9": 3
         },
         "1": {
+          "3": 1,
           "9": 9,
-          "7": 5,
-          "3": 1
+          "7": 5
+        },
+        "5": {
+          "7": 1,
+          "13": 11,
+          "3": 7
+        },
+        "11": {
+          "7": 11,
+          "13": 3,
+          "9": 5
         }
       },
       "vertex": {
-        "5": {
+        "3": {
+          "x": 2.0,
+          "y": 1.0,
+          "z": 0.0,
+          "attributes": {}
+        },
+        "13": {
           "x": 3.0,
           "y": 1.0,
+          "z": 1.0,
+          "attributes": {}
+        },
+        "1": {
+          "x": 2.0,
+          "y": 0.0,
           "z": 0.0,
           "attributes": {}
         },
@@ -17225,55 +22775,49 @@
           "z": 0.0,
           "attributes": {}
         },
-        "3": {
-          "x": 2.0,
-          "y": 1.0,
-          "z": 0.0,
-          "attributes": {}
-        },
-        "9": {
-          "x": 2.0,
-          "y": 0.0,
-          "z": 1.0,
-          "attributes": {}
-        },
         "15": {
           "x": 2.0,
           "y": 1.0,
           "z": 1.0,
           "attributes": {}
         },
-        "1": {
-          "x": 2.0,
-          "y": 0.0,
-          "z": 0.0,
-          "attributes": {}
-        },
-        "13": {
+        "5": {
           "x": 3.0,
           "y": 1.0,
-          "z": 1.0,
+          "z": 0.0,
           "attributes": {}
         },
         "11": {
           "x": 3.0,
+          "y": 0.0,
+          "z": 1.0,
+          "attributes": {}
+        },
+        "9": {
+          "x": 2.0,
           "y": 0.0,
           "z": 1.0,
           "attributes": {}
         }
       },
       "face": {
-        "9": [
-          3,
+        "5": [
           1,
-          9,
-          15
+          7,
+          11,
+          9
         ],
         "3": [
           9,
           11,
           13,
           15
+        ],
+        "1": [
+          1,
+          3,
+          5,
+          7
         ],
         "7": [
           5,
@@ -17287,25 +22831,19 @@
           13,
           11
         ],
-        "5": [
-          1,
-          7,
-          11,
-          9
-        ],
-        "1": [
-          1,
+        "9": [
           3,
-          5,
-          7
+          1,
+          9,
+          15
         ]
       },
       "facedata": {},
       "edgedata": {},
       "default_vertex_attributes": {
-        "x": 0.0,
+        "z": 0.0,
         "y": 0.0,
-        "z": 0.0
+        "x": 0.0
       },
       "default_face_attributes": {},
       "default_edge_attributes": {},
@@ -17313,7 +22851,7 @@
       "max_face": 12,
       "data": {
         "name": "Mesh",
-        "guid": "daef66fb-8900-4823-9ab6-d32987e44d8a",
+        "guid": "078c5c5a-da97-4fd4-8b5b-5cd0f513a003",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -17345,190 +22883,112 @@
     },
     {
       "halfedge": {
-        "23": {
-          "35": 11,
-          "25": 5,
-          "21": 23
+        "31": {
+          "39": 23,
+          "29": 15,
+          "21": 7
+        },
+        "3": {
+          "5": 1,
+          "25": 11,
+          "1": 9
+        },
+        "25": {
+          "23": 11,
+          "3": 9,
+          "17": 5
+        },
+        "27": {
+          "29": 7,
+          "19": 19,
+          "37": 13
+        },
+        "29": {
+          "31": 7,
+          "27": 13,
+          "15": 15
         },
         "33": {
-          "17": 9,
           "37": 19,
+          "17": 9,
           "1": 17
-        },
-        "5": {
-          "3": 11,
-          "7": 1,
-          "35": 21
-        },
-        "7": {
-          "9": 1,
-          "5": 21,
-          "13": 3
-        },
-        "9": {
-          "11": 17,
-          "1": 1,
-          "7": 3
-        },
-        "39": {
-          "13": 21,
-          "31": 15,
-          "35": 23
         },
         "15": {
           "11": 3,
           "29": 13,
           "13": 15
         },
+        "39": {
+          "13": 21,
+          "31": 15,
+          "35": 23
+        },
+        "23": {
+          "25": 5,
+          "35": 11,
+          "21": 23
+        },
+        "1": {
+          "3": 1,
+          "33": 9,
+          "9": 17
+        },
+        "19": {
+          "17": 19,
+          "27": 7,
+          "21": 5
+        },
+        "7": {
+          "5": 21,
+          "9": 1,
+          "13": 3
+        },
         "13": {
           "15": 3,
           "7": 21,
           "39": 15
         },
-        "11": {
-          "37": 17,
-          "9": 3,
-          "15": 13
-        },
-        "27": {
-          "19": 19,
-          "37": 13,
-          "29": 7
-        },
-        "31": {
-          "29": 15,
-          "39": 23,
-          "21": 7
-        },
-        "25": {
-          "3": 9,
-          "23": 11,
-          "17": 5
-        },
-        "1": {
-          "3": 1,
-          "9": 17,
-          "33": 9
-        },
         "17": {
+          "33": 19,
           "19": 5,
-          "25": 9,
-          "33": 19
+          "25": 9
         },
-        "21": {
-          "31": 23,
-          "23": 5,
-          "19": 7
-        },
-        "35": {
-          "39": 21,
-          "5": 11,
-          "23": 23
+        "5": {
+          "35": 21,
+          "3": 11,
+          "7": 1
         },
         "37": {
+          "27": 19,
           "11": 13,
-          "33": 17,
-          "27": 19
+          "33": 17
         },
-        "3": {
-          "25": 11,
-          "1": 9,
-          "5": 1
+        "11": {
+          "37": 17,
+          "15": 13,
+          "9": 3
         },
-        "29": {
-          "27": 13,
-          "31": 7,
-          "15": 15
+        "21": {
+          "23": 5,
+          "31": 23,
+          "19": 7
         },
-        "19": {
-          "27": 7,
-          "21": 5,
-          "17": 19
+        "9": {
+          "11": 17,
+          "1": 1,
+          "7": 3
+        },
+        "35": {
+          "23": 23,
+          "39": 21,
+          "5": 11
         }
       },
       "vertex": {
-        "17": {
-          "x": -0.809017,
-          "y": 2.190983,
-          "z": -0.809017,
-          "attributes": {}
-        },
-        "7": {
-          "x": 1.309017,
-          "y": 3.5,
-          "z": 0.0,
-          "attributes": {}
-        },
-        "37": {
-          "x": 0.0,
-          "y": 1.690983,
-          "z": 0.5,
-          "attributes": {}
-        },
-        "15": {
-          "x": 0.5,
-          "y": 3.0,
-          "z": 1.309017,
-          "attributes": {}
-        },
-        "5": {
-          "x": 0.809017,
-          "y": 3.809017,
-          "z": -0.809017,
-          "attributes": {}
-        },
-        "21": {
-          "x": -1.309017,
-          "y": 3.5,
-          "z": 0.0,
-          "attributes": {}
-        },
-        "13": {
-          "x": 0.809017,
-          "y": 3.809017,
-          "z": 0.809017,
-          "attributes": {}
-        },
         "9": {
           "x": 1.309017,
           "y": 2.5,
           "z": 0.0,
-          "attributes": {}
-        },
-        "1": {
-          "x": 0.809017,
-          "y": 2.190983,
-          "z": -0.809017,
-          "attributes": {}
-        },
-        "27": {
-          "x": -0.809017,
-          "y": 2.190983,
-          "z": 0.809017,
-          "attributes": {}
-        },
-        "31": {
-          "x": -0.809017,
-          "y": 3.809017,
-          "z": 0.809017,
-          "attributes": {}
-        },
-        "35": {
-          "x": 0.0,
-          "y": 4.309017,
-          "z": -0.5,
-          "attributes": {}
-        },
-        "29": {
-          "x": -0.5,
-          "y": 3.0,
-          "z": 1.309017,
-          "attributes": {}
-        },
-        "11": {
-          "x": 0.809017,
-          "y": 2.190983,
-          "z": 0.809017,
           "attributes": {}
         },
         "33": {
@@ -17537,22 +22997,10 @@
           "z": -0.5,
           "attributes": {}
         },
-        "39": {
-          "x": 0.0,
-          "y": 4.309017,
-          "z": 0.5,
-          "attributes": {}
-        },
-        "23": {
-          "x": -0.809017,
-          "y": 3.809017,
-          "z": -0.809017,
-          "attributes": {}
-        },
-        "19": {
-          "x": -1.309017,
-          "y": 2.5,
-          "z": 0.0,
+        "29": {
+          "x": -0.5,
+          "y": 3.0,
+          "z": 1.309017,
           "attributes": {}
         },
         "25": {
@@ -17561,34 +23009,110 @@
           "z": -1.309017,
           "attributes": {}
         },
+        "35": {
+          "x": 0.0,
+          "y": 4.309017,
+          "z": -0.5,
+          "attributes": {}
+        },
+        "17": {
+          "x": -0.809017,
+          "y": 2.190983,
+          "z": -0.809017,
+          "attributes": {}
+        },
+        "37": {
+          "x": 0.0,
+          "y": 1.690983,
+          "z": 0.5,
+          "attributes": {}
+        },
         "3": {
           "x": 0.5,
           "y": 3.0,
           "z": -1.309017,
           "attributes": {}
+        },
+        "5": {
+          "x": 0.809017,
+          "y": 3.809017,
+          "z": -0.809017,
+          "attributes": {}
+        },
+        "13": {
+          "x": 0.809017,
+          "y": 3.809017,
+          "z": 0.809017,
+          "attributes": {}
+        },
+        "7": {
+          "x": 1.309017,
+          "y": 3.5,
+          "z": 0.0,
+          "attributes": {}
+        },
+        "19": {
+          "x": -1.309017,
+          "y": 2.5,
+          "z": 0.0,
+          "attributes": {}
+        },
+        "11": {
+          "x": 0.809017,
+          "y": 2.190983,
+          "z": 0.809017,
+          "attributes": {}
+        },
+        "21": {
+          "x": -1.309017,
+          "y": 3.5,
+          "z": 0.0,
+          "attributes": {}
+        },
+        "23": {
+          "x": -0.809017,
+          "y": 3.809017,
+          "z": -0.809017,
+          "attributes": {}
+        },
+        "39": {
+          "x": 0.0,
+          "y": 4.309017,
+          "z": 0.5,
+          "attributes": {}
+        },
+        "27": {
+          "x": -0.809017,
+          "y": 2.190983,
+          "z": 0.809017,
+          "attributes": {}
+        },
+        "15": {
+          "x": 0.5,
+          "y": 3.0,
+          "z": 1.309017,
+          "attributes": {}
+        },
+        "31": {
+          "x": -0.809017,
+          "y": 3.809017,
+          "z": 0.809017,
+          "attributes": {}
+        },
+        "1": {
+          "x": 0.809017,
+          "y": 2.190983,
+          "z": -0.809017,
+          "attributes": {}
         }
       },
       "face": {
-        "9": [
-          1,
-          33,
+        "19": [
           17,
-          25,
-          3
-        ],
-        "11": [
-          5,
-          3,
-          25,
-          23,
-          35
-        ],
-        "13": [
-          11,
-          15,
-          29,
+          33,
+          37,
           27,
-          37
+          19
         ],
         "1": [
           1,
@@ -17604,20 +23128,6 @@
           23,
           25
         ],
-        "7": [
-          27,
-          29,
-          31,
-          21,
-          19
-        ],
-        "17": [
-          1,
-          9,
-          11,
-          37,
-          33
-        ],
         "21": [
           5,
           35,
@@ -17625,19 +23135,12 @@
           13,
           7
         ],
-        "15": [
-          13,
-          39,
-          31,
+        "13": [
+          11,
+          15,
           29,
-          15
-        ],
-        "23": [
-          23,
-          21,
-          31,
-          39,
-          35
+          27,
+          37
         ],
         "3": [
           11,
@@ -17646,20 +23149,55 @@
           13,
           15
         ],
-        "19": [
-          17,
-          33,
-          37,
+        "7": [
           27,
+          29,
+          31,
+          21,
           19
+        ],
+        "23": [
+          23,
+          21,
+          31,
+          39,
+          35
+        ],
+        "15": [
+          13,
+          39,
+          31,
+          29,
+          15
+        ],
+        "11": [
+          5,
+          3,
+          25,
+          23,
+          35
+        ],
+        "17": [
+          1,
+          9,
+          11,
+          37,
+          33
+        ],
+        "9": [
+          1,
+          33,
+          17,
+          25,
+          3
         ]
       },
       "facedata": {},
       "edgedata": {},
       "default_vertex_attributes": {
-        "x": 0.0,
         "z": 0.0,
-        "y": 0.0
+        "y": 0.0,
+        "x": 0.0
       },
       "default_face_attributes": {},
       "default_edge_attributes": {},
@@ -17667,7 +23205,7 @@
       "max_face": 24,
       "data": {
         "name": "Mesh",
-        "guid": "6419150b-3674-465e-b8f9-abecc7603447",
+        "guid": "85ee6c35-d439-47c3-a671-41c4c940896b",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],

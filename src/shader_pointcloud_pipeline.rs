@@ -75,44 +75,15 @@ pub fn create(
     camera_bind_group_layout: &wgpu::BindGroupLayout,
     depth_format: wgpu::TextureFormat,
     msaa_sample_count: u32,
-) -> (wgpu::RenderPipeline, wgpu::BindGroupLayout) {
+) -> wgpu::RenderPipeline {
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("Point Cloud Shader"),
         source: wgpu::ShaderSource::Wgsl(include_str!("shader_pointcloud.wgsl").into()),
     });
 
-    // Create bind group layout that includes camera and transformation matrix
-    let pointcloud_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        entries: &[
-            // Camera uniform (binding 0)
-            wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None,
-            },
-            // Transformation matrix uniform (binding 1)
-            wgpu::BindGroupLayoutEntry {
-                binding: 1,
-                visibility: wgpu::ShaderStages::VERTEX,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None,
-            },
-        ],
-        label: Some("pointcloud_bind_group_layout"),
-    });
-
     let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("Point Cloud Render Pipeline Layout"),
-        bind_group_layouts: &[&pointcloud_bind_group_layout],
+        bind_group_layouts: &[camera_bind_group_layout],
         push_constant_ranges: &[],
     });
 
@@ -171,5 +142,5 @@ pub fn create(
         multiview: None,
     });
 
-    (pipeline, pointcloud_bind_group_layout)
+    pipeline
 }

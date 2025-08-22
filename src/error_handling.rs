@@ -12,7 +12,7 @@ impl ErrorHandler {
                 .unwrap_or_else(|_| Self::load_embedded_geometry()),
             None => Self::load_embedded_geometry(),
         };
-        all_geom.augment_with_procedural();
+        // Procedural augmentation removed - geometry processed directly in geometry_loader
         all_geom
     }
 
