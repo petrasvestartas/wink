@@ -37,6 +37,9 @@ use buffer_factory::BufferFactory;
 use geometry_loader::GeometryLoader;
 use scene_bounds::SceneBounds;
 
+// Type alias for geometry updates from the background thread
+type GeometryUpdate = (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, [[f32; 4]; 4]);
+
 // Platform-specific constants
 #[cfg(target_arch = "wasm32")]
 const LOCAL_GEOMETRY_HTTP_PATH: &str = "/geometry/all_geometry.json"; // served by docs dev server
@@ -53,11 +56,12 @@ const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 // Polling interval for change detection (ms)
 const GEOMETRY_POLL_INTERVAL_MS: u64 = 100;
 
+// Removed duplicate type definition - using the one above with 6 elements
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum PipelineMode { Color, Solid, Lights, PointCloud }
 
-
-
+use wgpu::util::DeviceExt;
 
 pub struct State{
     surface: wgpu::Surface<'static>,
@@ -89,6 +93,10 @@ pub struct State{
     camera_bind_group: wgpu::BindGroup,
     camera_bind_group_layout: wgpu::BindGroupLayout,
     camera_controller: CameraController,
+    // Point cloud transformation matrix
+    pointcloud_transform_buffer: wgpu::Buffer,
+    pointcloud_bind_group: wgpu::BindGroup,
+    pointcloud_bind_group_layout: wgpu::BindGroupLayout,
     last_render_time: Instant,
     // Change detection throttle timestamp
     #[cfg(target_arch = "wasm32")]
@@ -98,7 +106,7 @@ pub struct State{
     window: Arc<Window>,
     // Native-only: background poller delivers geometry here to avoid blocking the render thread
     #[cfg(not(target_arch = "wasm32"))]
-    geom_rx: std::sync::mpsc::Receiver<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>)>,
+    geom_rx: std::sync::mpsc::Receiver<GeometryUpdate>,
     // Instance data
     instances: Vec<Instance>,
     instance_buffer: wgpu::Buffer,
@@ -121,7 +129,7 @@ pub struct State{
 
 impl State{
     // We don't need to be async right now, will implement later
-    pub async fn new(window: Arc<Window>, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch], pointcloud_instances: &[PointCloudInstance], pipes: Vec<PipeTransform>, spheres: Vec<SphereTransform>) -> anyhow::Result<Self> {
+    pub async fn new(window: Arc<Window>, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch], pointcloud_instances: &[PointCloudInstance], pipes: Vec<PipeTransform>, spheres: Vec<SphereTransform>, transform_matrix: [[f32; 4]; 4]) -> anyhow::Result<Self> {
 
         let size = window.inner_size();
         // Clamp initial surface size on Web (WebGL2 backend) to avoid exceeding max texture limit.
@@ -340,7 +348,7 @@ impl State{
             &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, msaa_sample_count,
         );
 
-        let render_pipeline_pointcloud = crate::shader_pointcloud_pipeline::create(
+        let (render_pipeline_pointcloud, pointcloud_bind_group_layout) = crate::shader_pointcloud_pipeline::create(
             &device, &config, &camera_bind_group_layout, DEPTH_FORMAT, msaa_sample_count,
         );
 
@@ -357,7 +365,7 @@ impl State{
         // Native: spawn a background poller thread that watches for local geometry file changes (mtime)
         // and sends rebuilt vertex/index buffers through a channel. This prevents UI freezes from blocking I/O.
         #[cfg(not(target_arch = "wasm32"))]
-        let (tx_geom, rx_geom) = std::sync::mpsc::channel::<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>)>();
+        let (tx_geom, rx_geom) = std::sync::mpsc::channel::<GeometryUpdate>();
 
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -378,8 +386,8 @@ impl State{
                     }
 
                     if changed {
-                        let (vertices, indices, batches, pointcloud_instances, _pipe_transforms, _sphere_transforms) = pollster::block_on(GeometryLoader::get_geometry());
-                        let _ = tx_geom.send((vertices, indices, batches, pointcloud_instances));
+                        let (vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms, transform_matrix) = pollster::block_on(GeometryLoader::get_geometry());
+                        let _ = tx_geom.send((vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms, transform_matrix));
                     }
                     std::thread::sleep(StdDuration::from_millis(GEOMETRY_POLL_INTERVAL_MS));
                 }
@@ -459,17 +467,11 @@ impl State{
             camera.fovy,
             camera.aspect,
             default_pipe_px_radius,
-            camera.is_ortho,
-            camera.ortho_half_height,
+            false, // is_ortho
+            1.0,   // ortho_half_height
         );
 
         let camera_buffer = BufferFactory::create_uniform_buffer(&device, &[camera_uniform]);
-
-        // Debug: log the first row of the view-proj on Web to ensure it isn't zeros/NaNs
-        #[cfg(target_arch = "wasm32")]
-        {
-            web_sys::console::log_1(&format!("Camera VP row0: {:?}", camera_uniform.view_proj[0]).into());
-        }
 
         let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &camera_bind_group_layout,
@@ -478,6 +480,29 @@ impl State{
                 resource: camera_buffer.as_entire_binding(),
             }],
             label: Some("camera_bind_group"),
+        });
+
+        // Create transformation matrix buffer for point clouds using the provided matrix
+        let pointcloud_transform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Point Cloud Transform Buffer"),
+            contents: bytemuck::cast_slice(&[transform_matrix]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
+        // Create point cloud bind group with camera and transformation matrix
+        let pointcloud_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &pointcloud_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: camera_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: pointcloud_transform_buffer.as_entire_binding(),
+                },
+            ],
+            label: Some("pointcloud_bind_group"),
         });
 
         let camera_controller = CameraController::new(4.0, 0.4);
@@ -563,6 +588,9 @@ impl State{
             camera_bind_group,
             camera_bind_group_layout,
             camera_controller,
+            pointcloud_transform_buffer,
+            pointcloud_bind_group,
+            pointcloud_bind_group_layout,
             // Instance data
             instances: flat_instances,
             instance_buffer,
@@ -706,10 +734,10 @@ impl State{
     // Replace entire scene including point clouds
     fn replace_scene_with_pointclouds(&mut self, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch], pointcloud_instances: &[PointCloudInstance]) {
         #[cfg(target_arch = "wasm32")]
-        web_sys::console::log_1(&format!("🔄 REPLACING SCENE: {} vertices, {} indices, {} batches, {} point cloud instances", vertices.len(), indices.len(), batches_in.len(), pointcloud_instances.len()).into());
+        web_sys::console::log_1(&format!("🔄 REPLACING SCENE: {} vertices, {} indices, {} batches, {} point cloud instances, {} pipes, {} spheres", vertices.len(), indices.len(), batches_in.len(), pointcloud_instances.len(), self.gpu_pipes_data.len(), self.gpu_spheres_data.len()).into());
         // Add a new line here to log the point cloud instances
         #[cfg(not(target_arch = "wasm32"))]
-        println!("🔄 REPLACING SCENE: {} vertices, {} indices, {} batches, {} point cloud instances", vertices.len(), indices.len(), batches_in.len(), pointcloud_instances.len());
+        println!("🔄 REPLACING SCENE: {} vertices, {} indices, {} batches, {} point cloud instances, {} pipes, {} spheres", vertices.len(), indices.len(), batches_in.len(), pointcloud_instances.len(), self.gpu_pipes_data.len(), self.gpu_spheres_data.len());
         // Replace vertex/index buffers
         let new_vertex_buffer = BufferFactory::create_vertex_buffer(&self.device, vertices);
         let new_index_buffer = BufferFactory::create_index_buffer(&self.device, indices);
@@ -831,9 +859,15 @@ impl State{
         // Native: drain background updates without throttling or blocking the render thread
         #[cfg(not(target_arch = "wasm32"))]
         {
-            while let Ok((vertices, indices, batches, pointcloud_instances)) = self.geom_rx.try_recv() {
-                println!("🔄 Native geometry update - loading {} new point cloud instances", pointcloud_instances.len());
+            while let Ok((vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms, transform_matrix)) = self.geom_rx.try_recv() {
+                println!("🔄 Native geometry update - loading {} new point cloud instances, {} pipes, {} spheres", pointcloud_instances.len(), pipe_transforms.len(), sphere_transforms.len());
+                
+                // Update GPU pipe/sphere data from channel
+                self.gpu_pipes_data = pipe_transforms;
+                self.gpu_spheres_data = sphere_transforms;
+                
                 self.replace_scene_with_pointclouds(&vertices, &indices, &batches, &pointcloud_instances);
+                self.update_point_cloud_transform(transform_matrix);
             }
             return;
         }
@@ -877,10 +911,10 @@ impl State{
                     
                     if local_changed {
                         // Rebuild full scene using the same logic as initial load
-                        let (vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms) = GeometryLoader::get_geometry().await;
+                        let (vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms, transform_matrix) = GeometryLoader::get_geometry().await;
                         #[cfg(target_arch = "wasm32")]
                         web_sys::console::log_1(&format!("🔄 FILE CHANGED - Reloading geometry: {} vertices, {} indices, {} batches, {} point cloud instances, {} pipes, {} spheres", vertices.len(), indices.len(), batches.len(), pointcloud_instances.len(), pipe_transforms.len(), sphere_transforms.len()).into());
-                        GeometryLoader::set_pending_geometry_with_gpu_data((vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms));
+                        GeometryLoader::set_pending_geometry_with_gpu_data((vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms, transform_matrix));
                         web_sys::console::log_1(&"Geometry changed; source: local".into());
                     }
                     GeometryLoader::set_fetching(false);
@@ -889,7 +923,7 @@ impl State{
 
             // Apply any pending geometry prepared by the async task
             let pending = GeometryLoader::take_pending_geometry();
-            if let Some((vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms)) = pending {
+            if let Some((vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms, transform_matrix)) = pending {
                 #[cfg(target_arch = "wasm32")]
                 web_sys::console::log_1(&format!("🔄 APPLYING PENDING GEOMETRY: {} vertices, {} indices, {} batches, {} point cloud instances, {} pipes, {} spheres", vertices.len(), indices.len(), batches.len(), pointcloud_instances.len(), pipe_transforms.len(), sphere_transforms.len()).into());
                 #[cfg(not(target_arch = "wasm32"))]
@@ -900,8 +934,19 @@ impl State{
                 self.gpu_spheres_data = sphere_transforms;
                 
                 self.replace_scene_with_pointclouds(&vertices, &indices, &batches, &pointcloud_instances);
+                self.update_point_cloud_transform(transform_matrix);
             }
         }
+    }
+
+    pub fn update_point_cloud_transform(&mut self, transform_matrix: [[f32; 4]; 4]) {
+        // Update the transformation matrix buffer
+        self.queue.write_buffer(
+            &self.pointcloud_transform_buffer,
+            0,
+            bytemuck::cast_slice(&[transform_matrix]),
+        );
+        println!("🔄 Updated point cloud transformation matrix");
     }
 
     pub fn resize(&mut self, width: u32, height: u32){
@@ -1225,8 +1270,18 @@ impl State{
                         render_pass.set_pipeline(&self.render_pipeline_pointcloud);
                     }
                 }
-                // Set the camera bind group (after pipeline)
-                render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
+                
+                // Set bind groups based on pipeline type
+                match d.kind {
+                    BatchKind::PointCloud => {
+                        // Point clouds use their own bind group with camera + transformation matrix
+                        render_pass.set_bind_group(0, &self.pointcloud_bind_group, &[]);
+                    }
+                    _ => {
+                        // Other pipelines use the camera bind group
+                        render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
+                    }
+                }
                 
                 match d.kind {
                     BatchKind::PointCloud => {
@@ -1447,7 +1502,7 @@ impl ApplicationHandler<State> for App {
         {
             // Native: load full geometry including point clouds so we can render glyphs
             // and ensure a PointCloud batch exists.
-            let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms) = pollster::block_on(GeometryLoader::get_geometry());
+            let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms, transform_matrix) = pollster::block_on(GeometryLoader::get_geometry());
             // Keep App copies in sync (may be used later)
             self.vertices = vertices;
             self.indices = indices;
@@ -1461,7 +1516,8 @@ impl ApplicationHandler<State> for App {
                     &self.batches,
                     &pointcloud_vertices, // Use loaded pointcloud instances
                     pipe_transforms,
-                    sphere_transforms
+                    sphere_transforms,
+                    transform_matrix,
                 ))
                 .expect("Unable to create state")
             );
@@ -1473,10 +1529,10 @@ impl ApplicationHandler<State> for App {
             if let Some(proxy) = self.proxy.take() {
                 wasm_bindgen_futures::spawn_local(async move {
                     // Build geometry on WASM (embedded + grid/axis + local JSON if available)
-                    let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms) = GeometryLoader::get_geometry().await;
+                    let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms, transform_matrix) = GeometryLoader::get_geometry().await;
                     assert!(proxy
                         .send_event(
-                            State::new(window, &vertices, &indices, &batches, &pointcloud_vertices, pipe_transforms, sphere_transforms)
+                            State::new(window, &vertices, &indices, &batches, &pointcloud_vertices, pipe_transforms, sphere_transforms, transform_matrix)
                                 .await
                                 .expect("Unable to create canvas!!!")
                         )
@@ -1625,7 +1681,7 @@ pub fn run() -> anyhow::Result<()> {
 
 
     #[cfg(not(target_arch = "wasm32"))]
-    let (vertices, indices, batches, _pointcloud_instances, _pipe_transforms, _sphere_transforms) = pollster::block_on(GeometryLoader::get_geometry());
+    let (vertices, indices, batches, _pointcloud_instances, _pipe_transforms, _sphere_transforms, _transform_matrix) = pollster::block_on(GeometryLoader::get_geometry());
 
     #[cfg(not(target_arch = "wasm32"))]
     let mut app = App::new(

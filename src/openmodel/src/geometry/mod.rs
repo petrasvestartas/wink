@@ -1,4 +1,3 @@
-pub mod point;
 pub mod line;
 pub mod plane;
 pub mod pointcloud;
@@ -8,9 +7,8 @@ pub mod mesh;
 pub mod pipe;
 
 // Re-export primitive types for backward compatibility
-pub use crate::primitives::{Vector, Color, Xform};
+pub use crate::primitives::{Vector, Color, Xform, Point};
 
-pub use point::Point;
 pub use line::Line;
 pub use plane::Plane;
 pub use pointcloud::PointCloud;

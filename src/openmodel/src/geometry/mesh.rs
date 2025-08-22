@@ -1400,8 +1400,8 @@ impl Mesh {
     }
 }
 
-#[allow(dead_code)]
 /// Project a 3D polygon to 2D for triangulation.
+#[allow(dead_code)]
 fn project_polygon_to_2d(polygon: &[Point]) -> Vec<[f32; 2]> {
     use crate::primitives::Vector;
     
@@ -1450,8 +1450,8 @@ fn project_polygon_to_2d(polygon: &[Point]) -> Vec<[f32; 2]> {
     points_2d
 }
 
-#[allow(dead_code)]
 /// Triangulate a polygon using the ear clipping algorithm
+#[allow(dead_code)]
 fn earclip_triangulate(points: &[[f32; 2]]) -> Result<Vec<[usize; 3]>, &'static str> {
     if points.len() < 3 {
         return Err("Polygon must have at least 3 vertices");
@@ -1520,8 +1520,8 @@ fn earclip_triangulate(points: &[[f32; 2]]) -> Result<Vec<[usize; 3]>, &'static 
     Ok(triangles)
 }
 
-#[allow(dead_code)]
 /// Check if three consecutive vertices form a valid ear
+#[allow(dead_code)]
 fn is_ear(points: &[[f32; 2]], indices: &[usize], prev: usize, curr: usize, next: usize) -> bool {
     let a = points[prev];
     let b = points[curr];
@@ -1548,8 +1548,8 @@ fn is_ear(points: &[[f32; 2]], indices: &[usize], prev: usize, curr: usize, next
     true
 }
 
-#[allow(dead_code)]
 /// Check if a point is inside a triangle using barycentric coordinates
+#[allow(dead_code)]
 fn point_in_triangle(p: [f32; 2], a: [f32; 2], b: [f32; 2], c: [f32; 2]) -> bool {
     let d1 = sign(p, a, b);
     let d2 = sign(p, b, c);
@@ -1561,14 +1561,14 @@ fn point_in_triangle(p: [f32; 2], a: [f32; 2], b: [f32; 2], c: [f32; 2]) -> bool
     !(has_neg && has_pos)
 }
 
-#[allow(dead_code)]
 /// Helper function for point-in-triangle test
+#[allow(dead_code)]
 fn sign(p1: [f32; 2], p2: [f32; 2], p3: [f32; 2]) -> f32 {
     (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
 }
 
-#[allow(dead_code)]
 /// Compute the signed area of a 2D polygon
+#[allow(dead_code)]
 fn compute_signed_area(points: &[[f32; 2]]) -> f32 {
     let mut sum = 0.0;
     let n = points.len();

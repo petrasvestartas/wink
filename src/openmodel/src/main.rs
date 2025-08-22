@@ -1,4 +1,5 @@
-use openmodel::geometry::{Point, Line, Mesh, PointCloud, Vector, Color};
+use openmodel::geometry::{Line, Mesh, PointCloud};
+use openmodel::primitives::{Point, Vector, Color, Xform};
 use openmodel::AllGeometryData;
 
 // Minimal star polygon mesh (concave, non-self-intersecting)
@@ -165,24 +166,40 @@ fn make_point_cloud() -> PointCloud {
     }
     
     println!("Generated {} points", points.len());
-    PointCloud::new(points, normals, colors)
+    
+    // Create a point cloud with transformation matrix
+    let mut point_cloud = PointCloud::new(points, normals, colors);
+    
+    // Apply a transformation: translate by (2, 0, 1) and rotate 45 degrees around Z-axis
+    let cos_45 = 0.7071067811865476f32; // cos(45°)
+    let sin_45 = 0.7071067811865475f32; // sin(45°)
+    
+    point_cloud.xform = Xform::from_matrix([
+        cos_45*0.0+1.0, -sin_45*0.0, 0.0, 0.0,  // Rotate + translate X
+        sin_45*0.0,  cos_45*0.0+1.0, 0.0, 0.0,  // Rotate + translate Y  
+        0.0,     0.0,    1.0, 0.0,  // No rotation in Z + translate Z
+        0.0,     0.0,    0.0, 1.0   // Homogeneous coordinate
+    ]);
+    
+    println!("Applied transformation: translation (2, 0, 1) + 45° rotation around Z-axis");
+    point_cloud
 }
 
 fn main() {
     // Minimal: 10x10 grid (11 lines per direction) on Z=0 plus Z axis line
     let mut lines: Vec<Line> = Vec::new();
-    let _size: i32 = 5; // -5..=5 => 11 lines => 10x10 cells
+    let size: i32 = 5; // -5..=5 => 11 lines => 10x10 cells
 
-    // // Horizontal lines (vary X)
-    // for i in -size..=size {
-    //     let y = i as f64;
-    //     lines.push(Line::from_points(&Point::new(-(size as f64), y, 0.0), &Point::new(size as f64, y, 0.0)));
-    // }
-    // // Vertical lines (vary Y)
-    // for i in -size..=size {
-    //     let x = i as f64;
-    //     lines.push(Line::from_points(&Point::new(x, -(size as f64), 0.0), &Point::new(x, size as f64, 0.0)));
-    // }
+    // Horizontal lines (vary X)
+    for i in -size..=size {
+        let y = i as f32;
+        lines.push(Line::from_points(&Point::new(-(size as f32), y, 0.0), &Point::new(size as f32, y, 0.0)));
+    }
+    // Vertical lines (vary Y)
+    for i in -size..=size {
+        let x = i as f32;
+        lines.push(Line::from_points(&Point::new(x, -(size as f32), 0.0), &Point::new(x, size as f32, 0.0)));
+    }
     // Z axis
     lines.push(Line::from_points(&Point::new(0.0, 0.0, 0.0), &Point::new(0.0, 0.0, 1.0)));
 

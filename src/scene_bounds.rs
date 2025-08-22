@@ -5,6 +5,12 @@ pub struct SceneBounds {
     pub max: cgmath::Point3<f32>,
 }
 
+impl Default for SceneBounds {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SceneBounds {
     pub fn new() -> Self {
         Self {

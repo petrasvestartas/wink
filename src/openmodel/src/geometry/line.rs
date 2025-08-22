@@ -206,9 +206,21 @@ impl Line{
 
     /// Returns a transform that maps the canonical unit pipe (aligned to +Z, length=1, radius=0.5,
     /// centered at the origin with z in [-0.5, +0.5]) onto this line segment.
-    /// XY scale is kept at 1.0; Z is scaled by the segment length. Thickness is handled in the shader.
+    /// Uses the JSON transformation matrix directly if available, otherwise falls back to coordinate-based calculation.
     pub fn to_pipe_transform(&self) -> Option<Xform> {
-        // Endpoints
+        // Check if we have a non-identity transformation matrix in the JSON data
+        let json_transform = self.data.transformation();
+        let is_identity = json_transform.iter().enumerate().all(|(i, &val)| {
+            (i % 5 == 0 && (val - 1.0).abs() < f32::EPSILON) || // Diagonal elements are 1.0
+            (i % 5 != 0 && val.abs() < f32::EPSILON) // Non-diagonal elements are 0.0
+        });
+
+        if !is_identity {
+            // Use the JSON transformation matrix directly - much more efficient!
+            return Some(Xform { m: *json_transform });
+        }
+
+        // Fallback: rebuild from coordinates (for backward compatibility)
         let p0 = Point::new(self.x0, self.y0, self.z0);
         let p1 = Point::new(self.x1, self.y1, self.z1);
 

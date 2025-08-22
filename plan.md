@@ -1,1 +1,2 @@
-- [ ] reload all geometry when any json input is changed
+- [x] reload all geometry when any json input is changed
+- [ ] line thickness and line colors 

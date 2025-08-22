@@ -18,7 +18,7 @@ pub struct GeometryLoader;
 
 #[cfg(target_arch = "wasm32")]
 thread_local! {
-    pub static PENDING_GEOMETRY: RefCell<Option<(Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_geometry_pipeline::PipeTransform>, Vec<crate::shader_geometry_pipeline::SphereTransform>)>> = RefCell::new(None);
+    pub static PENDING_GEOMETRY: RefCell<Option<(Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_geometry_pipeline::PipeTransform>, Vec<crate::shader_geometry_pipeline::SphereTransform>, [[f32; 4]; 4])>> = RefCell::new(None);
     pub static LOCAL_HASH: RefCell<Option<u64>> = RefCell::new(None);
     pub static LOCAL_FETCHING: Cell<bool> = Cell::new(false);
 }
@@ -43,17 +43,23 @@ impl GeometryLoader {
     }
 
     /// Get pending geometry data
-    pub fn take_pending_geometry() -> Option<(Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_geometry_pipeline::PipeTransform>, Vec<crate::shader_geometry_pipeline::SphereTransform>)> {
+    pub fn take_pending_geometry() -> Option<(Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_geometry_pipeline::PipeTransform>, Vec<crate::shader_geometry_pipeline::SphereTransform>, [[f32; 4]; 4])> {
         PENDING_GEOMETRY.with(|pg| pg.borrow_mut().take())
     }
 
     /// Set pending geometry data
     pub fn set_pending_geometry(data: (Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>)) {
-        PENDING_GEOMETRY.with(|pg| *pg.borrow_mut() = Some((data.0, data.1, data.2, data.3, Vec::new(), Vec::new())));
+        let identity_matrix = [
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ];
+        PENDING_GEOMETRY.with(|pg| *pg.borrow_mut() = Some((data.0, data.1, data.2, data.3, Vec::new(), Vec::new(), identity_matrix)));
     }
 
     /// Set pending geometry data with GPU data
-    pub fn set_pending_geometry_with_gpu_data(data: (Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_geometry_pipeline::PipeTransform>, Vec<crate::shader_geometry_pipeline::SphereTransform>)) {
+    pub fn set_pending_geometry_with_gpu_data(data: (Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_geometry_pipeline::PipeTransform>, Vec<crate::shader_geometry_pipeline::SphereTransform>, [[f32; 4]; 4])) {
         PENDING_GEOMETRY.with(|pg| *pg.borrow_mut() = Some(data));
     }
 
@@ -162,9 +168,28 @@ impl GeometryLoader {
     }
 
     /// Extract pointcloud instances from geometry data
-    pub fn extract_pointclouds(all_geom: &AllGeometryData) -> Vec<PointCloudInstance> {
+    pub fn extract_pointclouds(all_geom: &AllGeometryData) -> (Vec<PointCloudInstance>, [[f32; 4]; 4]) {
         let mut instances = Vec::new();
+        let mut transform_matrix = [
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ];
+        
         for pc in &all_geom.point_clouds {
+            // Extract transformation matrix from the first point cloud
+            if instances.is_empty() {
+                // Convert from column-major array to row-major 4x4 matrix
+                let m = &pc.xform.m;
+                transform_matrix = [
+                    [m[0], m[4], m[8], m[12]],
+                    [m[1], m[5], m[9], m[13]],
+                    [m[2], m[6], m[10], m[14]],
+                    [m[3], m[7], m[11], m[15]],
+                ];
+            }
+            
             for (i, point) in pc.points.iter().enumerate() {
                 let color = if i < pc.colors.len() {
                     let c = &pc.colors[i];
@@ -179,7 +204,7 @@ impl GeometryLoader {
                 });
             }
         }
-        instances
+        (instances, transform_matrix)
     }
 
     /// Extract GPU transforms from geometry data
@@ -295,10 +320,10 @@ impl GeometryLoader {
     }
 
     /// Main geometry loading function - clean and focused
-    pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>) {
+    pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, [[f32; 4]; 4]) {
         let mut all_geom = Self::load_geometry_data().await;
         let (vertices, indices, mut batches) = Self::build_mesh_geometry(&mut all_geom);
-        let pointcloud_instances = Self::extract_pointclouds(&all_geom);
+        let (pointcloud_instances, transform_matrix) = Self::extract_pointclouds(&all_geom);
         let (pipes, spheres) = Self::extract_gpu_transforms(&all_geom);
         
         // Add pointcloud batch if needed
@@ -312,6 +337,6 @@ impl GeometryLoader {
             });
         }
         
-        (vertices, indices, batches, pointcloud_instances, pipes, spheres)
+        (vertices, indices, batches, pointcloud_instances, pipes, spheres, transform_matrix)
     }
 }

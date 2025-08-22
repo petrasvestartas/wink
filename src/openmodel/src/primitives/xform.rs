@@ -1,5 +1,5 @@
 use crate::primitives::vector::Vector;
-use crate::geometry::point::Point;
+use crate::primitives::point::Point;
 use serde::{Deserialize, Serialize, Serializer};
 use std::ops::{Index, IndexMut, Mul, MulAssign};
 use std::fmt;
@@ -22,6 +22,28 @@ impl Xform {
     /// * `value` - The value to initialize all elements with
     pub fn new(value: f32) -> Self {
         Xform { m: [value; 16] }
+    }
+
+    /// Creates a new transformation matrix from a 4x4 matrix array.
+    ///
+    /// # Arguments
+    ///
+    /// * `matrix` - The 16-element array representing the 4x4 matrix in column-major order
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use openmodel::primitives::Xform;
+    /// let matrix = [
+    ///     1.0, 0.0, 0.0, 0.0,
+    ///     0.0, 1.0, 0.0, 0.0,
+    ///     0.0, 0.0, 1.0, 0.0,
+    ///     0.0, 0.0, 0.0, 1.0
+    /// ];
+    /// let xform = Xform::from_matrix(matrix);
+    /// ```
+    pub fn from_matrix(matrix: [f32; 16]) -> Self {
+        Xform { m: matrix }
     }
 
     /// Creates a new identity transformation matrix.
