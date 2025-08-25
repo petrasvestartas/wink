@@ -11,7 +11,7 @@ use crate::instance::{DrawBatch, BatchKind, Instance};
 use crate::shader_pointcloud_pipeline::PointCloudInstance;
 use crate::shader_primitives_pipeline::{PipeTransform, SphereTransform};
 use crate::error_handling::ErrorHandler;
-use openmodel::{AllGeometryData, geometry::{Mesh, SphereFromSegments, PipeFromSegments, Point}};
+use openmodel::{AllGeometryData, geometry::{Mesh, SphereFromSegments, Point}};
 
 /// Geometry loading and processing utilities
 pub struct GeometryLoader;
@@ -219,12 +219,12 @@ impl GeometryLoader {
         let mut spheres = Vec::new();
         
         // Extract pipe transforms from lines with color data preserved
-        for (i, line) in all_geom.lines.iter().enumerate() {
+        for (_i, line) in all_geom.lines.iter().enumerate() {
             if let Some(xf) = line.to_pipe_transform() {
                 let color = line.data.get_color();
                 let gpu_color = [color[0] as f32 / 255.0, color[1] as f32 / 255.0, color[2] as f32 / 255.0];
                 let thickness = line.data.get_thickness();
-                println!("🎨 Line {}: JSON color {:?} -> GPU color {:?}, thickness: {}", i, color, gpu_color, thickness);
+                // println!("🎨 Line {}: JSON color {:?} -> GPU color {:?}, thickness: {}", i, color, gpu_color, thickness);
                 pipes.push(PipeTransform {
                     transform: xf.m,
                     color: gpu_color,

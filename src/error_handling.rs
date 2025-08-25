@@ -7,7 +7,7 @@ impl ErrorHandler {
     /// Load geometry data with fallback to embedded JSON
     pub async fn load_geometry_with_fallback() -> AllGeometryData {
         let local_json = Self::load_local_geometry().await;
-        let mut all_geom: AllGeometryData = match local_json {
+        let all_geom: AllGeometryData = match local_json {
             Some(ref s) => serde_json::from_str::<AllGeometryData>(s)
                 .unwrap_or_else(|_| Self::load_embedded_geometry()),
             None => Self::load_embedded_geometry(),

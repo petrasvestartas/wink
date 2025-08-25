@@ -61,8 +61,6 @@ const GEOMETRY_POLL_INTERVAL_MS: u64 = 100;
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum PipelineMode { Color, Solid, Lights, PointCloud }
 
-use wgpu::util::DeviceExt;
-
 pub struct State{
     surface: wgpu::Surface<'static>,
     device: wgpu::Device,
@@ -126,7 +124,7 @@ pub struct State{
 
 impl State{
     // We don't need to be async right now, will implement later
-    pub async fn new(window: Arc<Window>, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch], pointcloud_instances: &[PointCloudInstance], pipes: Vec<PipeTransform>, spheres: Vec<SphereTransform>, transform_matrix: [[f32; 4]; 4]) -> anyhow::Result<Self> {
+    pub async fn new(window: Arc<Window>, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch], pointcloud_instances: &[PointCloudInstance], pipes: Vec<PipeTransform>, spheres: Vec<SphereTransform>) -> anyhow::Result<Self> {
 
         let size = window.inner_size();
         // Clamp initial surface size on Web (WebGL2 backend) to avoid exceeding max texture limit.
@@ -625,16 +623,6 @@ impl State{
             self.pipe_px_radius,
             self.camera.is_ortho,
             self.camera.ortho_half_height,
-        );
-        
-        // Debug camera uniform values
-        println!("🎥 Camera Debug - px_radius: {}, viewport: {}x{}, fovy: {}, is_ortho: {}, ortho_half_height: {}", 
-            self.pipe_px_radius, 
-            self.config.width, 
-            self.config.height, 
-            self.camera.fovy, 
-            self.camera.is_ortho, 
-            self.camera.ortho_half_height
         );
         
         self.write_camera_buffer();
@@ -1487,7 +1475,7 @@ impl ApplicationHandler<State> for App {
         {
             // Native: load full geometry including point clouds so we can render glyphs
             // and ensure a PointCloud batch exists.
-            let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms, transform_matrix) = pollster::block_on(GeometryLoader::get_geometry());
+            let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms, _transform_matrix) = pollster::block_on(GeometryLoader::get_geometry());
             // Keep App copies in sync (may be used later)
             self.vertices = vertices;
             self.indices = indices;
@@ -1502,7 +1490,6 @@ impl ApplicationHandler<State> for App {
                     &pointcloud_vertices, // Use loaded pointcloud instances
                     pipe_transforms,
                     sphere_transforms,
-                    transform_matrix,
                 ))
                 .expect("Unable to create state")
             );
@@ -1514,10 +1501,10 @@ impl ApplicationHandler<State> for App {
             if let Some(proxy) = self.proxy.take() {
                 wasm_bindgen_futures::spawn_local(async move {
                     // Build geometry on WASM (embedded + grid/axis + local JSON if available)
-                    let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms, transform_matrix) = GeometryLoader::get_geometry().await;
+                    let (vertices, indices, batches, pointcloud_vertices, pipe_transforms, sphere_transforms, _transform_matrix) = GeometryLoader::get_geometry().await;
                     assert!(proxy
                         .send_event(
-                            State::new(window, &vertices, &indices, &batches, &pointcloud_vertices, pipe_transforms, sphere_transforms, transform_matrix)
+                            State::new(window, &vertices, &indices, &batches, &pointcloud_vertices, pipe_transforms, sphere_transforms)
                                 .await
                                 .expect("Unable to create canvas!!!")
                         )
