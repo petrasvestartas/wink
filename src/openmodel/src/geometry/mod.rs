@@ -1,4 +1,5 @@
 pub mod line;
+pub mod arrow;
 pub mod plane;
 pub mod pointcloud;
 pub mod linecloud;
@@ -10,6 +11,7 @@ pub mod pipe;
 pub use crate::primitives::{Vector, Color, Xform, Point};
 
 pub use line::Line;
+pub use arrow::Arrow;
 pub use plane::Plane;
 pub use pointcloud::PointCloud;
 pub use linecloud::LineCloud;

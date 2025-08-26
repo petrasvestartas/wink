@@ -2,7 +2,7 @@ use wgpu::util::DeviceExt;
 use bytemuck::{Pod, Zeroable};
 
 #[repr(C)]
-#[derive(Clone, Copy, Pod, Zeroable)]
+#[derive(Debug, Clone, Copy, Pod, Zeroable)]
 pub struct PipeTransform {
     pub transform: [f32; 16], // 4x4 transformation matrix in column-major order
     pub color: [f32; 3],      // RGB color

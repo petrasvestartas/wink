@@ -11,7 +11,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4aa5d510-2823-4369-a282-0a6612de0010",
+        "guid": "34e2e528-5982-4cef-93b0-bc0949042be2",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -50,7 +50,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4705ebdf-9f1c-427d-ba3e-c0df04f23fe9",
+        "guid": "6c49769f-0dc5-46e3-92fa-eec940b07fce",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -89,7 +89,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "d51c7d9c-9bf3-416b-a9bc-cfc6827b1a8d",
+        "guid": "0961a19a-e931-45de-9cfd-15d0c259ea95",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -128,7 +128,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "500e800d-58be-4c3d-a2ba-2d6e4e432321",
+        "guid": "2dab68fb-21f8-4590-9a34-ef929a67c5fc",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -167,7 +167,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "bef3806c-0fab-4014-bbdb-bac83fd9ec39",
+        "guid": "447c4668-a88b-403a-918a-0c45b454ac84",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -206,7 +206,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "f8a60fed-4642-4f6c-be1c-d6d4ece6bb38",
+        "guid": "a0ef7dc5-bb94-4627-a2f6-26f9114d2981",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -245,7 +245,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "5eb6ff98-1c0b-4951-b28d-702aa2874bc9",
+        "guid": "e57040c5-0a91-428a-9f9e-be08a66933aa",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -284,7 +284,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "bdf87d33-5345-4d9f-83a4-22f0465c1db9",
+        "guid": "e90300cf-344c-4783-b514-28c174f97e38",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -323,7 +323,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "da73a55a-b5ee-47fe-8bb6-80b831623fb3",
+        "guid": "8f1aa600-5b97-48ca-a7c1-e0e56f94e502",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -362,7 +362,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "3632e7e8-8c61-4ebd-8814-39e452812ab2",
+        "guid": "9fdbd213-525a-4907-8c22-7d95f267d035",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -401,7 +401,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "e6d85ae7-a3e0-4348-b8d9-03dc59785681",
+        "guid": "55e2b8dd-a812-4bf7-a3c0-42d764335f14",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -440,7 +440,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "dfa01f93-7c04-4e7d-b5e9-589af45d25f3",
+        "guid": "c3556767-89ae-4650-aa01-17ee7b2bc1a0",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -479,7 +479,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "00daaa0f-eb12-40d0-aa57-f6482b587b2b",
+        "guid": "6f6e4cb7-ce57-4563-8d12-3df61892f55b",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -518,7 +518,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "256b19cf-8c96-42da-b13e-a9bbf2cf2cc4",
+        "guid": "bcf45715-07fd-4a37-9f36-6545bffcfc3d",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -557,7 +557,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "00885e16-9b70-4fa5-b010-5d64df034ec1",
+        "guid": "89e659cb-87b0-4548-ba74-5994765f5e08",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -596,7 +596,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "fa661b7e-68cf-4026-a3c0-a8c120d26647",
+        "guid": "6b032575-6525-4bd9-b6db-b4f2bf3c4072",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -635,7 +635,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "ce821280-6946-4dc7-9bb3-78e0d38486f4",
+        "guid": "09d8f5a8-f16b-4668-bdbc-2a74668f4db7",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -674,7 +674,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "48435294-46c8-41ec-a212-93aacf6848bd",
+        "guid": "1a9dbd83-b8be-4d20-b0c5-15e67a29f8d0",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -713,7 +713,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4b7aab36-346c-4b5e-af86-194eb21862a1",
+        "guid": "25818297-10ad-4e31-af1e-46c55a7848d3",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -752,7 +752,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "3385f644-ae48-4c98-b621-1a5adedbf163",
+        "guid": "082c5b54-d99c-4a3a-8061-bf752d37c6d8",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -791,7 +791,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "1d523507-0d10-4cca-a949-d871c8958cc4",
+        "guid": "324fe11c-fe4c-4a98-b50c-e15d5143567d",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -830,7 +830,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "5e7cda0e-e103-4325-a4c7-6de3e6645dcd",
+        "guid": "4424be30-538e-45d1-8c86-230093e9744e",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -869,7 +869,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4ee93487-88a8-4a78-9286-f8662cd116bd",
+        "guid": "99122998-e987-4629-a5cb-4e21c320752d",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -908,7 +908,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "6ebe12ca-23cc-41c8-9580-d10af6bfd32d",
+        "guid": "88b6610a-6229-4a6a-9903-811d7417b9f0",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -947,7 +947,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "c928088d-ea29-40f2-a16a-2a246fe4fca1",
+        "guid": "e1225c63-5086-42f5-a599-12ddde0618b8",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -986,7 +986,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "7b1d729c-2bf5-4524-b783-2395cefa1f66",
+        "guid": "36f3688b-5f06-42c6-be3d-7c99412d821d",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1025,7 +1025,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "2a6d2d1a-2fb5-4342-8779-61bdbd152be5",
+        "guid": "b42f3c8f-f43a-4854-9d06-5ed0855d8acb",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1064,7 +1064,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "01c524b1-f435-47c8-920e-6e3a21fcd861",
+        "guid": "a7fe46bc-a710-4088-98db-8d9b8093fc6d",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1103,7 +1103,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "d40392ad-d6ae-4a96-8405-4f7108f953bc",
+        "guid": "ca500acb-2d47-4f96-8e61-f4fcab566196",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1142,7 +1142,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "05c58aa1-9761-462a-88dc-fe6455f3c5fd",
+        "guid": "8e141555-134c-405f-8371-8c4d5ab8b28a",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1181,7 +1181,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "e08f1e04-9b42-4afa-93e1-8399fc2d91ad",
+        "guid": "e1851fb2-681c-4c5c-912a-82ae25806eac",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1220,7 +1220,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "8b00c1a5-81e9-4b3f-a473-7048dbb7e0b1",
+        "guid": "a341f9dc-20ea-46ee-8150-4bb12ac427cf",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1259,7 +1259,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "0e392fb7-450c-459c-a19c-b5f486bb4e6b",
+        "guid": "e91c615a-ca3a-4906-ab83-9e662b91d27a",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1298,7 +1298,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "c7aa35ac-9d64-4a2e-83e1-e762994b2f32",
+        "guid": "14c88593-75ea-4ba4-9ce6-5f384891e210",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1337,7 +1337,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "c2b1d1e0-22b7-4d7d-89e7-417381ed2ec4",
+        "guid": "39d53b5e-f1f0-41c5-8428-22e422901118",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1376,7 +1376,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "2df3424e-c631-476b-9fdd-deb289604ee0",
+        "guid": "6b0ef1ef-82b2-417c-81f6-ed6840f12716",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1415,7 +1415,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "f7a79c06-9223-416e-b7f8-5f4c666e3ac1",
+        "guid": "be396b7b-fb27-4f75-82ae-948d80395559",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1454,7 +1454,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "acafb6d8-6a28-414d-8275-c253f088fcc7",
+        "guid": "85502bb3-6203-4ccf-872b-5514364297cc",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1493,7 +1493,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "cef53406-532d-4b35-995f-744b01226ec7",
+        "guid": "1ad64e8d-7907-4a15-936d-22ba8c0ee4d9",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1532,7 +1532,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "068d4457-56af-4720-bfd4-b505630cae1c",
+        "guid": "7726b280-bc6d-45d6-8cd3-e19d43e0a977",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1571,7 +1571,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "27e4b318-4e1a-440a-bf63-fd3e6233c644",
+        "guid": "df796371-5ada-404f-9c2a-e31d9fcb9415",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1610,7 +1610,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "96336d4d-ae27-4d39-8346-066a337cf32a",
+        "guid": "a5768ae3-5d21-47dd-b6a9-8c1b911b775a",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1649,7 +1649,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "d30378e8-6950-488a-b718-b20800282823",
+        "guid": "976a4460-e903-4066-a44d-e890191fcc21",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1688,7 +1688,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4328c46d-30e1-4e0b-85f0-b53096d93013",
+        "guid": "a3f8a786-bfe1-4c61-aa92-19978fd8d350",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1727,7 +1727,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "03644829-56ac-4740-a002-dc007a894ddd",
+        "guid": "bf61dd88-98b9-4f56-9e59-24518083290d",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1766,7 +1766,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "357ab758-53e9-4420-9dff-c5e9135b8384",
+        "guid": "cb9c95ea-5f8b-488b-8ab7-5ca607ac2bc2",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1805,7 +1805,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "90700d70-3477-494e-834a-12d62c1833a6",
+        "guid": "a12d428a-faa7-4e61-8f84-5bb38f82f94b",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1844,7 +1844,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "37017bb3-4e30-442e-b870-b580ac0e1058",
+        "guid": "78fc1300-e93a-4892-b2ac-1843deda5c01",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1883,7 +1883,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "c84d1c48-8c2d-490a-a126-ed8f534e2867",
+        "guid": "46c72853-1c4a-4b06-8532-8afe7512d97e",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1922,7 +1922,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "da9e16c8-ec07-44c1-af97-0be5c52379be",
+        "guid": "dda12aad-11a8-46c7-bf77-fdab4e3c8a8e",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1961,7 +1961,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "06af7f4a-1ca2-4ce3-9e8f-c9ccb6999f8e",
+        "guid": "0a77ac06-bca8-4b9a-aad4-deca6fed2b5a",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2000,7 +2000,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "c873fe4e-da64-494e-885c-e1bbf79e44dc",
+        "guid": "99f2562e-2a93-45ee-84bb-5952185105b4",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2039,7 +2039,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "31b6a101-4f75-4144-a099-1f15f628b89f",
+        "guid": "dab2b0af-c9c2-410d-b1e0-5d7b0d08bf2b",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2078,7 +2078,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "991f5c32-0c2b-43ca-af1e-cb2d7a9cb016",
+        "guid": "d0b0a499-b96d-49d3-ace1-0945936a813f",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2117,7 +2117,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "541a7df0-813f-42cf-bd51-d60de83aca93",
+        "guid": "22d0b59e-deff-440f-8ac9-d3aab2e8d403",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2156,7 +2156,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "45d7f7ab-a4ae-441d-818a-2b209fc47a1b",
+        "guid": "456d3afd-dcd1-4bb7-a864-8f907419250c",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2195,7 +2195,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "04a86c34-c880-4717-805e-c009264f593a",
+        "guid": "8b43e2b5-cc0f-4d3c-8656-c48fbb24e550",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2234,7 +2234,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "bfa60c38-3cb2-40d1-b2bf-1015b72d4d52",
+        "guid": "83b77fbd-304e-4072-b552-a6e4acf1d3f5",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2273,7 +2273,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "28041d34-bed6-4559-b4fb-fcf8d33dd068",
+        "guid": "0542a9b7-36fd-4ed1-b74d-dad2789280a4",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2312,7 +2312,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "941e678c-d460-49ee-be26-006fb62948c7",
+        "guid": "a88ef74f-c030-48cf-b57b-e7d73c43f461",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2351,7 +2351,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "f8da16f7-9eb5-4e86-b87b-ab126c81e253",
+        "guid": "9b69caca-4094-4882-b28a-56c391ef9085",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2390,7 +2390,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "bd7ce338-af98-4922-908e-a23ddabd0f17",
+        "guid": "6d711f26-38ad-4531-a0b5-3e60f2bb4e21",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2429,7 +2429,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "efbbd900-eba1-4b06-9d6a-e19e13f4bd39",
+        "guid": "9edf069e-c81a-4cf5-b61b-8cdfa192e9a5",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2468,7 +2468,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "7755ec98-552b-4430-a27b-43406c0c86ec",
+        "guid": "3c056db8-2f7f-4a95-81a0-65a99e19df78",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2507,7 +2507,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "87b648af-8d31-480b-96e2-62bc866fa3f6",
+        "guid": "3aea84cf-227d-4129-a2d5-a5bf13eea985",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2546,7 +2546,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "80bb7e0b-4051-411d-b47e-87cd9c788e1e",
+        "guid": "ca07e1ee-6f75-4a45-a669-974aa283c8b6",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2585,7 +2585,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "88cb88ca-c7bd-4035-858a-11e38d7d7686",
+        "guid": "03085062-024b-4562-9704-04e29fdb9289",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2624,7 +2624,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "87862b80-8430-40c7-a161-4b7ead7d85ec",
+        "guid": "8f8167f5-486a-4716-ad56-0ddafcb5ce01",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2663,7 +2663,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "2115275b-15e2-48e0-b717-da0e6f398aa0",
+        "guid": "cfdf5431-2096-4428-807a-bc4e7324cf77",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2702,7 +2702,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4646bb20-8717-4715-8395-bc22daf45926",
+        "guid": "f1d56738-6632-4828-b9d1-2619d6f2c2c9",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2741,7 +2741,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "a8bf4553-daed-411f-a839-ddff1f66ff06",
+        "guid": "1c769ad9-c174-4617-8833-0e0fbf2d1014",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2780,7 +2780,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "7e10f8f8-9831-4642-9c3a-78c1b3d104f2",
+        "guid": "2bda4740-3206-451e-ae2b-477d45d2d50a",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2819,7 +2819,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "856ed03b-c90a-4300-ad8e-e979749d16f6",
+        "guid": "b1d91481-3eda-45e5-b449-3e8799eb9eb3",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2858,7 +2858,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "8d754996-4aec-43f3-91bd-8bef0ce764d4",
+        "guid": "3029cc26-c7b5-4c42-9f90-0fd017d8903e",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2897,7 +2897,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "16251bf4-2990-41fa-8ee9-3d80bc20da03",
+        "guid": "4d4587f6-833e-4ac4-b021-b6263de82861",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2936,7 +2936,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "9529cf88-5304-49ca-897b-4ec7f14b30a7",
+        "guid": "a6d1a421-dff0-4391-800a-15dc25cd7243",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2975,7 +2975,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "2847b4c1-854f-439f-aec7-e4f031711ac4",
+        "guid": "f584b7a6-0fb8-448e-8b83-3c0bf134b664",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3014,7 +3014,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "cd67e43b-a130-4993-84c5-563e72ccd353",
+        "guid": "a0643c7b-651b-4632-9244-7c1d675bc627",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3053,7 +3053,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4d2b5e1c-d0d3-475f-b14b-6922d87d721e",
+        "guid": "bef70afd-a91c-4495-8bad-631e2c6de501",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3092,7 +3092,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "063d70dd-f35b-4e8c-9221-ee52c026aa29",
+        "guid": "e9443eb2-a5b0-478c-8eaf-89babce4bac8",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3131,7 +3131,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "5e6b8aec-d718-47a3-8f45-ab98033cfbe8",
+        "guid": "f8241b10-0544-4ccf-8bfe-f31c2a150a82",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3170,7 +3170,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "18364387-b6cd-4e0b-bec9-29ca00d5d178",
+        "guid": "106d31a7-488f-4de6-afcf-4358e7a1ef5b",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3209,7 +3209,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "5f437315-984e-4b8d-835d-34fbcaa5cd1f",
+        "guid": "3c643ea4-5f48-40ff-b394-4fb758520420",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3248,7 +3248,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "5adf260b-5465-43cf-a88d-2096e87c4694",
+        "guid": "1617fdf6-45a4-4397-a366-370654e4b028",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3287,7 +3287,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "b3299d76-c9be-46c2-becb-46875e099ad9",
+        "guid": "3652fd07-24a6-49a8-9d4e-2813aadbd8b7",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3326,7 +3326,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "dc2e853b-70b8-4285-9f72-af5dfc2931d5",
+        "guid": "69407949-d46e-4afc-9ce8-0333d733caa6",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3365,7 +3365,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4f4b0ff6-c1a0-474d-80a3-1939491ba273",
+        "guid": "5d67f458-f08f-4d9e-8901-666411699086",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3404,7 +3404,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "45d420c5-1156-4846-8d54-f00d9159ee24",
+        "guid": "b1643cdb-989f-41fd-b8cb-3c3e933342dc",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3443,7 +3443,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "c07c05a4-1770-4329-b567-aa482f38e8b3",
+        "guid": "0c182dac-c1b2-4f9d-bde5-11447fc8ad5b",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3482,7 +3482,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "10f2a98a-2ee6-4206-b975-7448ccc5b96d",
+        "guid": "a695334c-fe70-40d9-af19-8dad0c228794",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3521,7 +3521,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "1a7b8d15-9f9d-49dc-9e0a-249f7537be12",
+        "guid": "d28d3329-e5df-45c7-8512-8464e30adca1",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3560,7 +3560,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "f0e5395c-556b-4acc-8a2a-1b36c409d016",
+        "guid": "4924480a-7e39-488b-a210-7e250d4baee7",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3599,7 +3599,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "6a6919fd-b3e7-42c9-9dda-43e4e6e5b7da",
+        "guid": "c93b4af5-eae1-4cb6-aede-2f9b2d8efaec",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3638,7 +3638,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "6cf37470-45c0-4afa-a570-420ac9a22117",
+        "guid": "25bf2412-e650-4927-922b-9eaae3e50e42",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3677,7 +3677,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "35251e48-d190-4c8a-bfcd-2b123546e81f",
+        "guid": "9f804a72-090d-46b3-9264-11728a3280c9",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3716,7 +3716,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "9590e3fc-7a0a-4bc1-8f87-a518c904943e",
+        "guid": "5a7d0f84-ada9-49e7-bfa4-98e78c89a1be",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3755,7 +3755,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "9d8d2ec6-6f6e-4902-987f-80dc59d567e9",
+        "guid": "987df399-1059-48cf-8a36-c7dce8283512",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3794,7 +3794,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "285513f4-817b-4249-9e6d-7fcdc51896e7",
+        "guid": "ecab54f9-9ad6-43f2-89f6-6abf6968be73",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3833,7 +3833,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "f9d0f38b-8a2c-4d74-af71-d993ba39100b",
+        "guid": "643ebe95-04ac-4b08-abbc-ff8da8e02813",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3872,7 +3872,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "15df31dd-9153-4838-9329-d8c518616de0",
+        "guid": "d54f1c4b-34c0-48a1-8eeb-208c66490ec4",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3911,7 +3911,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "82a14029-5a23-46e1-ae7a-2a6f5921e848",
+        "guid": "eef55053-c6b4-47e3-a940-546b18c05b8d",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3950,7 +3950,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "2726a78e-d86e-431a-8b5a-2188943c2cd4",
+        "guid": "796aa333-bb07-4828-a0d4-df06110248e7",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3989,7 +3989,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "feacd9b8-4010-48f2-a200-c71bbdf4901a",
+        "guid": "97e6d6e6-7770-4389-99c8-c2a91699380a",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4028,7 +4028,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "9935ce2e-87b0-443a-83f5-ac038c2e2976",
+        "guid": "ab209639-a686-434c-9997-2cd07ce56b3e",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4067,7 +4067,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "cc9f61b3-ae04-4d09-ba8f-ed086e32d736",
+        "guid": "37ae59ce-7c15-4be9-975c-3037bb687a86",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4106,7 +4106,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "0bee35e3-fd8a-423a-b086-f5bafdb715a6",
+        "guid": "4844fd0d-9612-4079-9d3d-7e2ecc208f6b",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4145,7 +4145,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "43819e56-fa79-4243-b49f-5ff24fa64d33",
+        "guid": "29bc9aa4-8f3f-4ef1-815f-f0fcc6fb2662",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4184,7 +4184,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "05de0604-17e5-4ea2-8cdc-572bee575a3f",
+        "guid": "b165b05f-9349-465b-9c2c-610941521471",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4223,7 +4223,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "6261f5d2-049b-44b5-8e15-b7a8c241df80",
+        "guid": "4690bdda-3431-4238-bd20-65d3b059afea",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4262,7 +4262,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "7b652862-94aa-476a-a95b-0435e24e2ff0",
+        "guid": "a6ca3e25-16f1-435c-bdc0-db07443657e8",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4301,7 +4301,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "8583c487-4cac-418b-bce6-09f1e3d02162",
+        "guid": "b53eb9ad-4291-47e8-9a30-1b0243a7dd38",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4340,7 +4340,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "f36b9df5-5b34-4c09-aa1c-7fcf30799a3c",
+        "guid": "a3657351-6036-4180-b1f7-202201c7e41d",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4379,7 +4379,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "c4bf43f9-7bee-4a43-917b-fbff7a6e8ec1",
+        "guid": "3e4ff348-cfeb-4878-b909-4aba284c12c2",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4418,7 +4418,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "1c9e8f89-6723-40b3-82b8-5fe19d4ed4ed",
+        "guid": "ff4ab00d-0ddd-4088-b67d-e5d81fb6f205",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4457,7 +4457,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "697105b9-27c2-4f6c-9a53-945d0ec7c3e4",
+        "guid": "21820117-dcd2-4aee-8c53-77a480f71259",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4496,7 +4496,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "9e805205-18af-407b-963e-d6befb437ac7",
+        "guid": "c9b6b8b8-6aa5-42c3-a47d-f10921b0e299",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4535,7 +4535,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "96d314ac-dc35-4957-a4a6-8e0679e5286e",
+        "guid": "11161aef-16bc-41ee-84be-eef8972c3b2e",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4574,7 +4574,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "3e3b4450-2230-45eb-9ca1-f8973b919025",
+        "guid": "c3ea8dcf-70f5-4dfd-b1a4-9896f45f7715",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4613,7 +4613,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "f64f816c-943d-4e9f-9613-a0a2b5045421",
+        "guid": "62e7a593-5c8e-46ab-b866-15e85d12c200",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4652,7 +4652,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "011fddf1-70a5-4fe8-83d6-aba412db5ade",
+        "guid": "878c5e5e-86d3-429e-99f3-b06d36230d37",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4691,7 +4691,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4ebf47e1-2246-4bd2-bd16-7fb977774ffd",
+        "guid": "5b033b32-7a6b-480b-97f6-c9f0ddff4605",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4730,7 +4730,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "a35141ce-a1bc-495a-b1e6-1903664fba9b",
+        "guid": "7116fcbd-8fb5-4d3f-832b-45aff3af45cd",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4769,7 +4769,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "feff958a-d5d3-4ace-bb7b-eb46fd3b13f4",
+        "guid": "a244e0f9-c66f-48fd-ae7f-7b77e22d72c6",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4808,7 +4808,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "1a99497b-a591-4387-b878-a9b366d42cac",
+        "guid": "072fb180-c41e-4dcf-8a5e-62f5bc405399",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4847,7 +4847,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "b3a4e0a5-dc98-4a0e-9af2-4085ef54336e",
+        "guid": "b3c85e90-f88d-43f1-9d1c-53b33dda27e2",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4886,7 +4886,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "7b99fd58-d5d0-4b2d-b746-48f15a191eb6",
+        "guid": "4597b280-6141-4243-813d-bf7521e23d46",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4925,7 +4925,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "a72896e6-0aba-4688-b0d6-e878eb537b9e",
+        "guid": "cb8cc7d3-ad1b-4cf2-89e0-6ab3cfc3e3e6",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4964,7 +4964,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "5966795c-1488-4b5b-9b40-9f32a4e10c6d",
+        "guid": "ea06ec52-a303-4952-9736-6464d4c91684",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5003,7 +5003,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "f0b648eb-fa4c-4288-b6dc-c84e58938a05",
+        "guid": "5fa1500e-473b-42a6-bc26-b638fc3d48ec",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5042,7 +5042,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "2ed12ff6-ca71-4007-9352-5d99d2f2a1fa",
+        "guid": "189da30d-628e-40eb-9b19-9bbb333752f4",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5081,7 +5081,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "dc9f0ebf-b224-4e34-ac4b-5f79bd93b729",
+        "guid": "2ea5c755-c564-4a03-a17a-b683ee6bd772",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5120,7 +5120,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "2adb3faa-c1c1-4b06-b940-697ba3b0e206",
+        "guid": "72055152-3350-4fec-89dc-50bfa0a02715",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5159,7 +5159,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4ab8ccd0-c4a1-428e-9816-4e06e8edd1b6",
+        "guid": "f2ed5a6f-5636-40cc-970a-6aec30b1bf8f",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5198,7 +5198,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "e748c61c-ef4d-4edd-ab94-8996412aaf18",
+        "guid": "83d8e178-71fe-4cf9-8f29-5c2ca9ff3989",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5237,7 +5237,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "b2bba722-8948-4bee-9537-29ada3c2ae84",
+        "guid": "8950e7d9-43d5-4c8b-b530-af5e3b6bf9a4",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5276,7 +5276,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "651a417c-13e1-4aea-8a82-5a2c66ebe632",
+        "guid": "0cca685f-f505-4ff5-a780-0189469b3699",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5315,7 +5315,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "1d742d52-4ed1-4a44-8e33-983b2858f6ab",
+        "guid": "c74fb5fa-0e69-495d-8603-f699d525ce71",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5354,7 +5354,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "af055eb6-4af0-4bc6-ad46-54fe129e1ebd",
+        "guid": "9eff90db-c1b8-465f-be79-d3484b715a01",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5393,7 +5393,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "71d5a461-5843-4cdf-887a-6ef28e01b1a3",
+        "guid": "d48a0b61-b376-4fc3-942e-a5760593ed69",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5432,7 +5432,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "c298eaf6-d37f-4439-aaf6-764b479e0ebc",
+        "guid": "0e0bd39c-6459-455c-bf5f-17d9b91814c2",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5471,7 +5471,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "f8b70c2e-42f6-48cf-8230-c34de638b613",
+        "guid": "11749071-6cb7-47b4-a1ab-fe98c6669eaf",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5510,7 +5510,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "eaa2d884-3106-4821-bed0-48be68ce0a81",
+        "guid": "d5f91c53-3af4-44bf-9d9a-db51811fbe7a",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5549,7 +5549,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "145d9b78-ff79-463d-832e-6b94bc047f48",
+        "guid": "6356a201-c8e3-4f8c-8b88-354ea7e50f0b",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5588,7 +5588,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "a2502ab6-1911-4691-9d31-f1105a31a2d9",
+        "guid": "1d812493-60cd-4e9e-be45-972793cef6cc",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5627,7 +5627,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "23f8e8ac-3119-44d4-b4e8-2dc7445e23c3",
+        "guid": "9ccd5813-095b-4c23-b8a3-ad4201020c92",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5666,7 +5666,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "14ee2878-6a7f-4718-a2a9-9ebfd8b50633",
+        "guid": "d84db59f-95a3-4bbe-8ef8-a519bca7039f",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5705,7 +5705,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "3a73c034-8063-42fc-b47e-7e205dd0df02",
+        "guid": "1651997f-cd5a-4ff7-8f14-d661e9322731",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5744,7 +5744,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "6095d3a3-e358-4cf4-9a23-3b6669d2cb62",
+        "guid": "4cad7481-6388-4146-8ebf-3312518282d2",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5783,7 +5783,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "341530df-95f8-4d4f-89b8-19807cfa9b4e",
+        "guid": "98a7aa89-4cc1-468f-877d-031849d2c8e9",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5822,7 +5822,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "657363c4-5c4f-4ffa-8528-0678c7c248ee",
+        "guid": "e1ad16d9-6be2-49bc-bc49-4e5dc4c75535",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5861,7 +5861,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "5c1bef69-195e-4452-9055-1ca8fd0ebfa2",
+        "guid": "7ef94bdd-cd1f-4a4e-a72f-18e5e2c114c9",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5900,7 +5900,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "c556a8cb-007f-4d36-8fdf-c48b15727ab3",
+        "guid": "c6f0a132-cc3d-41fa-b2ef-671f0d6b0f58",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5939,7 +5939,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4b2bf8c6-e07c-4497-a605-0c3d16753910",
+        "guid": "9da83b1d-2af8-4e9c-92c6-d5c3761eddb3",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5978,7 +5978,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "5a82fb43-90e5-4e0a-8ab0-32664dcbc1e4",
+        "guid": "10b70510-7e09-4e72-a761-55e48e0fa747",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6017,7 +6017,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "8d43bed7-3e67-4d31-bc38-a4d31ab2e07b",
+        "guid": "d5a77ae9-e063-4397-8499-b36fbe677779",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6056,7 +6056,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "50f6e061-9f29-46e3-b147-cc9c8635b802",
+        "guid": "e96d8d9f-9620-4b5b-849e-414fd3be931a",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6095,7 +6095,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "87ed7d18-af8f-4df9-b3ba-b285734081d7",
+        "guid": "70aa7b28-349a-4350-8e9d-3097501519c7",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6134,7 +6134,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "91bfb9b3-41a4-4f35-bb9b-934755dbfd68",
+        "guid": "6ebf0c3e-8f5b-4e5a-8656-42491e0f1df8",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6173,7 +6173,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "ac4f5238-a7e3-40a2-ace4-33d8545372fd",
+        "guid": "2421a9ca-f16e-42ac-b162-c0888eee35e1",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6212,7 +6212,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "aa331679-fa0b-4c6b-b27a-cbb5cb359d62",
+        "guid": "fd415411-9a6e-4002-99b1-5d230dc40911",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6251,7 +6251,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "dad4e23f-3d30-4320-b5bd-6131eb3afdb9",
+        "guid": "7092caa7-7fb4-438a-a676-5b18b3ec4f2c",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6290,7 +6290,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4aea5ce1-5c97-4fbd-a3d3-082c7fa9ff9c",
+        "guid": "098cda00-0dfa-49c5-aed2-38c8724cc1a4",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6329,7 +6329,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "f50416e3-9b04-49bd-a7e5-b56bd2aeb461",
+        "guid": "cbc9209a-cbb2-4895-8bc8-241028f52e17",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6368,7 +6368,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "d8bffb6a-7473-4fc0-9a55-ba3fed6b9249",
+        "guid": "daa212fb-f779-42d1-9bd0-ab4a5011c939",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6407,7 +6407,7 @@
       "z1": 40.0,
       "data": {
         "name": "Line",
-        "guid": "864a7520-3f5f-4097-b076-df7fd95c209e",
+        "guid": "0459c960-8154-4e62-befd-cd6bc4b37d80",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6435,6 +6435,125 @@
           255
         ],
         "thickness": 0.055000003
+      }
+    }
+  ],
+  "arrows": [
+    {
+      "x0": 4.0,
+      "y0": 0.0,
+      "z0": 1.0,
+      "x1": 24.0,
+      "y1": 0.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Arrow",
+        "guid": "bb322439-d54c-41c2-a7ae-f6517099286c",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          255,
+          0,
+          0
+        ],
+        "thickness": 0.3
+      }
+    },
+    {
+      "x0": 4.0,
+      "y0": 0.0,
+      "z0": 1.0,
+      "x1": 4.0,
+      "y1": 3.0,
+      "z1": 0.0,
+      "data": {
+        "name": "Arrow",
+        "guid": "d1386d45-9fea-471c-ba71-3f2ae380c1e1",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          255,
+          0
+        ],
+        "thickness": 0.3
+      }
+    },
+    {
+      "x0": 4.0,
+      "y0": 0.0,
+      "z0": 1.0,
+      "x1": 4.0,
+      "y1": 0.0,
+      "z1": 3.0,
+      "data": {
+        "name": "Arrow",
+        "guid": "266b8c4f-7c09-4310-8081-56ec04324e1a",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          255
+        ],
+        "thickness": 0.3
       }
     }
   ],
@@ -22470,7 +22589,7 @@
       },
       "data": {
         "name": "Data",
-        "guid": "3cd672ec-b528-4d61-8d34-bcbda8148dd3",
+        "guid": "f4b0c530-5457-41f3-99ee-ba1edd13d3a3",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -22507,22 +22626,6 @@
   "meshes": [
     {
       "halfedge": {
-        "13": {
-          "11": null,
-          "15": 1
-        },
-        "1": {
-          "3": 1,
-          "19": null
-        },
-        "9": {
-          "11": 1,
-          "7": null
-        },
-        "11": {
-          "9": null,
-          "13": 1
-        },
         "15": {
           "17": 1,
           "13": null
@@ -22531,111 +22634,47 @@
           "19": 1,
           "15": null
         },
-        "3": {
-          "5": 1,
-          "1": null
+        "11": {
+          "13": 1,
+          "9": null
         },
-        "19": {
-          "1": 1,
-          "17": null
-        },
-        "5": {
-          "3": null,
-          "7": 1
+        "13": {
+          "11": null,
+          "15": 1
         },
         "7": {
           "5": null,
           "9": 1
+        },
+        "5": {
+          "7": 1,
+          "3": null
+        },
+        "19": {
+          "17": null,
+          "1": 1
+        },
+        "9": {
+          "7": null,
+          "11": 1
+        },
+        "1": {
+          "3": 1,
+          "19": null
+        },
+        "3": {
+          "5": 1,
+          "1": null
         }
       },
       "vertex": {
-        "1": {
-          "x": 0.12821,
-          "y": 0.514321,
-          "z": 3.0,
-          "attributes": {
-            "b": 0.0,
-            "r": 1.0,
-            "g": 0.84
-          }
-        },
-        "17": {
-          "x": 0.538228,
-          "y": 0.0605,
-          "z": 3.0,
-          "attributes": {
-            "r": 1.0,
-            "g": 0.84,
-            "b": 0.0
-          }
-        },
-        "5": {
-          "x": -0.430101,
-          "y": 0.264609,
-          "z": 3.0,
-          "attributes": {
-            "g": 0.84,
-            "b": 0.0,
-            "r": 1.0
-          }
-        },
-        "9": {
-          "x": -0.365139,
-          "y": -0.343542,
-          "z": 3.0,
-          "attributes": {
-            "b": 0.0,
-            "g": 0.84,
-            "r": 1.0
-          }
-        },
         "11": {
           "x": -0.041799,
           "y": -0.292234,
           "z": 3.0,
           "attributes": {
             "b": 0.0,
-            "g": 0.84,
-            "r": 1.0
-          }
-        },
-        "3": {
-          "x": -0.103219,
-          "y": 0.282757,
-          "z": 3.0,
-          "attributes": {
-            "g": 0.84,
             "r": 1.0,
-            "b": 0.0
-          }
-        },
-        "7": {
-          "x": -0.281387,
-          "y": -0.02705,
-          "z": 3.0,
-          "attributes": {
-            "r": 1.0,
-            "g": 0.84,
-            "b": 0.0
-          }
-        },
-        "15": {
-          "x": 0.284442,
-          "y": -0.146318,
-          "z": 3.0,
-          "attributes": {
-            "r": 1.0,
-            "b": 0.0,
-            "g": 0.84
-          }
-        },
-        "13": {
-          "x": 0.233322,
-          "y": -0.469688,
-          "z": 3.0,
-          "attributes": {
-            "r": 1.0,
-            "b": 0.0,
             "g": 0.84
           }
         },
@@ -22645,8 +22684,88 @@
           "z": 3.0,
           "attributes": {
             "r": 1.0,
+            "b": 0.0,
+            "g": 0.84
+          }
+        },
+        "17": {
+          "x": 0.538228,
+          "y": 0.0605,
+          "z": 3.0,
+          "attributes": {
+            "b": 0.0,
+            "g": 0.84,
+            "r": 1.0
+          }
+        },
+        "7": {
+          "x": -0.281387,
+          "y": -0.02705,
+          "z": 3.0,
+          "attributes": {
+            "g": 0.84,
+            "r": 1.0,
+            "b": 0.0
+          }
+        },
+        "1": {
+          "x": 0.12821,
+          "y": 0.514321,
+          "z": 3.0,
+          "attributes": {
+            "r": 1.0,
+            "b": 0.0,
+            "g": 0.84
+          }
+        },
+        "3": {
+          "x": -0.103219,
+          "y": 0.282757,
+          "z": 3.0,
+          "attributes": {
+            "r": 1.0,
             "g": 0.84,
             "b": 0.0
+          }
+        },
+        "13": {
+          "x": 0.233322,
+          "y": -0.469688,
+          "z": 3.0,
+          "attributes": {
+            "b": 0.0,
+            "g": 0.84,
+            "r": 1.0
+          }
+        },
+        "15": {
+          "x": 0.284442,
+          "y": -0.146318,
+          "z": 3.0,
+          "attributes": {
+            "r": 1.0,
+            "g": 0.84,
+            "b": 0.0
+          }
+        },
+        "9": {
+          "x": -0.365139,
+          "y": -0.343542,
+          "z": 3.0,
+          "attributes": {
+            "b": 0.0,
+            "r": 1.0,
+            "g": 0.84
+          }
+        },
+        "5": {
+          "x": -0.430101,
+          "y": 0.264609,
+          "z": 3.0,
+          "attributes": {
+            "b": 0.0,
+            "r": 1.0,
+            "g": 0.84
           }
         }
       },
@@ -22662,6 +22781,534 @@
           15,
           17,
           19
+        ]
+      },
+      "facedata": {},
+      "edgedata": {},
+      "default_vertex_attributes": {
+        "z": 0.0,
+        "x": 0.0,
+        "y": 0.0
+      },
+      "default_face_attributes": {},
+      "default_edge_attributes": {},
+      "max_vertex": 20,
+      "max_face": 2,
+      "data": {
+        "name": "Mesh",
+        "guid": "60e543a6-a01c-4a78-85d3-9d9467ab1c37",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 1.0
+      }
+    },
+    {
+      "halfedge": {
+        "7": {
+          "5": 11,
+          "11": 5,
+          "1": 1
+        },
+        "1": {
+          "7": 5,
+          "9": 9,
+          "3": 1
+        },
+        "3": {
+          "5": 1,
+          "15": 7,
+          "1": 9
+        },
+        "5": {
+          "13": 11,
+          "3": 7,
+          "7": 1
+        },
+        "9": {
+          "11": 3,
+          "15": 9,
+          "1": 5
+        },
+        "15": {
+          "3": 9,
+          "13": 7,
+          "9": 3
+        },
+        "13": {
+          "11": 11,
+          "5": 7,
+          "15": 3
+        },
+        "11": {
+          "7": 11,
+          "13": 3,
+          "9": 5
+        }
+      },
+      "vertex": {
+        "15": {
+          "x": 2.0,
+          "y": 1.0,
+          "z": 1.0,
+          "attributes": {}
+        },
+        "7": {
+          "x": 3.0,
+          "y": 0.0,
+          "z": 0.0,
+          "attributes": {}
+        },
+        "1": {
+          "x": 2.0,
+          "y": 0.0,
+          "z": 0.0,
+          "attributes": {}
+        },
+        "11": {
+          "x": 3.0,
+          "y": 0.0,
+          "z": 1.0,
+          "attributes": {}
+        },
+        "13": {
+          "x": 3.0,
+          "y": 1.0,
+          "z": 1.0,
+          "attributes": {}
+        },
+        "9": {
+          "x": 2.0,
+          "y": 0.0,
+          "z": 1.0,
+          "attributes": {}
+        },
+        "5": {
+          "x": 3.0,
+          "y": 1.0,
+          "z": 0.0,
+          "attributes": {}
+        },
+        "3": {
+          "x": 2.0,
+          "y": 1.0,
+          "z": 0.0,
+          "attributes": {}
+        }
+      },
+      "face": {
+        "7": [
+          5,
+          3,
+          15,
+          13
+        ],
+        "9": [
+          3,
+          1,
+          9,
+          15
+        ],
+        "11": [
+          7,
+          5,
+          13,
+          11
+        ],
+        "5": [
+          1,
+          7,
+          11,
+          9
+        ],
+        "3": [
+          9,
+          11,
+          13,
+          15
+        ],
+        "1": [
+          1,
+          3,
+          5,
+          7
+        ]
+      },
+      "facedata": {},
+      "edgedata": {},
+      "default_vertex_attributes": {
+        "y": 0.0,
+        "x": 0.0,
+        "z": 0.0
+      },
+      "default_face_attributes": {},
+      "default_edge_attributes": {},
+      "max_vertex": 16,
+      "max_face": 12,
+      "data": {
+        "name": "Mesh",
+        "guid": "3af455a8-e088-4505-af49-a9b9f738fe11",
+        "parent": null,
+        "adjacencyindices": [],
+        "adjacencytypes": [],
+        "transformation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "thickness": 1.0
+      }
+    },
+    {
+      "halfedge": {
+        "17": {
+          "25": 9,
+          "19": 5,
+          "33": 19
+        },
+        "25": {
+          "3": 9,
+          "17": 5,
+          "23": 11
+        },
+        "1": {
+          "33": 9,
+          "3": 1,
+          "9": 17
+        },
+        "3": {
+          "25": 11,
+          "5": 1,
+          "1": 9
+        },
+        "33": {
+          "17": 9,
+          "37": 19,
+          "1": 17
+        },
+        "13": {
+          "15": 3,
+          "7": 21,
+          "39": 15
+        },
+        "7": {
+          "9": 1,
+          "13": 3,
+          "5": 21
+        },
+        "31": {
+          "29": 15,
+          "21": 7,
+          "39": 23
+        },
+        "19": {
+          "17": 19,
+          "21": 5,
+          "27": 7
+        },
+        "39": {
+          "35": 23,
+          "31": 15,
+          "13": 21
+        },
+        "9": {
+          "7": 3,
+          "1": 1,
+          "11": 17
+        },
+        "15": {
+          "29": 13,
+          "11": 3,
+          "13": 15
+        },
+        "23": {
+          "21": 23,
+          "35": 11,
+          "25": 5
+        },
+        "5": {
+          "7": 1,
+          "3": 11,
+          "35": 21
+        },
+        "27": {
+          "19": 19,
+          "29": 7,
+          "37": 13
+        },
+        "21": {
+          "23": 5,
+          "31": 23,
+          "19": 7
+        },
+        "35": {
+          "5": 11,
+          "23": 23,
+          "39": 21
+        },
+        "29": {
+          "27": 13,
+          "31": 7,
+          "15": 15
+        },
+        "11": {
+          "37": 17,
+          "9": 3,
+          "15": 13
+        },
+        "37": {
+          "27": 19,
+          "33": 17,
+          "11": 13
+        }
+      },
+      "vertex": {
+        "9": {
+          "x": 1.309017,
+          "y": 2.5,
+          "z": 0.0,
+          "attributes": {}
+        },
+        "27": {
+          "x": -0.809017,
+          "y": 2.190983,
+          "z": 0.809017,
+          "attributes": {}
+        },
+        "5": {
+          "x": 0.809017,
+          "y": 3.809017,
+          "z": -0.809017,
+          "attributes": {}
+        },
+        "1": {
+          "x": 0.809017,
+          "y": 2.190983,
+          "z": -0.809017,
+          "attributes": {}
+        },
+        "33": {
+          "x": 0.0,
+          "y": 1.690983,
+          "z": -0.5,
+          "attributes": {}
+        },
+        "31": {
+          "x": -0.809017,
+          "y": 3.809017,
+          "z": 0.809017,
+          "attributes": {}
+        },
+        "25": {
+          "x": -0.5,
+          "y": 3.0,
+          "z": -1.309017,
+          "attributes": {}
+        },
+        "3": {
+          "x": 0.5,
+          "y": 3.0,
+          "z": -1.309017,
+          "attributes": {}
+        },
+        "23": {
+          "x": -0.809017,
+          "y": 3.809017,
+          "z": -0.809017,
+          "attributes": {}
+        },
+        "15": {
+          "x": 0.5,
+          "y": 3.0,
+          "z": 1.309017,
+          "attributes": {}
+        },
+        "13": {
+          "x": 0.809017,
+          "y": 3.809017,
+          "z": 0.809017,
+          "attributes": {}
+        },
+        "19": {
+          "x": -1.309017,
+          "y": 2.5,
+          "z": 0.0,
+          "attributes": {}
+        },
+        "17": {
+          "x": -0.809017,
+          "y": 2.190983,
+          "z": -0.809017,
+          "attributes": {}
+        },
+        "21": {
+          "x": -1.309017,
+          "y": 3.5,
+          "z": 0.0,
+          "attributes": {}
+        },
+        "11": {
+          "x": 0.809017,
+          "y": 2.190983,
+          "z": 0.809017,
+          "attributes": {}
+        },
+        "7": {
+          "x": 1.309017,
+          "y": 3.5,
+          "z": 0.0,
+          "attributes": {}
+        },
+        "39": {
+          "x": 0.0,
+          "y": 4.309017,
+          "z": 0.5,
+          "attributes": {}
+        },
+        "35": {
+          "x": 0.0,
+          "y": 4.309017,
+          "z": -0.5,
+          "attributes": {}
+        },
+        "29": {
+          "x": -0.5,
+          "y": 3.0,
+          "z": 1.309017,
+          "attributes": {}
+        },
+        "37": {
+          "x": 0.0,
+          "y": 1.690983,
+          "z": 0.5,
+          "attributes": {}
+        }
+      },
+      "face": {
+        "17": [
+          1,
+          9,
+          11,
+          37,
+          33
+        ],
+        "13": [
+          11,
+          15,
+          29,
+          27,
+          37
+        ],
+        "19": [
+          17,
+          33,
+          37,
+          27,
+          19
+        ],
+        "3": [
+          11,
+          9,
+          7,
+          13,
+          15
+        ],
+        "1": [
+          1,
+          3,
+          5,
+          7,
+          9
+        ],
+        "23": [
+          23,
+          21,
+          31,
+          39,
+          35
+        ],
+        "5": [
+          17,
+          19,
+          21,
+          23,
+          25
+        ],
+        "7": [
+          27,
+          29,
+          31,
+          21,
+          19
+        ],
+        "9": [
+          1,
+          33,
+          17,
+          25,
+          3
+        ],
+        "15": [
+          13,
+          39,
+          31,
+          29,
+          15
+        ],
+        "21": [
+          5,
+          35,
+          39,
+          13,
+          7
+        ],
+        "11": [
+          5,
+          3,
+          25,
+          23,
+          35
         ]
       },
       "facedata": {},
@@ -22673,539 +23320,11 @@
       },
       "default_face_attributes": {},
       "default_edge_attributes": {},
-      "max_vertex": 20,
-      "max_face": 2,
-      "data": {
-        "name": "Mesh",
-        "guid": "59070cef-6fb0-4ac7-a875-472448061c3c",
-        "parent": null,
-        "adjacencyindices": [],
-        "adjacencytypes": [],
-        "transformation": [
-          1.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          1.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          1.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ],
-        "color": [
-          0,
-          0,
-          0
-        ],
-        "thickness": 1.0
-      }
-    },
-    {
-      "halfedge": {
-        "9": {
-          "11": 3,
-          "15": 9,
-          "1": 5
-        },
-        "13": {
-          "15": 3,
-          "5": 7,
-          "11": 11
-        },
-        "7": {
-          "1": 1,
-          "11": 5,
-          "5": 11
-        },
-        "3": {
-          "1": 9,
-          "5": 1,
-          "15": 7
-        },
-        "15": {
-          "3": 9,
-          "13": 7,
-          "9": 3
-        },
-        "1": {
-          "3": 1,
-          "9": 9,
-          "7": 5
-        },
-        "5": {
-          "7": 1,
-          "13": 11,
-          "3": 7
-        },
-        "11": {
-          "7": 11,
-          "13": 3,
-          "9": 5
-        }
-      },
-      "vertex": {
-        "3": {
-          "x": 2.0,
-          "y": 1.0,
-          "z": 0.0,
-          "attributes": {}
-        },
-        "13": {
-          "x": 3.0,
-          "y": 1.0,
-          "z": 1.0,
-          "attributes": {}
-        },
-        "1": {
-          "x": 2.0,
-          "y": 0.0,
-          "z": 0.0,
-          "attributes": {}
-        },
-        "7": {
-          "x": 3.0,
-          "y": 0.0,
-          "z": 0.0,
-          "attributes": {}
-        },
-        "15": {
-          "x": 2.0,
-          "y": 1.0,
-          "z": 1.0,
-          "attributes": {}
-        },
-        "5": {
-          "x": 3.0,
-          "y": 1.0,
-          "z": 0.0,
-          "attributes": {}
-        },
-        "11": {
-          "x": 3.0,
-          "y": 0.0,
-          "z": 1.0,
-          "attributes": {}
-        },
-        "9": {
-          "x": 2.0,
-          "y": 0.0,
-          "z": 1.0,
-          "attributes": {}
-        }
-      },
-      "face": {
-        "5": [
-          1,
-          7,
-          11,
-          9
-        ],
-        "3": [
-          9,
-          11,
-          13,
-          15
-        ],
-        "1": [
-          1,
-          3,
-          5,
-          7
-        ],
-        "7": [
-          5,
-          3,
-          15,
-          13
-        ],
-        "11": [
-          7,
-          5,
-          13,
-          11
-        ],
-        "9": [
-          3,
-          1,
-          9,
-          15
-        ]
-      },
-      "facedata": {},
-      "edgedata": {},
-      "default_vertex_attributes": {
-        "z": 0.0,
-        "y": 0.0,
-        "x": 0.0
-      },
-      "default_face_attributes": {},
-      "default_edge_attributes": {},
-      "max_vertex": 16,
-      "max_face": 12,
-      "data": {
-        "name": "Mesh",
-        "guid": "078c5c5a-da97-4fd4-8b5b-5cd0f513a003",
-        "parent": null,
-        "adjacencyindices": [],
-        "adjacencytypes": [],
-        "transformation": [
-          1.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          1.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          1.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ],
-        "color": [
-          0,
-          0,
-          0
-        ],
-        "thickness": 1.0
-      }
-    },
-    {
-      "halfedge": {
-        "31": {
-          "39": 23,
-          "29": 15,
-          "21": 7
-        },
-        "3": {
-          "5": 1,
-          "25": 11,
-          "1": 9
-        },
-        "25": {
-          "23": 11,
-          "3": 9,
-          "17": 5
-        },
-        "27": {
-          "29": 7,
-          "19": 19,
-          "37": 13
-        },
-        "29": {
-          "31": 7,
-          "27": 13,
-          "15": 15
-        },
-        "33": {
-          "37": 19,
-          "17": 9,
-          "1": 17
-        },
-        "15": {
-          "11": 3,
-          "29": 13,
-          "13": 15
-        },
-        "39": {
-          "13": 21,
-          "31": 15,
-          "35": 23
-        },
-        "23": {
-          "25": 5,
-          "35": 11,
-          "21": 23
-        },
-        "1": {
-          "3": 1,
-          "33": 9,
-          "9": 17
-        },
-        "19": {
-          "17": 19,
-          "27": 7,
-          "21": 5
-        },
-        "7": {
-          "5": 21,
-          "9": 1,
-          "13": 3
-        },
-        "13": {
-          "15": 3,
-          "7": 21,
-          "39": 15
-        },
-        "17": {
-          "33": 19,
-          "19": 5,
-          "25": 9
-        },
-        "5": {
-          "35": 21,
-          "3": 11,
-          "7": 1
-        },
-        "37": {
-          "27": 19,
-          "11": 13,
-          "33": 17
-        },
-        "11": {
-          "37": 17,
-          "15": 13,
-          "9": 3
-        },
-        "21": {
-          "23": 5,
-          "31": 23,
-          "19": 7
-        },
-        "9": {
-          "11": 17,
-          "1": 1,
-          "7": 3
-        },
-        "35": {
-          "23": 23,
-          "39": 21,
-          "5": 11
-        }
-      },
-      "vertex": {
-        "9": {
-          "x": 1.309017,
-          "y": 2.5,
-          "z": 0.0,
-          "attributes": {}
-        },
-        "33": {
-          "x": 0.0,
-          "y": 1.690983,
-          "z": -0.5,
-          "attributes": {}
-        },
-        "29": {
-          "x": -0.5,
-          "y": 3.0,
-          "z": 1.309017,
-          "attributes": {}
-        },
-        "25": {
-          "x": -0.5,
-          "y": 3.0,
-          "z": -1.309017,
-          "attributes": {}
-        },
-        "35": {
-          "x": 0.0,
-          "y": 4.309017,
-          "z": -0.5,
-          "attributes": {}
-        },
-        "17": {
-          "x": -0.809017,
-          "y": 2.190983,
-          "z": -0.809017,
-          "attributes": {}
-        },
-        "37": {
-          "x": 0.0,
-          "y": 1.690983,
-          "z": 0.5,
-          "attributes": {}
-        },
-        "3": {
-          "x": 0.5,
-          "y": 3.0,
-          "z": -1.309017,
-          "attributes": {}
-        },
-        "5": {
-          "x": 0.809017,
-          "y": 3.809017,
-          "z": -0.809017,
-          "attributes": {}
-        },
-        "13": {
-          "x": 0.809017,
-          "y": 3.809017,
-          "z": 0.809017,
-          "attributes": {}
-        },
-        "7": {
-          "x": 1.309017,
-          "y": 3.5,
-          "z": 0.0,
-          "attributes": {}
-        },
-        "19": {
-          "x": -1.309017,
-          "y": 2.5,
-          "z": 0.0,
-          "attributes": {}
-        },
-        "11": {
-          "x": 0.809017,
-          "y": 2.190983,
-          "z": 0.809017,
-          "attributes": {}
-        },
-        "21": {
-          "x": -1.309017,
-          "y": 3.5,
-          "z": 0.0,
-          "attributes": {}
-        },
-        "23": {
-          "x": -0.809017,
-          "y": 3.809017,
-          "z": -0.809017,
-          "attributes": {}
-        },
-        "39": {
-          "x": 0.0,
-          "y": 4.309017,
-          "z": 0.5,
-          "attributes": {}
-        },
-        "27": {
-          "x": -0.809017,
-          "y": 2.190983,
-          "z": 0.809017,
-          "attributes": {}
-        },
-        "15": {
-          "x": 0.5,
-          "y": 3.0,
-          "z": 1.309017,
-          "attributes": {}
-        },
-        "31": {
-          "x": -0.809017,
-          "y": 3.809017,
-          "z": 0.809017,
-          "attributes": {}
-        },
-        "1": {
-          "x": 0.809017,
-          "y": 2.190983,
-          "z": -0.809017,
-          "attributes": {}
-        }
-      },
-      "face": {
-        "19": [
-          17,
-          33,
-          37,
-          27,
-          19
-        ],
-        "1": [
-          1,
-          3,
-          5,
-          7,
-          9
-        ],
-        "5": [
-          17,
-          19,
-          21,
-          23,
-          25
-        ],
-        "21": [
-          5,
-          35,
-          39,
-          13,
-          7
-        ],
-        "13": [
-          11,
-          15,
-          29,
-          27,
-          37
-        ],
-        "3": [
-          11,
-          9,
-          7,
-          13,
-          15
-        ],
-        "7": [
-          27,
-          29,
-          31,
-          21,
-          19
-        ],
-        "23": [
-          23,
-          21,
-          31,
-          39,
-          35
-        ],
-        "15": [
-          13,
-          39,
-          31,
-          29,
-          15
-        ],
-        "11": [
-          5,
-          3,
-          25,
-          23,
-          35
-        ],
-        "17": [
-          1,
-          9,
-          11,
-          37,
-          33
-        ],
-        "9": [
-          1,
-          33,
-          17,
-          25,
-          3
-        ]
-      },
-      "facedata": {},
-      "edgedata": {},
-      "default_vertex_attributes": {
-        "z": 0.0,
-        "y": 0.0,
-        "x": 0.0
-      },
-      "default_face_attributes": {},
-      "default_edge_attributes": {},
       "max_vertex": 40,
       "max_face": 24,
       "data": {
         "name": "Mesh",
-        "guid": "85ee6c35-d439-47c3-a671-41c4c940896b",
+        "guid": "9110363c-0e8c-4610-ae28-f12e31607036",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],

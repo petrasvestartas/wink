@@ -7,7 +7,7 @@ pub mod geometry;
 pub mod primitives;
 
 
-use geometry::{Point, Vector, Line, Plane, Color, PointCloud, LineCloud, Pline, Mesh};
+use geometry::{Point, Vector, Line, Arrow, Plane, Color, PointCloud, LineCloud, Pline, Mesh};
 use primitives::Xform;
 use common::{JsonSerializable, FromJsonData};
 use serde::{Serialize, Deserialize};
@@ -25,6 +25,7 @@ pub struct AllGeometryData {
     pub points: Vec<Point>,
     pub vectors: Vec<Vector>,
     pub lines: Vec<Line>,
+    pub arrows: Vec<Arrow>,
     pub planes: Vec<Plane>,
     pub colors: Vec<Color>,
     pub point_clouds: Vec<PointCloud>,

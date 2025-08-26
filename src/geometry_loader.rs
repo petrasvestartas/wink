@@ -10,6 +10,7 @@ use crate::vertex::Vertex;
 use crate::instance::{DrawBatch, BatchKind, Instance};
 use crate::shader_pointcloud_pipeline::PointCloudInstance;
 use crate::shader_primitives_pipeline::{PipeTransform, SphereTransform};
+use crate::shader_arrow_pipeline::ArrowTransform;
 use crate::error_handling::ErrorHandler;
 use openmodel::{AllGeometryData, geometry::{Mesh, SphereFromSegments, Point}};
 
@@ -18,7 +19,7 @@ pub struct GeometryLoader;
 
 #[cfg(target_arch = "wasm32")]
 thread_local! {
-    pub static PENDING_GEOMETRY: RefCell<Option<(Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_primitives_pipeline::PipeTransform>, Vec<crate::shader_primitives_pipeline::SphereTransform>, [[f32; 4]; 4])>> = RefCell::new(None);
+    pub static PENDING_GEOMETRY: RefCell<Option<(Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_primitives_pipeline::PipeTransform>, Vec<crate::shader_primitives_pipeline::SphereTransform>, Vec<crate::shader_arrow_pipeline::ArrowTransform>, [[f32; 4]; 4])>> = RefCell::new(None);
     pub static LOCAL_HASH: RefCell<Option<u64>> = RefCell::new(None);
     pub static LOCAL_FETCHING: Cell<bool> = Cell::new(false);
 }
@@ -43,7 +44,7 @@ impl GeometryLoader {
     }
 
     /// Get pending geometry data
-    pub fn take_pending_geometry() -> Option<(Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_primitives_pipeline::PipeTransform>, Vec<crate::shader_primitives_pipeline::SphereTransform>, [[f32; 4]; 4])> {
+    pub fn take_pending_geometry() -> Option<(Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_primitives_pipeline::PipeTransform>, Vec<crate::shader_primitives_pipeline::SphereTransform>, Vec<crate::shader_arrow_pipeline::ArrowTransform>, [[f32; 4]; 4])> {
         PENDING_GEOMETRY.with(|pg| pg.borrow_mut().take())
     }
 
@@ -55,11 +56,11 @@ impl GeometryLoader {
             [0.0, 0.0, 1.0, 0.0],
             [0.0, 0.0, 0.0, 1.0],
         ];
-        PENDING_GEOMETRY.with(|pg| *pg.borrow_mut() = Some((data.0, data.1, data.2, data.3, Vec::new(), Vec::new(), identity_matrix)));
+        PENDING_GEOMETRY.with(|pg| *pg.borrow_mut() = Some((data.0, data.1, data.2, data.3, Vec::new(), Vec::new(), Vec::new(), Vec::new(), identity_matrix)));
     }
 
     /// Set pending geometry data with GPU data
-    pub fn set_pending_geometry_with_gpu_data(data: (Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_primitives_pipeline::PipeTransform>, Vec<crate::shader_primitives_pipeline::SphereTransform>, [[f32; 4]; 4])) {
+    pub fn set_pending_geometry_with_gpu_data(data: (Vec<crate::vertex::Vertex>, Vec<u16>, Vec<crate::instance::DrawBatch>, Vec<crate::shader_pointcloud_pipeline::PointCloudInstance>, Vec<crate::shader_primitives_pipeline::PipeTransform>, Vec<crate::shader_primitives_pipeline::SphereTransform>, Vec<crate::shader_arrow_pipeline::ArrowTransform>, [[f32; 4]; 4])) {
         PENDING_GEOMETRY.with(|pg| *pg.borrow_mut() = Some(data));
     }
 
@@ -279,10 +280,10 @@ impl GeometryLoader {
             }
         }
         
-        println!("📊 Total pipes: {} (from individual lines)", pipes.len());
         
         (pipes, spheres)
     }
+
 
     /// Build mesh geometry (vertices, indices, batches)
     pub fn build_mesh_geometry(all_geom: &mut AllGeometryData) -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>) {
@@ -371,11 +372,17 @@ impl GeometryLoader {
     }
 
     /// Main geometry loading function - clean and focused
-    pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, [[f32; 4]; 4]) {
+    pub async fn get_geometry() -> (Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, Vec<ArrowTransform>, [[f32; 4]; 4]) {
         let mut all_geom = Self::load_geometry_data().await;
         let (vertices, indices, mut batches) = Self::build_mesh_geometry(&mut all_geom);
         let (pointcloud_instances, transform_matrix) = Self::extract_pointclouds(&all_geom);
         let (pipes, spheres) = Self::extract_gpu_transforms(&all_geom);
+        
+        // Convert arrows to ArrowTransform format
+        let arrows: Vec<ArrowTransform> = all_geom.arrows.iter()
+            .filter_map(|arrow| ArrowTransform::from_arrow(arrow))
+            .collect();
+        
         
         // Add pointcloud batch if needed
         if !pointcloud_instances.is_empty() {
@@ -388,6 +395,6 @@ impl GeometryLoader {
             });
         }
         
-        (vertices, indices, batches, pointcloud_instances, pipes, spheres, transform_matrix)
+        (vertices, indices, batches, pointcloud_instances, pipes, spheres, arrows, transform_matrix)
     }
 }

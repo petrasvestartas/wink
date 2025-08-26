@@ -1,4 +1,4 @@
-use openmodel::geometry::{Line, Mesh, PointCloud};
+use openmodel::geometry::{Line, Arrow, Mesh, PointCloud};
 use openmodel::primitives::{Point, Vector, Color, Xform};
 use openmodel::AllGeometryData;
 
@@ -123,17 +123,11 @@ fn make_dodecahedron_mesh() -> Mesh {
     
     let dodecahedron = Mesh::from_polygons(faces, None);
     
-    // Debug dodecahedron faces
-    println!("Dodecahedron face details:");
-    for (fkey, vertices) in dodecahedron.get_face_data() {
-        println!("  Face {}: {} vertices", fkey, vertices.len());
-    }
     
     dodecahedron
 }
 
 fn make_point_cloud() -> PointCloud {
-    println!("Generating 1000 points within 10x10x10 bounds...");
     
     let mut points = Vec::new();
     let mut normals = Vec::new();
@@ -165,7 +159,6 @@ fn make_point_cloud() -> PointCloud {
         }
     }
     
-    println!("Generated {} points", points.len());
     
     // Create a point cloud with transformation matrix
     let mut point_cloud = PointCloud::new(points, normals, colors);
@@ -181,32 +174,12 @@ fn make_point_cloud() -> PointCloud {
         0.0,     0.0,    0.0, 1.0   // Homogeneous coordinate
     ]);
     
-    println!("Applied transformation: translation (2, 0, 1) + 45° rotation around Z-axis");
     point_cloud
 }
 
-fn main() {
+fn make_lines() -> Vec<Line> {
     // Create lines with varying thickness and color
     let mut lines: Vec<Line> = Vec::new();
-
-    
-    
-    // Test lines at different depths to verify consistent radius scaling
-    // Add 3 horizontal lines at different Z depths with same thickness
-    let mut test_line_near = Line::from_points(&Point::new(-2.0, 0.0, -1.0), &Point::new(2.0, 0.0, -1.0));
-    test_line_near.data.set_thickness(1.0);
-    test_line_near.data.set_color([255, 0, 0]); // Red - near
-    lines.push(test_line_near);
-    
-    let mut test_line_mid = Line::from_points(&Point::new(-2.0, 1.0, -5.0), &Point::new(2.0, 1.0, -5.0));
-    test_line_mid.data.set_thickness(1.0);
-    test_line_mid.data.set_color([0, 255, 0]); // Green - middle
-    lines.push(test_line_mid);
-    
-    let mut test_line_far = Line::from_points(&Point::new(-2.0, 2.0, -10.0), &Point::new(2.0, 2.0, -10.0));
-    test_line_far.data.set_thickness(1.0);
-    test_line_far.data.set_color([0, 0, 255]); // Blue - far
-    lines.push(test_line_far);
 
     // Grid lines with default thickness
     let size: i32 = 40; // -5..=5 => 11 lines => 10x10 cells
@@ -241,35 +214,48 @@ fn main() {
     line_z.data.set_color([0, 0, 255]); // Blue for z-axis (x=0)
     lines.push(line_z);
 
+    lines
+}
+
+fn make_arrows() -> Vec<Arrow> {
+    let mut arrows: Vec<Arrow> = Vec::new();
+    let thickness = 0.3;
     
-    // Star polygon mesh alongside the grid
+    // Create arrows at origin with larger size and bright colors for visibility
+    let mut arrow_x = Arrow::new(0.0+4.0, 0.0, 0.0, 20.0+4.0, 0.0, 0.0);
+    arrow_x.data.set_color([255, 0, 0]); // Red
+    arrow_x.data.set_thickness(thickness);
+    arrows.push(arrow_x);
+    
+    let mut arrow_y = Arrow::new(0.0+4.0, 0.0, 0.0, 0.0+4.0, 3.0, 0.0);
+    arrow_y.data.set_color([0, 255, 0]); // Green
+    arrow_y.data.set_thickness(thickness);
+    arrows.push(arrow_y);
+    
+    let mut arrow_z = Arrow::new(0.0+4.0, 0.0, 0.0, 0.0+4.0, 0.0, 3.0);
+    arrow_z.data.set_color([0, 0, 255]); // Blue
+    arrow_z.data.set_thickness(thickness);
+    arrows.push(arrow_z);
+    
+    arrows
+}
+
+fn main() {
+    
+    
     let star = make_star_mesh();
-
-    // Solid geometry example: sphere
-    let sphere = Mesh::create_unit_sphere_high_res();
-
-    // Unit cube translated +2 along X (x in [2,3], y in [0,1], z in [0,1])
+    let _sphere = Mesh::create_unit_sphere_high_res();
     let cube = make_cube_mesh();
-
-    // Dodecahedron positioned at y+3
     let dodecahedron = make_dodecahedron_mesh();
-
-    // Generate point cloud
     let point_cloud = make_point_cloud();
+    let lines = make_lines();
+    let arrows = make_arrows();
 
-    println!("Created {} meshes:", 4);
-    println!("  Star: {} vertices, {} faces", star.number_of_vertices(), star.number_of_faces());
-    println!("  Sphere: {} vertices, {} faces", sphere.number_of_vertices(), sphere.number_of_faces());
-    println!("  Cube: {} vertices, {} faces", cube.number_of_vertices(), cube.number_of_faces());
-    println!("  Dodecahedron: {} vertices, {} faces", dodecahedron.number_of_vertices(), dodecahedron.number_of_faces());
-    println!("  Point Cloud: {} points", point_cloud.points.len());
-
-    println!("Created {} lines with varying thickness and color", lines.len());
-    
     let all_geometry = AllGeometryData {
         points: vec![],
         vectors: vec![],
-        lines,
+        lines, // Restore lines but without RGB axis lines
+        arrows,
         planes: vec![],
         colors: vec![],
         point_clouds: vec![point_cloud],
@@ -286,5 +272,4 @@ fn main() {
     let out_path = format!("{}/all_geometry.json", env!("CARGO_MANIFEST_DIR"));
     let json_string = serde_json::to_string_pretty(&all_geometry).unwrap();
     std::fs::write(&out_path, json_string).unwrap();
-    println!("Wrote {}", out_path);
 }
