@@ -11,7 +11,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "fbefa22b-d9d7-44b4-b950-838d0771ec6a",
+        "guid": "a8b287b4-1369-41e0-abd9-749c166baab1",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -38,7 +38,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -50,7 +50,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "dd47c6e8-aabe-4e02-a0ff-63d3420ad3ad",
+        "guid": "aafc5de2-1ac6-4a11-912d-957819322006",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -77,7 +77,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -89,7 +89,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "821ab59c-04ac-470e-9d66-6225da16b1ab",
+        "guid": "59caed97-5f9e-4ce1-8fb7-7ed4d171f27a",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -116,7 +116,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -128,7 +128,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "95a94930-d1fa-44e1-bd84-efe23467ba47",
+        "guid": "0f4a867f-7b26-4f85-9cac-b3fbc01256e2",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -155,7 +155,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -167,7 +167,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "802731ac-1d0a-4c6b-bf25-fa445fb8ef52",
+        "guid": "894530c0-2656-466b-9c18-23d4d5fd399b",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -194,7 +194,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -206,7 +206,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "913d55e3-860f-4670-bf15-9ac3245ef6ac",
+        "guid": "38b18ebf-c214-4944-a733-9b8830aec662",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -233,7 +233,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -245,7 +245,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "5a3c3330-ab04-4bf7-b92b-d5b26ab9f051",
+        "guid": "6cb65363-7fc9-4eec-b6c4-6a4e6ff85bb1",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -272,7 +272,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -284,7 +284,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "3f652111-122d-4de0-bf5b-fe2b96c4848f",
+        "guid": "4a077e95-1310-47b1-bdc1-a07e453a407b",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -311,7 +311,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -323,7 +323,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "d47c7c67-e19c-4ed7-9267-aeacacb0ed0e",
+        "guid": "c624621c-6f07-4c2f-a6c9-9754d7b4c6c7",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -350,7 +350,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -362,7 +362,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "a4c46621-cc36-4b3b-a65a-bd9e8371cf93",
+        "guid": "f10b7891-28c5-4fa8-a64f-f57ee1c6ab92",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -389,7 +389,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -401,7 +401,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "814e240e-8ef5-4d4b-9983-6c614248f16b",
+        "guid": "da78b87f-501b-4eab-97a8-bde7a96d2b34",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -428,7 +428,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -440,7 +440,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "7dfc7a3e-0149-46c4-a031-4c13523fd567",
+        "guid": "89fd3bc9-24c0-4af5-89b0-5f76e56ff442",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -467,7 +467,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -479,7 +479,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "5a18ac93-4d24-45ce-982f-1cb6c891e5d1",
+        "guid": "144379e2-b176-4109-87cb-41e301e97e11",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -506,7 +506,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -518,7 +518,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "bab4f534-248e-4549-ad01-0557325d30f9",
+        "guid": "de40d322-e3e3-4f68-97b0-0a466978b55b",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -545,7 +545,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -557,7 +557,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "50d89503-ffc5-481b-a476-bc3c376fc9e9",
+        "guid": "89570e41-8718-42d3-b650-b2358bc0fed0",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -584,7 +584,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -596,7 +596,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "9199143f-2d23-4285-b62c-33542ac62a8d",
+        "guid": "565766ff-417a-4024-8e9f-eb02129f3a24",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -623,7 +623,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -635,7 +635,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "5ffb2407-c828-4ac2-853c-663c47546b46",
+        "guid": "e048b6f7-f3e4-4c00-b71a-af5a7baa9ce7",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -662,7 +662,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -674,7 +674,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "e409cd93-cb8f-411b-9f30-f6c39cbbd798",
+        "guid": "82c836f5-9d29-4949-beba-b0601fe16c30",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -701,7 +701,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -713,7 +713,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "01d31396-fbb1-4fcc-abc3-d1a3d37ad954",
+        "guid": "9f5cff93-050c-4acc-a690-54a91376d60e",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -740,7 +740,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -752,7 +752,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "1d54674a-9d15-48ca-99c9-db46e5532e75",
+        "guid": "d413bb9f-a9af-4683-ba20-8fe50d0dbcae",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -779,7 +779,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -791,7 +791,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "9f9ecbc1-ea0f-4775-865a-1de2dab8eeb4",
+        "guid": "a74fdf9b-4fca-4c4c-aab0-7a4f8d48a694",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -818,7 +818,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -830,7 +830,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "889beb34-4bbc-491d-aba1-cb9375a35327",
+        "guid": "15f2e080-a30d-4e33-a995-fe22d0542775",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -857,7 +857,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -869,7 +869,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "ad938f91-6103-4298-afe8-a97bee0c6e20",
+        "guid": "8363f486-d638-4a19-987e-78cddc840c69",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -896,7 +896,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -908,7 +908,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "2d9c6dc6-0254-45d1-a721-8531235c169d",
+        "guid": "4e8649b0-08f8-41ed-895e-5cfe3eb44f48",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -935,7 +935,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -947,7 +947,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "af719dcb-bd58-4ea8-9712-b473bd4570a1",
+        "guid": "c351d0e5-61b0-4337-b625-d50d2a004110",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -974,7 +974,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -986,7 +986,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "9b275468-6c7d-4a13-9995-1b4649a682a8",
+        "guid": "ecce82bb-f899-4c8d-baab-a7b1b6cba5b2",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1013,7 +1013,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1025,7 +1025,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "faa04880-b718-4c99-a8a9-ce4e7b2273a7",
+        "guid": "3928b726-ef6d-4707-a3dc-842c6092bb36",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1052,7 +1052,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1064,7 +1064,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "d2ad76e6-6ed1-4170-8647-6066e642f1eb",
+        "guid": "ec34d3d5-92df-4b0d-9c80-a173f1fa3775",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1091,7 +1091,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1103,7 +1103,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "389d124f-18c0-4c6a-95d8-f6b3447a6b0f",
+        "guid": "f47f4217-0432-4f73-8866-ced3a0bfedd5",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1130,7 +1130,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1142,7 +1142,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "9635cdc8-5e8c-4dce-85af-997e32a0dd8c",
+        "guid": "1711e382-c9c6-4ae7-92e8-5e0f3966a905",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1169,7 +1169,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1181,7 +1181,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "3aadcd21-55e2-4485-b830-c3120edd41f6",
+        "guid": "07a5a71e-c3e0-4ba7-871c-69fa8bf3d0b3",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1208,7 +1208,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1220,7 +1220,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "6de0ff42-1e21-40d5-9cf1-7e50256d9671",
+        "guid": "86e24d32-a7e3-471a-a0d3-0fca2314f59d",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1247,7 +1247,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1259,7 +1259,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "c4d27af8-d5ae-4b9c-9f0d-c826cc0fbc82",
+        "guid": "da2176a5-f968-47d9-b9d2-461bd8181b10",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1286,7 +1286,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1298,7 +1298,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "09c7e48e-7fed-47ef-bcc0-a3cbf23359a4",
+        "guid": "f6910c40-09aa-490a-9508-cb88ee0caadd",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1325,7 +1325,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1337,7 +1337,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "3262fdc1-6beb-46e7-b246-213139954166",
+        "guid": "0316c848-d5bd-4cb2-8cc5-48147f02dfe5",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1364,7 +1364,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1376,7 +1376,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "d42c8554-5b54-44b2-8d14-2d77b11ed8ef",
+        "guid": "5ac8db7b-24fe-48f5-91da-4fec419a0638",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1403,7 +1403,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1415,7 +1415,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4ca1f372-51be-4691-b82f-179a96654b75",
+        "guid": "c7d147ad-de5d-458e-aa7e-d0fce35aacc7",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1442,7 +1442,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1454,7 +1454,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "5342b879-a4e0-4983-9df2-7d7b5f1568a4",
+        "guid": "e8312758-98a3-4eec-8497-37fde288b180",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1481,7 +1481,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1493,7 +1493,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "44b697c6-6f54-4210-b8a2-654c67b71e1b",
+        "guid": "ecc7a444-4fd9-45c3-9a34-352dbfe886b6",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1520,7 +1520,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1532,7 +1532,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4200c158-dbfc-4884-9f8e-263e1e60f275",
+        "guid": "5d02d3d8-49a9-424d-b714-87aad1ab44bc",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1559,7 +1559,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1571,7 +1571,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "dbd7ac19-0e64-44d9-86e0-b4d706547057",
+        "guid": "6265c841-86ee-40f6-858d-0a30f851bb11",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1598,7 +1598,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1610,7 +1610,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4cdaae7f-d5e8-45a3-ba16-280be14b4b0d",
+        "guid": "7d41f25c-260d-487a-a1b0-0d5333c9c240",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1637,7 +1637,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1649,7 +1649,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "41b9a7dc-63c0-4dd5-aaa5-12f828d27f31",
+        "guid": "e14d68a8-17ec-4e5e-bb86-4c2ef546ff26",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1676,7 +1676,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1688,7 +1688,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "eb2b678e-3ec6-43d6-8d2e-df508771346c",
+        "guid": "5944a383-b930-47d1-b581-bb83b70b5e33",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1715,7 +1715,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1727,7 +1727,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "ff558a57-2669-442f-a655-17cd4841ee9e",
+        "guid": "fc2cc675-aa93-42cc-a2a7-1fe4da3bc1e4",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1754,7 +1754,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1766,7 +1766,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "8b04e48c-a38b-4392-9a08-1e62309b58ae",
+        "guid": "d32d0487-1e61-4f54-8440-4557431b2d96",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1793,7 +1793,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1805,7 +1805,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "0e06c071-be30-4e9c-ac29-d2cd37cc192b",
+        "guid": "af72bb26-844e-4211-bab0-ee018ca1c255",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1832,7 +1832,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1844,7 +1844,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4aa40eae-9983-4f17-b202-fcdc064099fa",
+        "guid": "61f2490a-6818-4d97-b8ae-7797aca6d529",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1871,7 +1871,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1883,7 +1883,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "da381a1d-ba1a-4eff-8526-00a806bfa1a8",
+        "guid": "ac67fb7f-8193-4450-affc-b3525a78ab6f",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1910,7 +1910,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1922,7 +1922,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "a2fec6b2-f45b-4c3e-9e4a-60282651b1b8",
+        "guid": "d4c67001-e4ad-4703-8f22-dbf108be17e3",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1949,7 +1949,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -1961,7 +1961,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "33b2b141-641d-40f3-afb0-3878310b5af3",
+        "guid": "c54335cb-9073-4f73-a94c-c0e94fcf3158",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -1988,7 +1988,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2000,7 +2000,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "17882979-0187-4928-819a-00ae70153ca7",
+        "guid": "0271bcf5-fc26-42e8-8887-d7d6b82ffc36",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2027,7 +2027,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2039,7 +2039,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "ef2f0a50-6495-41c9-8bda-245fe87ff8c4",
+        "guid": "7ad41885-2fb2-42f2-ae69-d97b0d84e9af",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2066,7 +2066,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2078,7 +2078,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "b9363dba-c937-478a-b6e4-57b47c2128c4",
+        "guid": "4bf13ae6-ed90-49bb-b1f5-3fd816b08265",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2105,7 +2105,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2117,7 +2117,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "a6d6442e-71ff-4533-9704-d3129fcfc590",
+        "guid": "6370f7c9-e3fb-418c-bad6-8cc558005106",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2144,7 +2144,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2156,7 +2156,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "d433de58-1df4-435c-ac84-c85bb8200287",
+        "guid": "c0511b98-8528-4d55-9e52-b62c469c689b",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2183,7 +2183,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2195,7 +2195,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4df7f342-8559-47c4-9720-fbad99535289",
+        "guid": "89926636-8d95-4e4a-af3f-b520eae0a105",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2222,7 +2222,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2234,7 +2234,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "a15021fc-3149-40e1-859a-6a9f8b23b61a",
+        "guid": "970691f7-55fe-4861-b611-bd2366d2dbcc",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2261,7 +2261,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2273,7 +2273,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "22e02574-5b82-4139-b772-ad37a8da9600",
+        "guid": "81abeec1-87d9-43bf-ab04-8dff84b6e2c0",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2300,7 +2300,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2312,7 +2312,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "17b352bf-d0d0-4cd5-abae-9e34e9aaef53",
+        "guid": "b4656287-0859-4403-9b49-d83eabcfbb3d",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2339,7 +2339,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2351,7 +2351,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "8ef3889c-5a02-414c-9cec-202c09c63508",
+        "guid": "7464f254-ea95-4e0b-a1e3-e3153b11b7cd",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2378,7 +2378,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2390,7 +2390,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "d73fce72-536a-4611-b07c-c383faf6cad3",
+        "guid": "974e2969-b64f-4304-b747-2dfe770da287",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2417,7 +2417,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2429,7 +2429,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "8dc1c0f7-f478-4e35-b793-dd7f346c3d7f",
+        "guid": "9d078e8e-6ddd-4571-8182-f79e0fa009c9",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2456,7 +2456,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2468,7 +2468,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "3bb292cf-6932-44c6-be9c-0090c57c19b8",
+        "guid": "90cb4b7d-3f15-40b6-b709-6c0f23a4e4b6",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2495,7 +2495,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2507,7 +2507,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "ddb5365c-b85f-4fdb-a09a-cea89fe8d75f",
+        "guid": "6b6a609d-6882-4092-8fc9-6d7f9cbb3f33",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2534,7 +2534,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2546,7 +2546,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "8fc76ab0-67c9-477e-aab4-a930926dcf37",
+        "guid": "24c93b53-0414-4e27-a859-f7eeecd37da7",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2573,7 +2573,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2585,7 +2585,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "8f737612-36ba-4fab-b151-b3a4e035e7a2",
+        "guid": "ab9eeee5-2403-4855-8b52-2d650a12115c",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2612,7 +2612,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2624,7 +2624,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "eee19f6f-d37e-4267-8139-88108a48d8d0",
+        "guid": "bc9f6b89-8e44-4856-979a-bd3d0d6827ad",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2651,7 +2651,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2663,7 +2663,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "a6387a05-a3da-46d6-b98a-cea641d3eb90",
+        "guid": "436b4742-578f-449d-a05d-a8c7939fd01a",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2690,7 +2690,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2702,7 +2702,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "8ca69253-38d6-4092-bbbe-55eb5c914ad0",
+        "guid": "1b7a9e61-b723-4198-82a5-0aaaf7b304bb",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2729,7 +2729,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2741,7 +2741,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "db3df776-0ae4-4938-ac09-634177137114",
+        "guid": "e43ba3ec-a3b7-4607-9918-ee182bb3037e",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2768,7 +2768,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2780,7 +2780,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "d61dc60e-9bf6-439d-b1a4-a45500e96ad4",
+        "guid": "11162a94-4632-4741-ae8b-b0b9435e2799",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2807,7 +2807,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2819,7 +2819,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4d4fe290-7773-4066-8faf-013900d75d8c",
+        "guid": "687b42f3-1251-4f0a-9d18-05dfa7f8f67f",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2846,7 +2846,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2858,7 +2858,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "87230e3c-7490-4701-a236-31ebcdc25e7d",
+        "guid": "a1d2dc23-16bb-4dcf-8caf-52485fba60c2",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2885,7 +2885,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2897,7 +2897,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "ab02f3e2-771c-4fff-8f44-a0cc79be389a",
+        "guid": "2c083645-7408-48a4-8d63-c8146085d244",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2924,7 +2924,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2936,7 +2936,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "872619f9-9539-4f50-8a73-38d5eba89142",
+        "guid": "1effbf35-a767-423d-8a1c-33d6a09224a3",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -2963,7 +2963,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -2975,7 +2975,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "8d806bcb-ca63-4a79-a676-70d6d86bc297",
+        "guid": "1625b326-b99c-437f-ba03-344848a30491",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3002,7 +3002,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3014,7 +3014,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "adc85004-f468-482a-b4ec-74f4e707a833",
+        "guid": "79feea04-08bc-4824-a4fd-1c6034800d85",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3041,7 +3041,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3053,7 +3053,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "32afb203-c243-42a3-a3e8-f768272504dc",
+        "guid": "3af26be6-a7fa-4034-aac2-c87164534ee3",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3080,7 +3080,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3092,7 +3092,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "45606381-095e-41d2-a5c2-5722e0a244b8",
+        "guid": "90c4ec5c-4df2-49af-be8e-01222bb8c239",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3119,7 +3119,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3131,7 +3131,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "bd0eb9c3-7447-4a37-aaeb-ed56b5201c75",
+        "guid": "01c955ca-14a6-4782-beee-99bddbb1b935",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3158,7 +3158,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3170,7 +3170,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "87cb20d3-622c-461a-830c-5fab3b767f4f",
+        "guid": "339eeef6-cfa7-44c4-9069-0e797a7b14f9",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3197,7 +3197,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3209,7 +3209,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "b6a37589-de47-4c7e-8f98-3782192045c3",
+        "guid": "653ec7b2-3176-45b5-85c1-2c7cbc1fe761",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3236,7 +3236,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3248,7 +3248,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "96621a61-ebad-4f80-be21-b1ed2ef453eb",
+        "guid": "30b7d00d-3d98-4828-a792-0695629be6fb",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3275,7 +3275,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3287,7 +3287,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "87f1aecf-428b-4947-8849-d79a95a2e716",
+        "guid": "29a898e0-a54f-4917-8f8f-0b7c150059d6",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3314,7 +3314,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3326,7 +3326,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "710e3e15-37b3-4f39-8853-67508dac04fc",
+        "guid": "0e4be3b8-7618-4618-a9a9-14e88d8807ef",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3353,7 +3353,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3365,7 +3365,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "1accb44f-7fe9-49f9-a206-2b5f53d13f3a",
+        "guid": "1e5a7077-ac4f-446f-aa8c-85c36dc0fdba",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3392,7 +3392,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3404,7 +3404,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "fe4a86df-b6c1-4089-9a2b-6b0df11197da",
+        "guid": "1dca7ab1-0262-4cfc-b310-662f73ce55db",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3431,7 +3431,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3443,7 +3443,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "34aa30e0-73b3-4890-9041-39e5575637e5",
+        "guid": "dc63e3e6-7304-47d4-bf84-26107b773477",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3470,7 +3470,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3482,7 +3482,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "e10025ac-c528-4b60-8ba8-7c636fbb4710",
+        "guid": "5f663852-10df-4ba5-ba6b-380e4c72b37c",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3509,7 +3509,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3521,7 +3521,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "a26ba045-8b38-43ad-ab9b-4cf549b5295f",
+        "guid": "7cc1249c-3806-472f-a5c7-e7a12b46fe0a",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3548,7 +3548,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3560,7 +3560,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "6f8c5b46-f8f8-4ae9-a802-c9ef340dbc29",
+        "guid": "7ffd71fb-df4b-4215-853e-2791a924e5fc",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3587,7 +3587,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3599,7 +3599,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "fe1ff9fc-83a7-492f-81ac-79fedc371308",
+        "guid": "4a6056c1-af8e-483b-8187-3e1a60288d8e",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3626,7 +3626,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3638,7 +3638,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "6a518300-2f50-4ea1-9556-e06ac34e25c9",
+        "guid": "cbe147d7-ba19-4616-b3ca-f25c45610fee",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3665,7 +3665,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3677,7 +3677,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "bd008257-5d6f-48c3-968c-b68a8e079384",
+        "guid": "8eb0c11f-4cc1-43bc-abeb-283a8ec662b2",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3704,7 +3704,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3716,7 +3716,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "0e6f4e57-ac20-457f-9d75-4378ea071751",
+        "guid": "84036810-d7cf-4d68-8132-e7747effe0b4",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3743,7 +3743,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3755,7 +3755,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "06ad0128-f3c3-4ab7-bd1e-8de65217f3f9",
+        "guid": "949d64b7-1f89-440e-988c-0a374a4c5e28",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3782,7 +3782,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3794,7 +3794,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "5296a6b9-168f-4562-86a5-5e70d061ddbe",
+        "guid": "4563d530-2941-4418-b560-ecff1dc00059",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3821,7 +3821,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3833,7 +3833,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "8c152bf1-4b97-47f2-8645-8db921f9575b",
+        "guid": "62ca4398-b8e6-4bb3-b2f6-96cac0ef8e4a",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3860,7 +3860,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3872,7 +3872,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "d33933e1-4a22-40dd-802b-20df219565fc",
+        "guid": "d66d0b53-2905-459d-b2a5-96157dd94f41",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3899,7 +3899,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3911,7 +3911,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "739fc731-fe78-45e9-a618-b6ad2339604f",
+        "guid": "2014f44a-ee12-46ab-805e-954645604b39",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3938,7 +3938,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3950,7 +3950,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "d6a85513-39e4-4b44-8a65-bd874ecbf147",
+        "guid": "5b7dfbe1-b737-4bfb-9e65-3d03de0b99b5",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -3977,7 +3977,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -3989,7 +3989,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "36cecf8b-bf2b-436e-9675-cfed1ccea40e",
+        "guid": "7286e633-9dd1-4a84-925a-a209489bba93",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4016,7 +4016,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4028,7 +4028,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "e87d875b-0680-41c4-91c6-d967788e986a",
+        "guid": "b7e2f4ab-af85-426f-b34e-a3ab5dd3a640",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4055,7 +4055,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4067,7 +4067,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "882f0756-ebb0-4ba2-9cb8-121885849e44",
+        "guid": "f4b034b8-a6d0-4e29-9ee3-a41879a0f3b6",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4094,7 +4094,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4106,7 +4106,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "6b2c5b74-0e30-4a24-bf3f-2712802aa586",
+        "guid": "6944e33e-e02f-40bb-8757-4792903d6c8f",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4133,7 +4133,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4145,7 +4145,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "edc3c749-8118-4199-9e11-e6916cb95bf3",
+        "guid": "87af61c1-f480-4f51-ae3e-6c6e3509c4ba",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4172,7 +4172,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4184,7 +4184,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "2767a684-7d48-4d21-841d-602098359d05",
+        "guid": "e5ca3f4f-e74b-4e34-b17f-a468e171e447",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4211,7 +4211,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4223,7 +4223,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4adb4aaf-786c-4ce3-8caa-26af5ad08894",
+        "guid": "d77edb82-4bb8-42aa-a3a5-fd45ece625f4",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4250,7 +4250,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4262,7 +4262,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "8c154413-e589-4233-97a0-af45efb68c96",
+        "guid": "137ad3a6-7c60-48dd-92d8-2477daed1d02",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4289,7 +4289,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4301,7 +4301,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "8f6f5a3c-b8e8-4b08-b42b-0e7dae2157f0",
+        "guid": "3bd05ef2-ebe9-46a2-90cb-577653d2c3de",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4328,7 +4328,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4340,7 +4340,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "340823c4-5f2b-4006-87a3-7ff65bad4e8c",
+        "guid": "2b52c458-dc50-4d04-bed4-2442addfa866",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4367,7 +4367,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4379,7 +4379,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "7b011025-bf78-446f-8e47-261a829b88b4",
+        "guid": "73899e3e-e95d-47ea-9690-96f5f736eaf3",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4406,7 +4406,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4418,7 +4418,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "0c64fd6b-b3d7-48f3-bce0-f2e642a718b3",
+        "guid": "a47edf83-6b2a-4caf-aaa7-ca0578908029",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4445,7 +4445,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4457,7 +4457,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "5fea2856-9dd9-4c05-89e5-1103af317b8b",
+        "guid": "3b4d995f-79ce-4cf6-a50b-10c2f60e6105",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4484,7 +4484,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4496,7 +4496,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "386f4a45-040e-4524-b17d-b1dff07cde49",
+        "guid": "12f5a659-ffb9-4c9e-b166-95ed962737fb",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4523,7 +4523,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4535,7 +4535,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "70f3aced-9830-450b-9d26-a4dc4b4b0608",
+        "guid": "0e0708f3-79ee-43b0-9d9d-02d3abc3f891",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4562,7 +4562,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4574,7 +4574,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "73af7e07-2e50-4b4b-95fa-064ccf7141af",
+        "guid": "d82a83c2-9fb2-4d62-b41f-7aba20fe0059",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4601,7 +4601,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4613,7 +4613,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "769da572-2c12-42c4-8ca3-90d3cdc31108",
+        "guid": "9b51bc13-ab97-4730-bc74-acf53cb541ce",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4640,7 +4640,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4652,7 +4652,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "46db2b3f-c709-4cad-b70f-7cfce57865fa",
+        "guid": "7a9564d8-56da-426b-840b-f15ab80c7de1",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4679,7 +4679,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4691,7 +4691,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4e306dc2-c1ec-4d8a-a18a-13b3e8f18f93",
+        "guid": "3a863ad8-78c2-421e-a2ee-a0b2b7916946",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4718,7 +4718,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4730,7 +4730,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "7a08de7d-0b06-4103-95e7-9e7445cb8b6b",
+        "guid": "812576d2-f1ed-44f1-a96a-a7b556e096c1",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4757,7 +4757,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4769,7 +4769,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "7251019a-59a7-4ec0-8b11-842359dfe7d1",
+        "guid": "215f9baa-80d0-464d-a5d1-0abc961378f8",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4796,7 +4796,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4808,7 +4808,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "28b82776-9ed4-48bd-a14b-ce68d4ecbc87",
+        "guid": "574be9a6-0681-4581-8db1-aa0d0ff8e160",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4835,7 +4835,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4847,7 +4847,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "63878c78-7e16-4b12-bdae-4d3247efa090",
+        "guid": "4d24b921-9c47-4b50-82da-e6f948464c07",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4874,7 +4874,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4886,7 +4886,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "84f62d81-b51a-4b84-858d-98aa652aa6d0",
+        "guid": "2f9f2cae-ec0c-488b-9d91-c91a8820e1bc",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4913,7 +4913,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4925,7 +4925,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "32c9ef68-3270-429d-bdea-cfc7d35cd378",
+        "guid": "9971b79c-27fa-4983-9950-252d72609a79",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4952,7 +4952,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -4964,7 +4964,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "73799828-0c21-45ad-9190-f59e99f33e13",
+        "guid": "f777af38-5c77-46da-8c6f-e0c8daad2bf0",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -4991,7 +4991,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5003,7 +5003,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "17de813e-e680-4740-8a45-d2b891a45273",
+        "guid": "2eba0146-f849-4ae1-9776-8f22396fab82",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5030,7 +5030,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5042,7 +5042,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "bea3e4de-514a-401a-944f-bbb428e28d48",
+        "guid": "b1413138-ae88-451d-bf61-ee6b20ab696b",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5069,7 +5069,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5081,7 +5081,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "a2a7d5c2-a168-4be2-8c50-a8f51a337119",
+        "guid": "385760e7-1688-4abb-99f3-d9758d431b4f",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5108,7 +5108,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5120,7 +5120,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "4d6e2157-7578-4197-b5d2-a25306c3a6bc",
+        "guid": "e086e569-f469-4241-b87d-e1cd5b7deba4",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5147,7 +5147,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5159,7 +5159,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "9598903b-d70b-4340-92ea-34cc068b2d5b",
+        "guid": "df0ca69e-9125-4a91-895a-fe77aab29d9b",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5186,7 +5186,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5198,7 +5198,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "10efd23e-6298-477e-a4f1-03c4758d43f0",
+        "guid": "f798683d-6471-4c8d-878f-b660489d6e94",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5225,7 +5225,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5237,7 +5237,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "296fc5fa-d97a-4fb7-b17e-a71bf40028c0",
+        "guid": "cd3fb91f-f553-4485-8fa4-e1a2853e3a13",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5264,7 +5264,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5276,7 +5276,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "9b01e99e-4c06-4ea1-8926-d2eba0a05eb2",
+        "guid": "9bbadd62-b01d-48a1-91d9-bd6825d9784d",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5303,7 +5303,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5315,7 +5315,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "ecbcf473-59d6-465f-b71a-880a557dc742",
+        "guid": "3beee423-1279-4ed8-825a-8daad6e4245c",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5342,7 +5342,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5354,7 +5354,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "73c86c5f-c00c-4fe1-be6e-7401d8d4e496",
+        "guid": "7f55dd83-3173-418b-84c7-08bb0dbafa29",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5381,7 +5381,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5393,7 +5393,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "02d09afd-c5fc-4d98-a085-c44218ad7acb",
+        "guid": "5f5791a0-299a-4d53-bc8a-e1e2018aa68b",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5420,7 +5420,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5432,7 +5432,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "e9d292e7-90b1-455d-87f6-d41fdc381457",
+        "guid": "6b3e09de-af1f-4032-ba19-f5572708c19a",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5459,7 +5459,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5471,7 +5471,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "c81e068f-9bfd-460f-962c-df9953509ed7",
+        "guid": "6adcc438-0301-4ad1-a413-20df6e7af7f7",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5498,7 +5498,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5510,7 +5510,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "f37282b8-d5d4-43ab-aa82-eb895a6e4208",
+        "guid": "332e288c-b967-457b-b9d9-51f2b69179ce",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5537,7 +5537,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5549,7 +5549,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "1145ecc1-7a14-411a-85d7-78eb0421dd8e",
+        "guid": "058d283a-d654-4847-9bd9-a1e701b8e14d",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5576,7 +5576,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5588,7 +5588,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "a713305f-f2b9-4bf8-a4a8-d50bd0746a78",
+        "guid": "0f21e565-4c1b-4796-98d7-e512b4f5a0d4",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5615,7 +5615,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5627,7 +5627,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "514fcb0d-3caa-4f86-9b73-69eeca144a25",
+        "guid": "d996baf0-de74-42aa-b146-abdf0f19c643",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5654,7 +5654,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5666,7 +5666,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "ff614371-5927-4e7b-bc0b-274314fd6cc3",
+        "guid": "0d22c8a4-20fe-4a28-8c0d-b800c709a8bb",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5693,7 +5693,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5705,7 +5705,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "d8a5b007-a59a-488c-ba7d-f33e76784c7b",
+        "guid": "ffb94865-b695-4948-99d0-c5409a5657cb",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5732,7 +5732,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5744,7 +5744,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "ebc72b7a-2f24-4425-8a6d-f5b5e8dde814",
+        "guid": "f574e60d-db2e-43cc-80d5-0cd4d1452b03",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5771,7 +5771,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5783,7 +5783,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "9aeb7c05-803f-401c-9d99-66f38ede6523",
+        "guid": "dc84bb72-42ef-45f9-aa7c-e9a723dccf3f",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5810,7 +5810,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5822,7 +5822,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "0d576527-593c-4532-a8e0-8a400275b612",
+        "guid": "7e87d792-37dc-4e81-8c3b-60123de52861",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5849,7 +5849,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5861,7 +5861,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "ddc9e6b5-78c4-4207-8442-e647fb7552e6",
+        "guid": "111e5f46-15d2-4220-9e92-e0013bece9f1",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5888,7 +5888,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5900,7 +5900,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "38c39b99-b895-4430-858b-8dfe91c87945",
+        "guid": "a0592a8f-7fba-42be-be0e-ba12e568c452",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5927,7 +5927,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5939,7 +5939,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "26872c80-977c-4f68-a23a-de031549c62e",
+        "guid": "d63f44de-f8b1-46e4-9c91-01cb37f3bbb5",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -5966,7 +5966,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -5978,7 +5978,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "0f177405-b210-47bf-8546-01d1f1f22db5",
+        "guid": "40b28087-0beb-486f-b7f5-8610cd308688",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6005,7 +6005,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -6017,7 +6017,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "20df23e9-ebd3-421c-b17a-151b2dacc27e",
+        "guid": "20cbd19a-95ff-4e57-87e1-1c2d2e1b03e4",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6044,7 +6044,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -6056,7 +6056,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "b8faf92b-3cff-453e-8e5f-5011563b6ae5",
+        "guid": "165af359-0f76-4954-bb38-65886ec0578e",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6083,7 +6083,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -6095,7 +6095,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "3d3f9211-45ac-4971-b28e-b85f6d20c39b",
+        "guid": "7d964d98-00d3-4a96-9771-43dc53e6e04e",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6122,7 +6122,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -6134,7 +6134,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "07b32f5a-9218-4de3-a5ff-f59bc04f9751",
+        "guid": "a5ef19f7-3f57-492d-a8fe-4c0aff2c8e7c",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6161,7 +6161,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -6173,7 +6173,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "a90d1347-dc7b-416d-8fae-5c5217bbe8c4",
+        "guid": "463d6bf8-da52-4baa-b86c-1dc175df3d44",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6200,7 +6200,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -6212,7 +6212,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "28c30860-acd4-43a8-8311-408a5d4d3bdd",
+        "guid": "7f1a08a6-6d80-44bb-9b57-90857e13be41",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6239,7 +6239,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -6251,7 +6251,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "97ee1d32-6a60-48af-bcd3-f37669706ce8",
+        "guid": "a04f6d61-41e7-40b8-b584-ffd6f6f5b870",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6278,7 +6278,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -6290,7 +6290,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "ba8f4f51-c793-4c2e-a10e-7c4e8b34c7ec",
+        "guid": "0ab4b478-7cea-4a7e-8331-5b1321aac431",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6317,7 +6317,7 @@
           0,
           0
         ],
-        "thickness": 0.05
+        "thickness": 0.01
       }
     },
     {
@@ -6329,7 +6329,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "46dc47df-9e56-412f-83c1-8cf9063d595e",
+        "guid": "a9a36bfc-565a-4d74-b462-a26d90a15a64",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6356,7 +6356,7 @@
           0,
           0
         ],
-        "thickness": 0.055000003
+        "thickness": 0.19999999
       }
     },
     {
@@ -6368,7 +6368,7 @@
       "z1": 0.0,
       "data": {
         "name": "Line",
-        "guid": "e98cd0a7-9f92-42b1-9e3e-b54062165dc1",
+        "guid": "e37ec25a-d6ac-49cc-a226-e869f85cdf99",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6395,7 +6395,7 @@
           255,
           0
         ],
-        "thickness": 0.055000003
+        "thickness": 0.19999999
       }
     },
     {
@@ -6407,7 +6407,7 @@
       "z1": 40.0,
       "data": {
         "name": "Line",
-        "guid": "a16bad86-d25d-46c7-8fff-be3aa61fcc33",
+        "guid": "fd56250f-8b74-4df5-a45d-e3787eafc346",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6434,7 +6434,7 @@
           0,
           255
         ],
-        "thickness": 0.055000003
+        "thickness": 0.19999999
       }
     }
   ],
@@ -6448,7 +6448,7 @@
       "z1": 0.0,
       "data": {
         "name": "Arrow",
-        "guid": "8a05d404-5e69-4a73-a0ab-230e5ea35cf7",
+        "guid": "79162d49-632a-4b31-8a4a-1ffc111ab8bf",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6487,7 +6487,7 @@
       "z1": 0.0,
       "data": {
         "name": "Arrow",
-        "guid": "1a490b14-a144-4d8c-a98b-6c7a2a548b6c",
+        "guid": "7b4ffdda-08a0-4c50-898e-5b65317e0b73",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -6526,7 +6526,7 @@
       "z1": 3.0,
       "data": {
         "name": "Arrow",
-        "guid": "8425c88e-9d81-414e-b998-dfae3ec2a39e",
+        "guid": "da1cfae6-d988-492e-83f6-d613068a022a",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -22589,7 +22589,7 @@
       },
       "data": {
         "name": "Data",
-        "guid": "0d8cb981-1a83-4a83-a6df-53f9f892647c",
+        "guid": "0096202f-2fcb-4fef-a255-f6628218e714",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -22626,81 +22626,91 @@
   "meshes": [
     {
       "halfedge": {
-        "11": {
-          "13": 1,
-          "9": null
-        },
-        "9": {
-          "7": null,
-          "11": 1
-        },
-        "1": {
-          "3": 1,
-          "19": null
-        },
-        "3": {
-          "1": null,
-          "5": 1
-        },
-        "15": {
-          "13": null,
-          "17": 1
+        "5": {
+          "3": null,
+          "7": 1
         },
         "19": {
           "17": null,
           "1": 1
         },
-        "5": {
-          "3": null,
-          "7": 1
+        "1": {
+          "19": null,
+          "3": 1
         },
-        "13": {
-          "15": 1,
-          "11": null
+        "15": {
+          "13": null,
+          "17": 1
         },
-        "17": {
-          "15": null,
-          "19": 1
+        "9": {
+          "7": null,
+          "11": 1
         },
         "7": {
           "5": null,
           "9": 1
+        },
+        "11": {
+          "9": null,
+          "13": 1
+        },
+        "17": {
+          "19": 1,
+          "15": null
+        },
+        "3": {
+          "1": null,
+          "5": 1
+        },
+        "13": {
+          "15": 1,
+          "11": null
         }
       },
       "vertex": {
-        "13": {
-          "x": 0.233322,
-          "y": -0.469688,
-          "z": 3.0,
-          "attributes": {
-            "g": 0.84,
-            "r": 1.0,
-            "b": 0.0
-          }
-        },
-        "15": {
-          "x": 0.284442,
-          "y": -0.146318,
-          "z": 3.0,
-          "attributes": {
-            "r": 1.0,
-            "g": 0.84,
-            "b": 0.0
-          }
-        },
         "5": {
           "x": -0.430101,
           "y": 0.264609,
           "z": 3.0,
           "attributes": {
-            "r": 1.0,
             "b": 0.0,
+            "r": 1.0,
             "g": 0.84
+          }
+        },
+        "19": {
+          "x": 0.246482,
+          "y": 0.209046,
+          "z": 3.0,
+          "attributes": {
+            "b": 0.0,
+            "r": 1.0,
+            "g": 0.84
+          }
+        },
+        "17": {
+          "x": 0.538228,
+          "y": 0.0605,
+          "z": 3.0,
+          "attributes": {
+            "g": 0.84,
+            "r": 1.0,
+            "b": 0.0
           }
         },
         "1": {
           "x": 0.12821,
           "y": 0.514321,
+          "z": 3.0,
+          "attributes": {
+            "g": 0.84,
+            "b": 0.0,
+            "r": 1.0
+          }
+        },
+        "15": {
+          "x": 0.284442,
+          "y": -0.146318,
           "z": 3.0,
           "attributes": {
             "r": 1.0,
@@ -22718,39 +22728,9 @@
             "b": 0.0
           }
         },
-        "17": {
-          "x": 0.538228,
-          "y": 0.0605,
-          "z": 3.0,
-          "attributes": {
-            "r": 1.0,
-            "b": 0.0,
-            "g": 0.84
-          }
-        },
-        "9": {
-          "x": -0.365139,
-          "y": -0.343542,
-          "z": 3.0,
-          "attributes": {
-            "g": 0.84,
-            "r": 1.0,
-            "b": 0.0
-          }
-        },
-        "19": {
-          "x": 0.246482,
-          "y": 0.209046,
-          "z": 3.0,
-          "attributes": {
-            "r": 1.0,
-            "g": 0.84,
-            "b": 0.0
-          }
-        },
-        "7": {
-          "x": -0.281387,
-          "y": -0.02705,
+        "13": {
+          "x": 0.233322,
+          "y": -0.469688,
           "z": 3.0,
           "attributes": {
             "g": 0.84,
@@ -22763,9 +22743,29 @@
           "y": 0.282757,
           "z": 3.0,
           "attributes": {
-            "r": 1.0,
             "g": 0.84,
-            "b": 0.0
+            "b": 0.0,
+            "r": 1.0
+          }
+        },
+        "9": {
+          "x": -0.365139,
+          "y": -0.343542,
+          "z": 3.0,
+          "attributes": {
+            "b": 0.0,
+            "r": 1.0,
+            "g": 0.84
+          }
+        },
+        "7": {
+          "x": -0.281387,
+          "y": -0.02705,
+          "z": 3.0,
+          "attributes": {
+            "b": 0.0,
+            "g": 0.84,
+            "r": 1.0
           }
         }
       },
@@ -22786,9 +22786,9 @@
       "facedata": {},
       "edgedata": {},
       "default_vertex_attributes": {
-        "y": 0.0,
+        "z": 0.0,
         "x": 0.0,
-        "z": 0.0
+        "y": 0.0
       },
       "default_face_attributes": {},
       "default_edge_attributes": {},
@@ -22796,7 +22796,7 @@
       "max_face": 2,
       "data": {
         "name": "Mesh",
-        "guid": "84350f54-1f59-4a75-9d62-f5a3df66101d",
+        "guid": "8968eaea-ea21-4de7-9fa2-176d09b48a80",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -22819,67 +22819,79 @@
           1.0
         ],
         "color": [
+          0,
           255,
-          214,
           0
         ],
-        "thickness": 1.2
+        "thickness": 0.2
       }
     },
     {
       "halfedge": {
+        "3": {
+          "5": 1,
+          "1": 9,
+          "15": 7
+        },
         "9": {
-          "1": 5,
+          "15": 9,
           "11": 3,
-          "15": 9
+          "1": 5
+        },
+        "15": {
+          "9": 3,
+          "3": 9,
+          "13": 7
         },
         "13": {
-          "15": 3,
           "5": 7,
+          "15": 3,
           "11": 11
-        },
-        "7": {
-          "1": 1,
-          "11": 5,
-          "5": 11
         },
         "11": {
           "9": 5,
-          "13": 3,
-          "7": 11
-        },
-        "15": {
-          "13": 7,
-          "9": 3,
-          "3": 9
+          "7": 11,
+          "13": 3
         },
         "1": {
-          "9": 9,
+          "3": 1,
           "7": 5,
-          "3": 1
+          "9": 9
         },
         "5": {
-          "3": 7,
+          "7": 1,
           "13": 11,
-          "7": 1
+          "3": 7
         },
-        "3": {
-          "1": 9,
-          "5": 1,
-          "15": 7
+        "7": {
+          "5": 11,
+          "11": 5,
+          "1": 1
         }
       },
       "vertex": {
-        "3": {
+        "9": {
           "x": 2.0,
-          "y": 1.0,
-          "z": 0.0,
+          "y": 0.0,
+          "z": 1.0,
           "attributes": {}
         },
         "13": {
           "x": 3.0,
           "y": 1.0,
           "z": 1.0,
+          "attributes": {}
+        },
+        "1": {
+          "x": 2.0,
+          "y": 0.0,
+          "z": 0.0,
+          "attributes": {}
+        },
+        "5": {
+          "x": 3.0,
+          "y": 1.0,
+          "z": 0.0,
           "attributes": {}
         },
         "7": {
@@ -22894,32 +22906,26 @@
           "z": 1.0,
           "attributes": {}
         },
-        "1": {
-          "x": 2.0,
-          "y": 0.0,
-          "z": 0.0,
-          "attributes": {}
-        },
         "15": {
           "x": 2.0,
           "y": 1.0,
           "z": 1.0,
           "attributes": {}
         },
-        "5": {
-          "x": 3.0,
+        "3": {
+          "x": 2.0,
           "y": 1.0,
           "z": 0.0,
-          "attributes": {}
-        },
-        "9": {
-          "x": 2.0,
-          "y": 0.0,
-          "z": 1.0,
           "attributes": {}
         }
       },
       "face": {
+        "3": [
+          9,
+          11,
+          13,
+          15
+        ],
         "1": [
           1,
           3,
@@ -22932,37 +22938,31 @@
           13,
           11
         ],
-        "5": [
-          1,
-          7,
-          11,
-          9
-        ],
         "7": [
           5,
           3,
           15,
           13
         ],
-        "3": [
-          9,
-          11,
-          13,
-          15
-        ],
         "9": [
           3,
           1,
           9,
           15
+        ],
+        "5": [
+          1,
+          7,
+          11,
+          9
         ]
       },
       "facedata": {},
       "edgedata": {},
       "default_vertex_attributes": {
-        "x": 0.0,
         "z": 0.0,
-        "y": 0.0
+        "y": 0.0,
+        "x": 0.0
       },
       "default_face_attributes": {},
       "default_edge_attributes": {},
@@ -22970,7 +22970,7 @@
       "max_face": 12,
       "data": {
         "name": "Mesh",
-        "guid": "131517a4-d5c7-4191-9dd0-6adf37464dde",
+        "guid": "af721156-30dc-4094-85c7-50ea55b7185d",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -22993,8 +22993,8 @@
           1.0
         ],
         "color": [
-          51,
-          102,
+          0,
+          0,
           255
         ],
         "thickness": 0.9
@@ -23002,124 +23002,112 @@
     },
     {
       "halfedge": {
-        "11": {
-          "37": 17,
-          "15": 13,
-          "9": 3
-        },
-        "31": {
-          "21": 7,
-          "39": 23,
-          "29": 15
-        },
-        "1": {
-          "9": 17,
-          "3": 1,
-          "33": 9
-        },
-        "27": {
-          "37": 13,
-          "19": 19,
-          "29": 7
-        },
-        "39": {
-          "13": 21,
-          "35": 23,
-          "31": 15
-        },
-        "9": {
-          "1": 1,
-          "11": 17,
-          "7": 3
-        },
-        "29": {
-          "31": 7,
-          "15": 15,
-          "27": 13
-        },
-        "33": {
-          "1": 17,
-          "37": 19,
-          "17": 9
-        },
-        "23": {
-          "21": 23,
-          "25": 5,
-          "35": 11
-        },
-        "21": {
-          "19": 7,
-          "23": 5,
-          "31": 23
-        },
-        "5": {
-          "35": 21,
-          "3": 11,
-          "7": 1
+        "17": {
+          "33": 19,
+          "25": 9,
+          "19": 5
         },
         "25": {
           "3": 9,
-          "23": 11,
-          "17": 5
-        },
-        "37": {
-          "33": 17,
-          "27": 19,
-          "11": 13
-        },
-        "15": {
-          "11": 3,
-          "29": 13,
-          "13": 15
-        },
-        "7": {
-          "13": 3,
-          "5": 21,
-          "9": 1
-        },
-        "35": {
-          "5": 11,
-          "23": 23,
-          "39": 21
+          "17": 5,
+          "23": 11
         },
         "13": {
           "15": 3,
           "7": 21,
           "39": 15
         },
-        "17": {
-          "25": 9,
-          "33": 19,
-          "19": 5
+        "19": {
+          "17": 19,
+          "21": 5,
+          "27": 7
+        },
+        "37": {
+          "11": 13,
+          "33": 17,
+          "27": 19
+        },
+        "15": {
+          "13": 15,
+          "11": 3,
+          "29": 13
+        },
+        "5": {
+          "7": 1,
+          "3": 11,
+          "35": 21
+        },
+        "21": {
+          "31": 23,
+          "19": 7,
+          "23": 5
+        },
+        "23": {
+          "21": 23,
+          "25": 5,
+          "35": 11
+        },
+        "9": {
+          "1": 1,
+          "7": 3,
+          "11": 17
+        },
+        "31": {
+          "21": 7,
+          "39": 23,
+          "29": 15
+        },
+        "33": {
+          "17": 9,
+          "37": 19,
+          "1": 17
+        },
+        "35": {
+          "39": 21,
+          "5": 11,
+          "23": 23
+        },
+        "7": {
+          "13": 3,
+          "5": 21,
+          "9": 1
+        },
+        "27": {
+          "29": 7,
+          "19": 19,
+          "37": 13
+        },
+        "29": {
+          "31": 7,
+          "15": 15,
+          "27": 13
+        },
+        "39": {
+          "13": 21,
+          "31": 15,
+          "35": 23
+        },
+        "11": {
+          "37": 17,
+          "15": 13,
+          "9": 3
+        },
+        "1": {
+          "3": 1,
+          "33": 9,
+          "9": 17
         },
         "3": {
-          "5": 1,
+          "25": 11,
           "1": 9,
-          "25": 11
-        },
-        "19": {
-          "27": 7,
-          "17": 19,
-          "21": 5
+          "5": 1
         }
       },
       "vertex": {
-        "29": {
-          "x": -0.5,
+        "15": {
+          "x": 0.5,
           "y": 3.0,
           "z": 1.309017,
-          "attributes": {}
-        },
-        "37": {
-          "x": 0.0,
-          "y": 1.690983,
-          "z": 0.5,
-          "attributes": {}
-        },
-        "7": {
-          "x": 1.309017,
-          "y": 3.5,
-          "z": 0.0,
           "attributes": {}
         },
         "17": {
@@ -23128,46 +23116,10 @@
           "z": -0.809017,
           "attributes": {}
         },
-        "27": {
-          "x": -0.809017,
-          "y": 2.190983,
-          "z": 0.809017,
-          "attributes": {}
-        },
-        "19": {
+        "21": {
           "x": -1.309017,
-          "y": 2.5,
+          "y": 3.5,
           "z": 0.0,
-          "attributes": {}
-        },
-        "9": {
-          "x": 1.309017,
-          "y": 2.5,
-          "z": 0.0,
-          "attributes": {}
-        },
-        "13": {
-          "x": 0.809017,
-          "y": 3.809017,
-          "z": 0.809017,
-          "attributes": {}
-        },
-        "3": {
-          "x": 0.5,
-          "y": 3.0,
-          "z": -1.309017,
-          "attributes": {}
-        },
-        "31": {
-          "x": -0.809017,
-          "y": 3.809017,
-          "z": 0.809017,
-          "attributes": {}
-        },
-        "35": {
-          "x": 0.0,
-          "y": 4.309017,
-          "z": -0.5,
           "attributes": {}
         },
         "25": {
@@ -23176,16 +23128,10 @@
           "z": -1.309017,
           "attributes": {}
         },
-        "33": {
-          "x": 0.0,
-          "y": 1.690983,
-          "z": -0.5,
-          "attributes": {}
-        },
-        "21": {
-          "x": -1.309017,
-          "y": 3.5,
-          "z": 0.0,
+        "27": {
+          "x": -0.809017,
+          "y": 2.190983,
+          "z": 0.809017,
           "attributes": {}
         },
         "23": {
@@ -23200,22 +23146,70 @@
           "z": -0.809017,
           "attributes": {}
         },
+        "9": {
+          "x": 1.309017,
+          "y": 2.5,
+          "z": 0.0,
+          "attributes": {}
+        },
+        "7": {
+          "x": 1.309017,
+          "y": 3.5,
+          "z": 0.0,
+          "attributes": {}
+        },
         "5": {
           "x": 0.809017,
           "y": 3.809017,
           "z": -0.809017,
           "attributes": {}
         },
-        "11": {
+        "29": {
+          "x": -0.5,
+          "y": 3.0,
+          "z": 1.309017,
+          "attributes": {}
+        },
+        "33": {
+          "x": 0.0,
+          "y": 1.690983,
+          "z": -0.5,
+          "attributes": {}
+        },
+        "13": {
           "x": 0.809017,
-          "y": 2.190983,
+          "y": 3.809017,
           "z": 0.809017,
           "attributes": {}
         },
-        "15": {
+        "31": {
+          "x": -0.809017,
+          "y": 3.809017,
+          "z": 0.809017,
+          "attributes": {}
+        },
+        "3": {
           "x": 0.5,
           "y": 3.0,
-          "z": 1.309017,
+          "z": -1.309017,
+          "attributes": {}
+        },
+        "37": {
+          "x": 0.0,
+          "y": 1.690983,
+          "z": 0.5,
+          "attributes": {}
+        },
+        "19": {
+          "x": -1.309017,
+          "y": 2.5,
+          "z": 0.0,
+          "attributes": {}
+        },
+        "35": {
+          "x": 0.0,
+          "y": 4.309017,
+          "z": -0.5,
           "attributes": {}
         },
         "39": {
@@ -23223,29 +23217,42 @@
           "y": 4.309017,
           "z": 0.5,
           "attributes": {}
+        },
+        "11": {
+          "x": 0.809017,
+          "y": 2.190983,
+          "z": 0.809017,
+          "attributes": {}
         }
       },
       "face": {
-        "9": [
-          1,
-          33,
-          17,
-          25,
-          3
-        ],
-        "5": [
-          17,
-          19,
-          21,
-          23,
-          25
-        ],
         "23": [
           23,
           21,
           31,
           39,
           35
+        ],
+        "13": [
+          11,
+          15,
+          29,
+          27,
+          37
+        ],
+        "15": [
+          13,
+          39,
+          31,
+          29,
+          15
+        ],
+        "17": [
+          1,
+          9,
+          11,
+          37,
+          33
         ],
         "1": [
           1,
@@ -23254,19 +23261,19 @@
           7,
           9
         ],
-        "3": [
-          11,
-          9,
-          7,
-          13,
-          15
-        ],
         "7": [
           27,
           29,
           31,
           21,
           19
+        ],
+        "5": [
+          17,
+          19,
+          21,
+          23,
+          25
         ],
         "19": [
           17,
@@ -23282,26 +23289,19 @@
           23,
           35
         ],
-        "13": [
+        "3": [
           11,
-          15,
-          29,
-          27,
-          37
-        ],
-        "17": [
-          1,
           9,
-          11,
-          37,
-          33
-        ],
-        "15": [
+          7,
           13,
-          39,
-          31,
-          29,
           15
+        ],
+        "9": [
+          1,
+          33,
+          17,
+          25,
+          3
         ],
         "21": [
           5,
@@ -23315,8 +23315,8 @@
       "edgedata": {},
       "default_vertex_attributes": {
         "z": 0.0,
-        "y": 0.0,
-        "x": 0.0
+        "x": 0.0,
+        "y": 0.0
       },
       "default_face_attributes": {},
       "default_edge_attributes": {},
@@ -23324,7 +23324,7 @@
       "max_face": 24,
       "data": {
         "name": "Mesh",
-        "guid": "6f796be4-4245-4629-a27a-7dde2bd0bf8a",
+        "guid": "c518e75d-6b5a-46f0-b516-f02e87e86595",
         "parent": null,
         "adjacencyindices": [],
         "adjacencytypes": [],
@@ -23348,8 +23348,8 @@
         ],
         "color": [
           255,
-          51,
-          51
+          0,
+          0
         ],
         "thickness": 1.5
       }

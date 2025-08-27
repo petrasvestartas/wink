@@ -153,11 +153,18 @@ fn vs_pipes(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
         let ortho_half_height = camera.pipe_params.y;
         world_per_pixel = (2.0 * ortho_half_height) / viewport_h;
     } else {
-        // For perspective: calculate based on actual distance to geometry
-        let world_center = pipe_transform * vec4<f32>(0.0, 0.0, 0.0, 1.0);
-        let distance_to_camera = length(world_center.xyz - camera.eye_pos.xyz);
+        // For perspective: calculate based on actual vertex position distance to camera
+        // This fixes scaling inconsistency for pipes that cross the screen
+        let world_vertex = pipe_transform * vec4<f32>(local_pos, 1.0);
+        let distance_to_camera = length(world_vertex.xyz - camera.eye_pos.xyz);
+        
+        // Clamp distance to prevent extreme scaling when very close to camera
+        let min_distance = 0.1;
+        let max_distance = 1000.0;
+        let clamped_distance = clamp(distance_to_camera, min_distance, max_distance);
+        
         let fovy_rad = radians(camera.viewport_fovy_aspect_pipe_px_radius.z);
-        world_per_pixel = (2.0 * distance_to_camera * tan(fovy_rad * 0.5)) / viewport_h;
+        world_per_pixel = (2.0 * clamped_distance * tan(fovy_rad * 0.5)) / viewport_h;
     }
     
     let desired_world_r = px_radius * world_per_pixel;
@@ -193,13 +200,14 @@ fn vs_pipes(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
 // Fragment shader with proper lighting for pipes
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    // Balanced lighting to show colors properly
-    let light_dir = normalize(vec3<f32>(0.5, 0.5, -1.0)); // Light coming from front-right-top
-    let ambient = 0.4;  // Moderate ambient
-    let diffuse = max(0.0, dot(in.world_normal, -light_dir));
-    let lighting = ambient + diffuse * 0.4;  // Moderate diffuse
+    // // Balanced lighting to show colors properly
+    // let light_dir = normalize(vec3<f32>(0.5, 0.5, -1.0)); // Light coming from front-right-top
+    // let ambient = 0.4;  // Moderate ambient
+    // let diffuse = max(0.0, dot(in.world_normal, -light_dir));
+    // let lighting = ambient + diffuse * 0.4;  // Moderate diffuse
     
-    // Use the actual color from vertex shader
-    let final_color = in.color * lighting;
-    return vec4<f32>(final_color, 1.0);
+    // Apply gamma correction for consistent colors across platforms
+    // Convert from linear to sRGB gamma space
+    let gamma_corrected = pow(in.color, vec3<f32>(1.0 / 2.2));
+    return vec4<f32>(gamma_corrected, 1.0);
 }

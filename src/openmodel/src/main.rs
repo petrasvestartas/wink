@@ -21,8 +21,8 @@ fn make_star_mesh() -> Mesh {
         vd.set_color(1.0, 0.84, 0.0);
     }
     // Set edge color and thickness using existing data field
-    mesh.data.set_color([255, 214, 0]); // Bright yellow (RGB 0-255)
-    mesh.data.set_thickness(1.2);
+    mesh.data.set_color([0, 255, 0]); // Bright yellow (RGB 0-255)
+    mesh.data.set_thickness(0.2);
     mesh
 }
 
@@ -73,7 +73,7 @@ fn make_cube_mesh() -> Mesh{
     ];
     let mut cube = Mesh::from_polygons(cube_faces, None);
     // Set edge color and thickness using existing data field
-    cube.data.set_color([51, 102, 255]); // Blue (RGB 0-255)
+    cube.data.set_color([0, 0, 255]); // Blue (RGB 0-255)
     cube.data.set_thickness(0.9);
     cube
 }
@@ -128,7 +128,7 @@ fn make_dodecahedron_mesh() -> Mesh {
     
     let mut dodecahedron = Mesh::from_polygons(faces, None);
     // Set edge color and thickness using existing data field
-    dodecahedron.data.set_color([255, 51, 51]); // Red (RGB 0-255)
+    dodecahedron.data.set_color([255, 0, 0]); // Red (RGB 0-255)
     dodecahedron.data.set_thickness(1.5);
     
     dodecahedron
@@ -190,7 +190,7 @@ fn make_lines() -> Vec<Line> {
 
     // Grid lines with default thickness
     let size: i32 = 40; // -5..=5 => 11 lines => 10x10 cells
-    let thickness = 0.05;
+    let thickness = 0.01;
 
     // Horizontal lines (vary X) - red for x-axis (y=0), black for others
     for i in -size..=size {
@@ -208,16 +208,17 @@ fn make_lines() -> Vec<Line> {
         line.data.set_color([0, 0, 0]); // Green for y-axis (x=0)
         lines.push(line);
     }
+    let axes_scale = 20.0;
     let mut line_x = Line::from_points(&Point::new(0.0, 0.0, 0.0), &Point::new(size as f32, 0.0, 0.0));
-    line_x.data.set_thickness(thickness*1.1);
+    line_x.data.set_thickness(thickness*axes_scale);
     line_x.data.set_color([255, 0, 0]); // Red for x-axis (y=0)
     lines.push(line_x);
     let mut line_y = Line::from_points(&Point::new(0.0, 0.0, 0.0), &Point::new(0.0, size as f32, 0.0));
-    line_y.data.set_thickness(thickness*1.1);
+    line_y.data.set_thickness(thickness*axes_scale);
     line_y.data.set_color([0, 255, 0]); // Green for y-axis (x=0)
     lines.push(line_y);
     let mut line_z = Line::from_points(&Point::new(0.0, 0.0, 0.0), &Point::new(0.0, 0.0, size as f32));
-    line_z.data.set_thickness(thickness*1.1);
+    line_z.data.set_thickness(thickness*axes_scale);
     line_z.data.set_color([0, 0, 255]); // Blue for z-axis (x=0)
     lines.push(line_z);
 

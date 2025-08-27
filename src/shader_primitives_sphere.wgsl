@@ -236,14 +236,14 @@ fn vs_spheres(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
 // Fragment shader with proper lighting for spheres
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    // Balanced lighting to show colors properly
-    let light_dir = normalize(vec3<f32>(0.5, 0.5, -1.0)); // Light coming from front-right-top
-    let ambient = 0.4;  // Moderate ambient
-    let diffuse = max(0.0, dot(in.world_normal, -light_dir));
-    let lighting = ambient + diffuse * 0.4;  // Moderate diffuse
+    // // Balanced lighting to show colors properly
+    // let light_dir = normalize(vec3<f32>(0.5, 0.5, -1.0)); // Light coming from front-right-top
+    // let ambient = 0.4;  // Moderate ambient
+    // let diffuse = max(0.0, dot(in.world_normal, -light_dir));
+    // let lighting = ambient + diffuse * 0.4;  // Moderate diffuse
     
-    // Use the sphere color from vertex shader
-    let final_color = in.color * lighting;
-    
-    return vec4<f32>(final_color, 1.0);
+    // Apply gamma correction for consistent colors across platforms
+    // Convert from linear to sRGB gamma space
+    let gamma_corrected = pow(in.color, vec3<f32>(1.0 / 2.2));
+    return vec4<f32>(gamma_corrected, 1.0);
 }
