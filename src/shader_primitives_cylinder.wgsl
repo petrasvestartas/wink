@@ -147,21 +147,31 @@ fn vs_pipes(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
     let viewport_h = camera.viewport_fovy_aspect_pipe_px_radius.y;
     let is_ortho = camera.pipe_params.z > 0.5;
     
-    // Calculate world-space radius based on camera distance
+    // Calculate world-space radius using hybrid scaling approach
     var world_per_pixel: f32;
     if is_ortho {
         let ortho_half_height = camera.pipe_params.y;
         world_per_pixel = (2.0 * ortho_half_height) / viewport_h;
     } else {
-        // For perspective: calculate based on actual vertex position distance to camera
-        // This fixes scaling inconsistency for pipes that cross the screen
-        let world_vertex = pipe_transform * vec4<f32>(local_pos, 1.0);
-        let distance_to_camera = length(world_vertex.xyz - camera.eye_pos.xyz);
+        // HYBRID APPROACH: Use weighted average of center distance and vertex distance
+        // This provides more consistent scaling for lines of varying lengths
         
-        // Clamp distance to prevent extreme scaling when very close to camera
-        let min_distance = 0.1;
-        let max_distance = 1000.0;
-        let clamped_distance = clamp(distance_to_camera, min_distance, max_distance);
+        // Method 1: Center distance (good for overall consistency)
+        let world_center = pipe_transform * vec4<f32>(0.0, 0.0, 0.0, 1.0);
+        let center_distance = length(world_center.xyz - camera.eye_pos.xyz);
+        
+        // Method 2: Vertex distance (good for depth accuracy)
+        let world_vertex = pipe_transform * vec4<f32>(local_pos, 1.0);
+        let vertex_distance = length(world_vertex.xyz - camera.eye_pos.xyz);
+        
+        // Weighted blend: favor center distance for consistency, vertex for accuracy
+        let blend_factor = 0.7; // 70% center, 30% vertex
+        let blended_distance = mix(vertex_distance, center_distance, blend_factor);
+        
+        // Clamp distance to prevent extreme scaling
+        let min_distance = 0.5;  // Increased min for better stability
+        let max_distance = 500.0; // Reduced max for better consistency
+        let clamped_distance = clamp(blended_distance, min_distance, max_distance);
         
         let fovy_rad = radians(camera.viewport_fovy_aspect_pipe_px_radius.z);
         world_per_pixel = (2.0 * clamped_distance * tan(fovy_rad * 0.5)) / viewport_h;
