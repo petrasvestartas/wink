@@ -23,6 +23,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@mdit-vue/plugin-component": "^3.0.2",
     "wink-docs": "file:"
   }
 }

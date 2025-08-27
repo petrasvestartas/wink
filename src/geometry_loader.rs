@@ -56,7 +56,7 @@ impl GeometryLoader {
             [0.0, 0.0, 1.0, 0.0],
             [0.0, 0.0, 0.0, 1.0],
         ];
-        PENDING_GEOMETRY.with(|pg| *pg.borrow_mut() = Some((data.0, data.1, data.2, data.3, Vec::new(), Vec::new(), Vec::new(), Vec::new(), identity_matrix)));
+        PENDING_GEOMETRY.with(|pg| *pg.borrow_mut() = Some((data.0, data.1, data.2, data.3, Vec::new(), Vec::new(), Vec::new(), identity_matrix)));
     }
 
     /// Set pending geometry data with GPU data

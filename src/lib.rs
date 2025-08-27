@@ -48,6 +48,8 @@ const LOCAL_GEOMETRY_HTTP_PATH: &str = "/geometry/all_geometry.json"; // served 
 const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24Plus;
 #[cfg(target_arch = "wasm32")]
 const _MSAA_SAMPLE_COUNT: u32 = 4;
+#[cfg(target_arch = "wasm32")]
+const GEOMETRY_POLL_INTERVAL_MS: u64 = 100;
 
 #[cfg(not(target_arch = "wasm32"))]
 #[cfg(not(target_arch = "wasm32"))]
@@ -98,8 +100,9 @@ pub struct State{
     mouse_pressed: bool,
     // default pointer to the window
     window: Arc<Window>,
-    // Native-only: background poller delivers geometry here to avoid blocking the render thread
-    #[cfg(not(target_arch = "wasm32"))]
+    // Geometry receiver (used by native, dummy for WASM)
+    #[allow(dead_code)]
+    geom_rx: std::sync::mpsc::Receiver<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, Vec<ArrowTransform>, [[f32; 4]; 4])>,
     // Instance data
     instances: Vec<Instance>,
     instance_buffer: wgpu::Buffer,
@@ -121,13 +124,24 @@ pub struct State{
     arrow_pipeline: shader_arrow_pipeline::ArrowPipeline,
     gpu_arrows_data: Vec<ArrowTransform>,
     gpu_geometry_scale: f32,
-    geom_rx: std::sync::mpsc::Receiver<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, Vec<ArrowTransform>, [[f32; 4]; 4])>,
 }
 
 impl State{
-    // We don't need to be async right now, will implement later
+    #[cfg(not(target_arch = "wasm32"))]
     pub async fn new(window: Arc<Window>, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch], pointcloud_instances: &[PointCloudInstance], pipes: Vec<PipeTransform>, spheres: Vec<SphereTransform>, arrows: Vec<ArrowTransform>, geom_rx: std::sync::mpsc::Receiver<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, Vec<ArrowTransform>, [[f32; 4]; 4])>) -> anyhow::Result<Self> {
-
+        // Call the shared WASM implementation but store the geom_rx
+        let mut state = Self::new_wasm_impl(window, vertices, indices, batches_in, pointcloud_instances, pipes, spheres, arrows).await?;
+        state.geom_rx = geom_rx;
+        Ok(state)
+    }
+    
+    #[cfg(target_arch = "wasm32")]
+    pub async fn new(window: Arc<Window>, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch], pointcloud_instances: &[PointCloudInstance], pipes: Vec<PipeTransform>, spheres: Vec<SphereTransform>, arrows: Vec<ArrowTransform>) -> anyhow::Result<Self> {
+        Self::new_wasm_impl(window, vertices, indices, batches_in, pointcloud_instances, pipes, spheres, arrows).await
+    }
+    
+    // Shared implementation for both native and WASM
+    async fn new_wasm_impl(window: Arc<Window>, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch], pointcloud_instances: &[PointCloudInstance], pipes: Vec<PipeTransform>, spheres: Vec<SphereTransform>, arrows: Vec<ArrowTransform>) -> anyhow::Result<Self> {
         let size = window.inner_size();
         // Clamp initial surface size on Web (WebGL2 backend) to avoid exceeding max texture limit.
         // On Web, prefer the canvas's actual internal resolution (width/height attributes)
@@ -542,8 +556,11 @@ impl State{
             mouse_pressed: false,
             // Window
             window,
-            // Geometry receiver
-            geom_rx,
+            // Geometry receiver (dummy channel for WASM, real one passed in for native)
+            geom_rx: {
+                let (_, rx) = std::sync::mpsc::channel();
+                rx
+            },
             // ADDED (depth): Depth buffer fields (texture + view)
             depth_texture,
             depth_view,
@@ -1016,12 +1033,11 @@ impl State{
         // Debug: Log that update is being called
         #[cfg(target_arch = "wasm32")]
         {
-            static mut UPDATE_COUNTER: u32 = 0;
-            unsafe {
-                UPDATE_COUNTER += 1;
-                if UPDATE_COUNTER % 300 == 0 { // Log every 5 seconds at 60fps
-                    web_sys::console::log_1(&format!("🔄 Update loop running ({})", UPDATE_COUNTER).into());
-                }
+            use std::sync::atomic::{AtomicU32, Ordering};
+            static UPDATE_COUNTER: AtomicU32 = AtomicU32::new(0);
+            let count = UPDATE_COUNTER.fetch_add(1, Ordering::Relaxed);
+            if count % 300 == 0 { // Log every 5 seconds at 60fps
+                web_sys::console::log_1(&format!("🔄 Update loop running ({})", count).into());
             }
         }
         // WASM: keep surface config synced with actual canvas backing size set by JS
@@ -1362,8 +1378,11 @@ pub struct App {
     #[cfg(target_arch = "wasm32")]
     proxy: Option<winit::event_loop::EventLoopProxy<State>>,
     state: Option<State>,
+    #[allow(dead_code)]
     vertices: Vec<Vertex>, // User geometry
+    #[allow(dead_code)]
     indices: Vec<u16>, // User geometry,
+    #[allow(dead_code)]
     batches: Vec<DrawBatch>,
     _geom_rx: std::sync::mpsc::Receiver<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, [[f32; 4]; 4])>,
 }
