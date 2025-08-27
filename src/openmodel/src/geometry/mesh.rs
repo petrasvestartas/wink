@@ -164,6 +164,7 @@ impl Mesh {
         default_vertex_attributes.insert("y".to_string(), 0.0);
         default_vertex_attributes.insert("z".to_string(), 0.0);
         
+        
         Mesh {
             halfedge: HashMap::new(),
             vertex: HashMap::new(),

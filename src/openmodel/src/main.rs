@@ -17,10 +17,12 @@ fn make_star_mesh() -> Mesh {
         Point::new(0.246482, 0.209046, 3.0),
     ];
     let mut mesh = Mesh::from_polygons(vec![polygon], None);
-    // Assign per-vertex colors so the renderer uses them (golden yellow)
     for vd in mesh.vertex.values_mut() {
         vd.set_color(1.0, 0.84, 0.0);
     }
+    // Set edge color and thickness using existing data field
+    mesh.data.set_color([255, 214, 0]); // Bright yellow (RGB 0-255)
+    mesh.data.set_thickness(1.2);
     mesh
 }
 
@@ -69,7 +71,10 @@ fn make_cube_mesh() -> Mesh{
             Point::new(3.0, 0.0, 1.0),
         ],
     ];
-    let cube = Mesh::from_polygons(cube_faces, None);
+    let mut cube = Mesh::from_polygons(cube_faces, None);
+    // Set edge color and thickness using existing data field
+    cube.data.set_color([51, 102, 255]); // Blue (RGB 0-255)
+    cube.data.set_thickness(0.9);
     cube
 }
 
@@ -121,8 +126,10 @@ fn make_dodecahedron_mesh() -> Mesh {
         vec![vertices[2].clone(), vertices[11].clone(), vertices[6].clone(), vertices[19].clone(), vertices[18].clone()], // Face 11
     ];
     
-    let dodecahedron = Mesh::from_polygons(faces, None);
-    
+    let mut dodecahedron = Mesh::from_polygons(faces, None);
+    // Set edge color and thickness using existing data field
+    dodecahedron.data.set_color([255, 51, 51]); // Red (RGB 0-255)
+    dodecahedron.data.set_thickness(1.5);
     
     dodecahedron
 }

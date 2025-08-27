@@ -259,24 +259,39 @@ impl GeometryLoader {
         
         // Add pipes for mesh edges and spheres for mesh vertices
         for mesh in &all_geom.meshes {
-            // Extract mesh edges as pipes
+            // Extract mesh edges as pipes using mesh data for color and thickness
             let edge_lines = mesh.extract_edges_as_lines();
             for line in &edge_lines {
                 if let Some(xf) = line.to_pipe_transform() {
+                    // Use mesh data for edge color and thickness
+                    let mesh_color = mesh.data.get_color();
+                    let color = [
+                        mesh_color[0] as f32 / 255.0,
+                        mesh_color[1] as f32 / 255.0,
+                        mesh_color[2] as f32 / 255.0,
+                    ];
+                    let thickness = mesh.data.get_thickness();
+                    
+                    
                     pipes.push(PipeTransform {
                         transform: xf.m,
-                        color: [0.5, 0.5, 0.5], // Gray for mesh edges
-                        thickness: 0.7, // Thinner than main lines
+                        color,
+                        thickness,
                     });
                 }
             }
             
-            // Extract mesh vertices as spheres
+            // Extract mesh vertices as spheres using same color and thickness as edges
             let vertex_points = mesh.sphere_points();
+            let mesh_color = mesh.data.get_color();
+            let vertex_color = [
+                mesh_color[0] as f32 / 255.0,
+                mesh_color[1] as f32 / 255.0,
+                mesh_color[2] as f32 / 255.0,
+            ];
+            let vertex_thickness = mesh.data.get_thickness();
             for point in vertex_points {
-                let color = [0.7, 0.7, 0.7]; // Gray for mesh vertices
-                let thickness = 0.6; // Small spheres
-                spheres.push(SphereTransform::from_point_with_data(&point, color, thickness));
+                spheres.push(SphereTransform::from_point_with_data(&point, vertex_color, vertex_thickness));
             }
         }
         
