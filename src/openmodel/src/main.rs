@@ -22,7 +22,7 @@ fn make_star_mesh() -> Mesh {
     }
     // Set edge color and thickness using existing data field
     mesh.data.set_color([0, 255, 0]); // Bright yellow (RGB 0-255)
-    mesh.data.set_thickness(0.2);
+    mesh.data.set_thickness(0.1);
     mesh
 }
 
@@ -74,7 +74,7 @@ fn make_cube_mesh() -> Mesh{
     let mut cube = Mesh::from_polygons(cube_faces, None);
     // Set edge color and thickness using existing data field
     cube.data.set_color([0, 0, 255]); // Blue (RGB 0-255)
-    cube.data.set_thickness(0.9);
+    cube.data.set_thickness(0.1);
     cube
 }
 
@@ -128,8 +128,8 @@ fn make_dodecahedron_mesh() -> Mesh {
     
     let mut dodecahedron = Mesh::from_polygons(faces, None);
     // Set edge color and thickness using existing data field
-    dodecahedron.data.set_color([255, 0, 0]); // Red (RGB 0-255)
-    dodecahedron.data.set_thickness(1.5);
+    dodecahedron.data.set_color([100, 100, 100]); // Red (RGB 0-255)
+    dodecahedron.data.set_thickness(0.1);
     
     dodecahedron
 }
@@ -190,7 +190,7 @@ fn make_lines() -> Vec<Line> {
 
     // Grid lines with default thickness
     let size: i32 = 40; // -5..=5 => 11 lines => 10x10 cells
-    let thickness = 0.01;
+    let thickness = 0.02;
 
     // Horizontal lines (vary X) - red for x-axis (y=0), black for others
     for i in -size..=size {
@@ -208,7 +208,7 @@ fn make_lines() -> Vec<Line> {
         line.data.set_color([0, 0, 0]); // Green for y-axis (x=0)
         lines.push(line);
     }
-    let axes_scale = 20.0;
+    let axes_scale = 2.0;
     let mut line_x = Line::from_points(&Point::new(0.0, 0.0, 0.0), &Point::new(size as f32, 0.0, 0.0));
     line_x.data.set_thickness(thickness*axes_scale);
     line_x.data.set_color([255, 0, 0]); // Red for x-axis (y=0)
