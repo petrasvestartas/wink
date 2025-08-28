@@ -664,45 +664,32 @@ impl CameraController {
     pub fn process_keyboard(&mut self, key: KeyCode, state: ElementState) -> bool {
         let amount = if state == ElementState::Pressed { 1.0 } else { 0.0 };
         match key {
-            KeyCode::KeyW | KeyCode::ArrowUp => {
+            KeyCode::KeyQ => {
                 self.amount_forward = amount;
                 true
             }
-            KeyCode::KeyS | KeyCode::ArrowDown => {
+            KeyCode::KeyE => {
                 self.amount_backward = amount;
                 true
             }
-            KeyCode::KeyA | KeyCode::ArrowLeft => {
+            KeyCode::KeyD => {
                 self.amount_left = amount;
                 true
             }
-            KeyCode::KeyD | KeyCode::ArrowRight => {
+            KeyCode::KeyA => {
                 self.amount_right = amount;
                 true
             }
-            KeyCode::KeyE => {
+            KeyCode::KeyW => {
                 self.amount_up = amount;
                 true
             }
-            KeyCode::KeyQ | KeyCode::ShiftLeft => {
+            KeyCode::KeyS => {
                 self.amount_down = amount;
-                true
-            }
-            KeyCode::KeyC => {
-                if state == ElementState::Pressed {
-                    log::info!("KeyC is deprecated. Use 'P' to cycle: Perspective -> TopView -> Parallel");
-                }
-                true
-            }
-            KeyCode::KeyT => {
-                if state == ElementState::Pressed {
-                    log::info!("KeyT is deprecated. Use 'P' to cycle: Perspective -> TopView -> Parallel");
-                }
                 true
             }
             KeyCode::KeyP => {
                 if state == ElementState::Pressed {
-                    log::info!("KeyP pressed: scheduling view cycle (Perspective -> TopView -> Parallel)");
                     self.cycle_view_pressed = true;
                 }
                 true

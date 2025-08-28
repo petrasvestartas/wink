@@ -4,7 +4,7 @@ pub struct Instance {
 }
 
 impl Instance {
-    // Convert the Instance data into InstanceRaw (no cgmath needed)
+    // Convert the Instance data into InstanceRaw
     pub fn to_raw(&self) -> InstanceRaw {
         InstanceRaw { model: self.model }
     }

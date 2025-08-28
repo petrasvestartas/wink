@@ -500,7 +500,7 @@ impl State{
         let scene_bounds = if !vertices.is_empty() {
             let mut bounds = SceneBounds::new();
             for vertex in vertices {
-                bounds.expand_point(cgmath::Point3::new(
+                bounds.expand_point(openmodel::geometry::Point::new(
                     vertex.position[0],
                     vertex.position[1],
                     vertex.position[2],
@@ -760,7 +760,7 @@ impl State{
         self.scene_bounds = if !vertices.is_empty() {
             let mut bounds = SceneBounds::new();
             for vertex in vertices {
-                bounds.expand_point(cgmath::Point3::new(
+                bounds.expand_point(openmodel::geometry::Point::new(
                     vertex.position[0],
                     vertex.position[1],
                     vertex.position[2],
@@ -1077,7 +1077,7 @@ impl State{
     }
 
     /// Get scene bounds for camera framing
-    pub fn get_scene_bounds(&self) -> Option<(cgmath::Point3<f32>, cgmath::Vector3<f32>)> {
+    pub fn get_scene_bounds(&self) -> Option<(openmodel::geometry::Point, openmodel::geometry::Vector)> {
         self.scene_bounds.map(|bounds| (bounds.center(), bounds.size()))
     }
 

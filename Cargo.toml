@@ -3,7 +3,7 @@ name = "wink"
 version = "0.1.0"
 authors = ["Petras Vestartas <https://www.vestartas.com>"]
 edition = "2021"
-description = "wink: minimal wgpu + winit + WASM example with professional quaternion camera"
+description = "Wink: is a cross-platform 3D graphics application that runs natively on desktop and in web browsers via WebAssembly."
 repository = "https://github.com/petrasvestartas/wink"
 license = "MIT"
 

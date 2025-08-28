@@ -3,7 +3,7 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, 
 use std::fmt;
 
 /// A point in 3D space with x, y, z coordinates (no transformation data)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Point {
     /// The x coordinate of the point.
     pub x: f32,

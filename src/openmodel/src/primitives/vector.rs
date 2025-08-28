@@ -7,7 +7,7 @@ use crate::common::json_serialization::{HasJsonData, FromJsonData};
 use crate::common::Data;
 
 /// A vector in 3D space with x, y, z components
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq)]
 pub struct Vector {
     /// The x component of the vector.
     pub x: f32,
@@ -116,6 +116,33 @@ impl Vector {
     /// Creates a unit vector in the z direction.
     pub fn unit_z() -> Self {
         Self::new(0.0, 0.0, 1.0)
+    }
+
+    /// Compute the squared magnitude (length) of the vector.
+    /// This is more efficient than magnitude() when you only need to compare lengths.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use openmodel::primitives::Vector;
+    /// let v = Vector::new(3.0, 4.0, 0.0);
+    /// assert_eq!(v.magnitude_squared(), 25.0);
+    /// ```
+    pub fn magnitude_squared(&self) -> f32 {
+        self.length_squared()
+    }
+
+    /// Check if all components of the vector are finite (not NaN or infinite).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use openmodel::primitives::Vector;
+    /// let v = Vector::new(1.0, 2.0, 3.0);
+    /// assert!(v.is_finite());
+    /// ```
+    pub fn is_finite(&self) -> bool {
+        self.x.is_finite() && self.y.is_finite() && self.z.is_finite()
     }
 
     /// Calculate the dot product of this vector with another vector.

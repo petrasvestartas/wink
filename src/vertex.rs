@@ -31,22 +31,3 @@ impl Vertex {
         }
     }
 }
-
-// Helper function to convert sRGB color to linear color space
-/*
-fn srgb_to_linear(srgb: [f32; 3]) -> [f32; 3] {
-    let convert = |c: f32| {
-        if c <= 0.04045 {
-            c / 12.92
-        } else {
-            ((c + 0.055) / 1.055).powf(2.4)
-        }
-    };
-    
-    [
-        convert(srgb[0]),
-        convert(srgb[1]),
-        convert(srgb[2]),
-    ]
-}
-*/
