@@ -11,6 +11,7 @@ const dstDir = path.resolve(__dirname, '../public/geometry');
 const files = [
   'all_geometry.json',
   'geometry_data.json',
+  'geometry_metadata.json',
 ];
 
 function ensureDir(dir) {

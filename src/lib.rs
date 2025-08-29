@@ -668,13 +668,13 @@ impl State{
 
     // Update point cloud instance buffer with new data (only if different)
     fn update_pointcloud_instances(&mut self, pointcloud_instances: &[PointCloudInstance]) {
-        let new_count = pointcloud_instances.len() as u32;
+        // Render all points on both native and web
+        let lod_instances = pointcloud_instances.to_vec();
         
-        // Always update when new data is provided - don't assume identical data based on count alone
-        // This ensures geometry changes are reflected even when instance count stays the same
+        let new_count = lod_instances.len() as u32;
         
-        // Create new instance buffer only when needed
-        let pointcloud_instance_buffer = BufferFactory::create_pointcloud_buffer(&self.device, pointcloud_instances);
+        // Create new instance buffer with LOD data
+        let pointcloud_instance_buffer = BufferFactory::create_pointcloud_buffer(&self.device, &lod_instances);
         
 
         self.pointcloud_instance_buffer = pointcloud_instance_buffer;
@@ -815,41 +815,38 @@ impl State{
             return;
         }
 
-        // WASM: throttled async polling and apply results prepared by the task
+        // WASM: smart metadata-based polling to avoid loading huge files
         #[cfg(target_arch = "wasm32")]
         {
             let now = Instant::now();
             let elapsed = now.duration_since(self.last_poll_time);
-            let web_poll_interval = GEOMETRY_POLL_INTERVAL_MS; // Real-time polling on web
+            let web_poll_interval = 1000; // Check metadata every 1 second instead of 100ms
             if elapsed.as_millis() < web_poll_interval as u128 {
                 return; // Skip this frame
             }
             self.last_poll_time = now;
-            web_sys::console::log_1(&"🔍 Starting geometry poll cycle".into());
+            
             // If a fetch is already running, just try to apply pending result
             let already_fetching = GeometryLoader::is_fetching();
             if !already_fetching {
                 GeometryLoader::set_fetching(true);
-                // Spawn async poll for local JSON; only apply if content hash changed
+                // Check small metadata file first
                 spawn_local(async move {
-                    // Fetch local-served JSON
-                    web_sys::console::log_1(&format!("🔍 Fetching geometry from: {}", LOCAL_GEOMETRY_HTTP_PATH).into());
-                    let local_text = GeometryLoader::fetch_text(LOCAL_GEOMETRY_HTTP_PATH).await;
-                    let local_changed = if let Some(ref t) = local_text {
-                        let new_hash = GeometryLoader::fnv1a64(t.as_bytes());
-                        let old_hash = GeometryLoader::get_local_hash();
-                        web_sys::console::log_1(&format!("🔍 Hash comparison - Old: {:?}, New: {}, Size: {} bytes", old_hash, new_hash, t.len()).into());
-                        if old_hash.map_or(true, |old| old != new_hash) {
-                            GeometryLoader::set_local_hash(new_hash);
-                            web_sys::console::log_1(&"✅ Hash changed - will reload geometry".into());
+                    web_sys::console::log_1(&"🔍 Checking geometry metadata".into());
+                    let metadata_text = GeometryLoader::fetch_text("/geometry/geometry_metadata.json").await;
+                    let local_changed = if let Some(ref timestamp_str) = metadata_text {
+                        let new_timestamp = timestamp_str.trim().parse::<u64>().unwrap_or(0);
+                        let old_timestamp = GeometryLoader::get_local_hash().unwrap_or(0);
+                        if new_timestamp != old_timestamp {
+                            GeometryLoader::set_local_hash(new_timestamp);
+                            web_sys::console::log_1(&"🔄 Timestamp changed, loading full geometry".into());
                             true
                         } else {
-                            web_sys::console::log_1(&"⏭️ Hash unchanged - skipping reload".into());
                             false
                         }
                     } else { 
-                        web_sys::console::log_1(&"❌ Failed to fetch geometry file".into());
-                        false 
+                        web_sys::console::log_1(&"❌ Failed to fetch metadata, trying full file".into());
+                        true // Fallback to full file check
                     };
                     
                     if local_changed {
@@ -1140,10 +1137,10 @@ impl State{
             
             #[cfg(not(target_arch = "wasm32"))]
             {
-                // let pointcloud_batches = self.batches.iter().filter(|b| matches!(b.kind, BatchKind::PointCloud)).count();
-                // if pointcloud_batches > 0 {
-                //     println!("Found {} point cloud batches in render loop", pointcloud_batches);
-                // }
+                let pointcloud_batches = self.batches.iter().filter(|b| matches!(b.kind, BatchKind::PointCloud)).count();
+                if pointcloud_batches > 0 {
+                    println!("🎯 Found {} point cloud batches, {} instances", pointcloud_batches, self.pointcloud_num_instances);
+                }
             }
             
             for d in &self.batches {

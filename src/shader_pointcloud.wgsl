@@ -41,29 +41,25 @@ fn vs_main(
     // Use point position directly (transformation handled in instance data)
     let world_center = instance.position;
     
-    // Get camera forward direction and create camera-facing basis vectors
-    let camera_forward = normalize(camera.view_dir.xyz);
-    let world_up = vec3<f32>(0.0, 0.0, 1.0);
+    // Transform point to clip space first
+    let clip_pos = camera.view_proj * vec4<f32>(world_center, 1.0);
     
-    // Create right and up vectors for billboard
-    var right = normalize(cross(camera_forward, world_up));
-    if (length(cross(camera_forward, world_up)) < 0.001) {
-        // Handle case where camera is looking straight up/down
-        right = vec3<f32>(1.0, 0.0, 0.0);
-    }
-    let up = normalize(cross(right, camera_forward));
+    // Fixed pixel size - restore original size
+    let pixel_radius = instance.size * 50.0; // Original size
+    let viewport_width = camera.viewport_fovy_aspect_pipe_px_radius.x;
+    let viewport_height = camera.viewport_fovy_aspect_pipe_px_radius.y;
     
-    // Calculate world-space size based on distance for perspective
-    let distance_to_camera = length(world_center - camera.eye_pos.xyz);
-    let world_size = instance.size * 1.0 * max(distance_to_camera * 0.1, 0.05);
+    // Simplified NDC calculation
+    let ndc_size_x = pixel_radius / viewport_width;
+    let ndc_size_y = pixel_radius / viewport_height;
     
-    // Create billboard quad in world space
-    let world_pos = world_center + 
-        right * vertex.quad_pos.x * world_size +
-        up * vertex.quad_pos.y * world_size;
+    // Apply quad offset in clip space
+    var final_clip_pos = clip_pos;
+    final_clip_pos.x += vertex.quad_pos.x * ndc_size_x * clip_pos.w;
+    final_clip_pos.y += vertex.quad_pos.y * ndc_size_y * clip_pos.w;
     
     var out: VertexOutput;
-    out.clip_position = camera.view_proj * vec4<f32>(world_pos, 1.0);
+    out.clip_position = final_clip_pos;
     out.color = instance.color;
     out.quad_coord = vertex.quad_pos;
     return out;
@@ -71,17 +67,16 @@ fn vs_main(
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    // Create circular glyph using quad coordinates
-    let dist_from_center = length(in.quad_coord);
+    // Simplified fragment shader - remove expensive length calculation
+    let dist_sq = dot(in.quad_coord, in.quad_coord);
     
-    // Smooth circular falloff - discard pixels outside circle
-    if (dist_from_center > 1.0) {
+    // Fast circular falloff using squared distance
+    if (dist_sq > 1.0) {
         discard;
     }
     
-    // Smooth edge for antialiasing
-    let alpha = 1.0 - smoothstep(0.8, 1.0, dist_from_center);
+    // Simplified alpha without smoothstep
+    let alpha = 1.0 - dist_sq * 0.2;
     
-    // Use constant color without brightness variation
     return vec4<f32>(in.color, alpha);
 }
