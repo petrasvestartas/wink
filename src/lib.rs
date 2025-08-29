@@ -790,16 +790,27 @@ impl State{
         // Native: drain background updates without throttling or blocking the render thread
         #[cfg(not(target_arch = "wasm32"))]
         {
-                    while let Ok((vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms, arrow_transforms, transform_matrix)) = self.geom_rx.try_recv() {
-            println!("🔄 Native geometry update - loading {} new point cloud instances, {} pipes, {} spheres, {} arrows", pointcloud_instances.len(), pipe_transforms.len(), sphere_transforms.len(), arrow_transforms.len());
-            
-            // Update GPU pipe/sphere/arrow data from channel
-            self.gpu_pipes_data = pipe_transforms;
-            self.gpu_spheres_data = sphere_transforms;
-            self.gpu_arrows_data = arrow_transforms;
-                
-                self.replace_scene_with_pointclouds(&vertices, &indices, &batches, &pointcloud_instances);
-                self.update_point_cloud_transform(transform_matrix);
+            // Debug: Check if channel has any messages
+            match self.geom_rx.try_recv() {
+                Ok((vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms, arrow_transforms, transform_matrix)) => {
+                    println!("🔄 Native geometry update - loading {} vertices, {} indices, {} batches, {} point cloud instances, {} pipes, {} spheres, {} arrows", vertices.len(), indices.len(), batches.len(), pointcloud_instances.len(), pipe_transforms.len(), sphere_transforms.len(), arrow_transforms.len());
+                    
+                    // Update GPU pipe/sphere/arrow data from channel
+                    self.gpu_pipes_data = pipe_transforms;
+                    self.gpu_spheres_data = sphere_transforms;
+                    self.gpu_arrows_data = arrow_transforms;
+                        
+                    self.replace_scene_with_pointclouds(&vertices, &indices, &batches, &pointcloud_instances);
+                    self.update_point_cloud_transform(transform_matrix);
+                    
+                    println!("✅ Scene replaced with new geometry");
+                },
+                Err(std::sync::mpsc::TryRecvError::Empty) => {
+                    // No messages available - this is normal
+                },
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                    println!("❌ Geometry channel disconnected");
+                }
             }
             return;
         }
@@ -962,48 +973,6 @@ impl State{
                 // Intercept 'N' and 'M' to adjust pipe thickness (in pixels)
                 if *state == ElementState::Pressed {
                     match key {
-                        KeyCode::KeyN => {
-                            // Decrease pipe pixel radius, clamp to a sensible minimum
-                            self.pipe_px_radius = self.pipe_px_radius * 0.9;
-                            // Update camera uniform immediately; the render loop also updates each frame
-                            self.camera_uniform.set_eye_dir(&self.camera);
-                            self.camera_uniform.set_view_params(
-                                self.config.width as f32,
-                                self.config.height as f32,
-                                self.camera.fovy,
-                                self.camera.aspect,
-                                self.pipe_px_radius,
-                                self.camera.is_ortho,
-                                self.camera.ortho_half_height,
-                            );
-                            self.queue.write_buffer(
-                                &self.camera_buffer,
-                                0,
-                                bytemuck::cast_slice(&[self.camera_uniform]),
-                            );
-                            true
-                        }
-                        KeyCode::KeyM => {
-                            // Increase pipe pixel radius, clamp to a sensible maximum
-                            self.pipe_px_radius = self.pipe_px_radius * 1.1111;
-                            // Update camera uniform immediately; the render loop also updates each frame
-                            self.camera_uniform.set_eye_dir(&self.camera);
-                            self.camera_uniform.set_view_params(
-                                self.config.width as f32,
-                                self.config.height as f32,
-                                self.camera.fovy,
-                                self.camera.aspect,
-                                self.pipe_px_radius,
-                                self.camera.is_ortho,
-                                self.camera.ortho_half_height,
-                            );
-                            self.queue.write_buffer(
-                                &self.camera_buffer,
-                                0,
-                                bytemuck::cast_slice(&[self.camera_uniform]),
-                            );
-                            true
-                        }
                         _ => self.camera_controller.process_keyboard(*key, *state),
                     }
                 } else {
@@ -1384,7 +1353,7 @@ pub struct App {
     indices: Vec<u16>, // User geometry,
     #[allow(dead_code)]
     batches: Vec<DrawBatch>,
-    _geom_rx: std::sync::mpsc::Receiver<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, [[f32; 4]; 4])>,
+    geom_rx: std::sync::mpsc::Receiver<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, Vec<ArrowTransform>, [[f32; 4]; 4])>,
 }
 
 impl App {
@@ -1394,7 +1363,7 @@ impl App {
         vertices: Vec<Vertex>, // User geometry
         indices: Vec<u16>, // User geometry
         batches: Vec<DrawBatch>,
-        geom_rx: std::sync::mpsc::Receiver<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, [[f32; 4]; 4])>,
+        geom_rx: std::sync::mpsc::Receiver<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, Vec<ArrowTransform>, [[f32; 4]; 4])>,
     ) -> Self {      
 
         // Create the proxy for wasm
@@ -1405,7 +1374,7 @@ impl App {
             vertices, // User geometry
             indices, // User geometry
             batches,
-            _geom_rx: geom_rx,
+            geom_rx,
             #[cfg(target_arch = "wasm32")]
             proxy,
         }
@@ -1455,7 +1424,8 @@ impl ApplicationHandler<State> for App {
             self.vertices = vertices;
             self.indices = indices;
             self.batches = batches;
-            // Create State with point cloud vertices
+            // Create State with point cloud vertices and pass the geometry receiver
+            let geom_rx = std::mem::replace(&mut self.geom_rx, std::sync::mpsc::channel().1);
             self.state = Some(
                 pollster::block_on(State::new(
                     window,
@@ -1466,7 +1436,7 @@ impl ApplicationHandler<State> for App {
                     pipe_transforms,
                     sphere_transforms,
                     arrow_transforms,
-                    std::sync::mpsc::channel().1,
+                    geom_rx,
                 )).expect("Unable to create state")
             );
         }
@@ -1630,7 +1600,38 @@ pub fn run() -> anyhow::Result<()> {
     let event_loop = EventLoop::with_user_event().build()?;
 
     // Create geometry channel for background loading
-    let (_tx_geom, rx_geom) = std::sync::mpsc::channel::<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, [[f32; 4]; 4])>();
+    let (tx_geom, rx_geom) = std::sync::mpsc::channel::<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, Vec<ArrowTransform>, [[f32; 4]; 4])>();
+    
+    // Start file watcher thread for native app
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        use std::time::{Duration, SystemTime};
+        std::thread::spawn(move || {
+            let geometry_path = format!("{}/data/all_geometry.json", env!("CARGO_MANIFEST_DIR"));
+            let mut last_modified = SystemTime::UNIX_EPOCH;
+            
+            loop {
+                if let Ok(metadata) = std::fs::metadata(&geometry_path) {
+                    if let Ok(modified) = metadata.modified() {
+                        if modified > last_modified {
+                            println!("🔄 File changed, reloading geometry...");
+                            last_modified = modified;
+                            
+                            // Load new geometry
+                            let (vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms, arrow_transforms, transform_matrix) = 
+                                pollster::block_on(crate::geometry_loader::GeometryLoader::get_geometry());
+                            if tx_geom.send((vertices, indices, batches, pointcloud_instances, pipe_transforms, sphere_transforms, arrow_transforms, transform_matrix)).is_err() {
+                                println!("❌ Failed to send geometry update - channel closed");
+                                break; // Channel closed, exit thread
+                            }
+                            println!("📤 Geometry update sent to main thread");
+                        }
+                    }
+                }
+                std::thread::sleep(Duration::from_millis(500)); // Check every 500ms
+            }
+        });
+    }
 
 
     #[cfg(not(target_arch = "wasm32"))]

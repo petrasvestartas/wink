@@ -8,9 +8,18 @@ impl ErrorHandler {
     pub async fn load_geometry_with_fallback() -> AllGeometryData {
         let local_json = Self::load_local_geometry().await;
         let all_geom: AllGeometryData = match local_json {
-            Some(ref s) => serde_json::from_str::<AllGeometryData>(s)
-                .unwrap_or_else(|_| Self::load_embedded_geometry()),
-            None => Self::load_embedded_geometry(),
+            Some(ref s) => {
+                println!("🔄 Loading geometry from runtime file");
+                serde_json::from_str::<AllGeometryData>(s)
+                    .unwrap_or_else(|e| {
+                        println!("⚠️ Failed to parse runtime file, using embedded: {}", e);
+                        Self::load_embedded_geometry()
+                    })
+            },
+            None => {
+                println!("📦 No runtime file found, using embedded geometry");
+                Self::load_embedded_geometry()
+            },
         };
         // Procedural augmentation removed - geometry processed directly in geometry_loader
         all_geom
@@ -18,7 +27,7 @@ impl ErrorHandler {
 
     /// Load embedded geometry as fallback
     fn load_embedded_geometry() -> AllGeometryData {
-        serde_json::from_str(include_str!("openmodel/all_geometry.json"))
+        serde_json::from_str(include_str!("../data/all_geometry.json"))
             .expect("embedded geometry JSON must be valid")
     }
 
@@ -27,10 +36,17 @@ impl ErrorHandler {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let base = env!("CARGO_MANIFEST_DIR");
-            let local_path = format!("{}/src/openmodel/all_geometry.json", base);
+            let local_path = format!("{}/data/all_geometry.json", base);
+            println!("🔍 Attempting to load geometry from: {}", local_path);
             match std::fs::read_to_string(&local_path) {
-                Ok(content) => Some(content),
-                Err(_) => None,
+                Ok(content) => {
+                    println!("✅ Successfully loaded {} bytes from file", content.len());
+                    Some(content)
+                },
+                Err(e) => {
+                    println!("❌ Failed to load file: {}", e);
+                    None
+                }
             }
         }
         #[cfg(target_arch = "wasm32")]

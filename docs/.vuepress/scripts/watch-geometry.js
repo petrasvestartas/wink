@@ -1,11 +1,11 @@
-// Watch and copy geometry JSON files from src/openmodel/ into docs/.vuepress/public/geometry/
+// Watch and copy geometry JSON files from data/ into docs/.vuepress/public/geometry/
 // Works during `npm run dev` to enable live updates on the web without rebuilding WASM.
 
 const fs = require('fs');
 const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '../../..');
-const srcDir = path.join(repoRoot, 'src', 'openmodel');
+const srcDir = path.join(repoRoot, 'data');
 const dstDir = path.resolve(__dirname, '../public/geometry');
 
 const files = [
