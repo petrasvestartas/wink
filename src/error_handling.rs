@@ -27,7 +27,7 @@ impl ErrorHandler {
 
     /// Load embedded geometry as fallback
     fn load_embedded_geometry() -> AllGeometryData {
-        serde_json::from_str(include_str!("../data/all_geometry.json"))
+        serde_json::from_str(include_str!("../data/session.json"))
             .expect("embedded geometry JSON must be valid")
     }
 
@@ -36,22 +36,22 @@ impl ErrorHandler {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let base = env!("CARGO_MANIFEST_DIR");
-            let local_path = format!("{}/data/all_geometry.json", base);
-            println!("🔍 Attempting to load geometry from: {}", local_path);
+            let local_path = format!("{base}/data/session.json");
+            println!("🔍 Attempting to load geometry from: {local_path}");
             match std::fs::read_to_string(&local_path) {
                 Ok(content) => {
                     println!("✅ Successfully loaded {} bytes from file", content.len());
                     Some(content)
                 },
                 Err(e) => {
-                    println!("❌ Failed to load file: {}", e);
+                    println!("❌ Failed to load file: {e}");
                     None
                 }
             }
         }
         #[cfg(target_arch = "wasm32")]
         {
-            Self::fetch_text("/geometry/all_geometry.json").await
+            Self::fetch_text("/geometry/session.json").await
         }
     }
 

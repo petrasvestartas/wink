@@ -43,13 +43,9 @@ use scene_bounds::SceneBounds;
 
 // Platform-specific constants
 #[cfg(target_arch = "wasm32")]
-const LOCAL_GEOMETRY_HTTP_PATH: &str = "/geometry/all_geometry.json"; // served by docs dev server
-#[cfg(target_arch = "wasm32")]
 const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24Plus;
 #[cfg(target_arch = "wasm32")]
 const _MSAA_SAMPLE_COUNT: u32 = 4;
-#[cfg(target_arch = "wasm32")]
-const GEOMETRY_POLL_INTERVAL_MS: u64 = 100;
 
 #[cfg(not(target_arch = "wasm32"))]
 #[cfg(not(target_arch = "wasm32"))]
@@ -101,7 +97,7 @@ pub struct State{
     // default pointer to the window
     window: Arc<Window>,
     // Geometry receiver (used by native, dummy for WASM)
-    #[allow(dead_code)]
+    #[cfg(not(target_arch = "wasm32"))]
     geom_rx: std::sync::mpsc::Receiver<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, Vec<ArrowTransform>, [[f32; 4]; 4])>,
     // Instance data
     instances: Vec<Instance>,
@@ -131,7 +127,10 @@ impl State{
     pub async fn new(window: Arc<Window>, vertices: &[Vertex], indices: &[u16], batches_in: &[DrawBatch], pointcloud_instances: &[PointCloudInstance], pipes: Vec<PipeTransform>, spheres: Vec<SphereTransform>, arrows: Vec<ArrowTransform>, geom_rx: std::sync::mpsc::Receiver<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, Vec<ArrowTransform>, [[f32; 4]; 4])>) -> anyhow::Result<Self> {
         // Call the shared WASM implementation but store the geom_rx
         let mut state = Self::new_wasm_impl(window, vertices, indices, batches_in, pointcloud_instances, pipes, spheres, arrows).await?;
-        state.geom_rx = geom_rx;
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            state.geom_rx = geom_rx;
+        }
         Ok(state)
     }
     
@@ -230,7 +229,7 @@ impl State{
         #[cfg(target_arch = "wasm32")]
         web_sys::console::log_1(&format!("MSAA sample count: {}", msaa_sample_count).into());
         #[cfg(not(target_arch = "wasm32"))]
-        log::info!("MSAA sample count: {}", msaa_sample_count);
+        log::info!("MSAA sample count: {msaa_sample_count}");
 
         // Choose appropriate limits per backend
         let required_limits = if cfg!(target_arch = "wasm32") {
@@ -556,7 +555,8 @@ impl State{
             mouse_pressed: false,
             // Window
             window,
-            // Geometry receiver (dummy channel for WASM, real one passed in for native)
+            // Geometry receiver (only for native builds)
+            #[cfg(not(target_arch = "wasm32"))]
             geom_rx: {
                 let (_, rx) = std::sync::mpsc::channel();
                 rx
@@ -565,7 +565,7 @@ impl State{
             depth_texture,
             depth_view,
             // ADDED (MSAA)
-            msaa_sample_count: msaa_sample_count,
+            msaa_sample_count,
             msaa_color_texture,
             msaa_color_view,
             // GPU geometry pipeline (initially None, will be initialized later if needed)
@@ -812,7 +812,6 @@ impl State{
                     println!("❌ Geometry channel disconnected");
                 }
             }
-            return;
         }
 
         // WASM: smart metadata-based polling to avoid loading huge files
@@ -833,7 +832,7 @@ impl State{
                 // Check small metadata file first
                 spawn_local(async move {
                     web_sys::console::log_1(&"🔍 Checking geometry metadata".into());
-                    let metadata_text = GeometryLoader::fetch_text("/geometry/geometry_metadata.json").await;
+                    let metadata_text = GeometryLoader::fetch_text("/geometry/session_metadata.json").await;
                     let local_changed = if let Some(ref timestamp_str) = metadata_text {
                         let new_timestamp = timestamp_str.trim().parse::<u64>().unwrap_or(0);
                         let old_timestamp = GeometryLoader::get_local_hash().unwrap_or(0);
@@ -968,13 +967,8 @@ impl State{
                 ..
             } => {
                 // Intercept 'N' and 'M' to adjust pipe thickness (in pixels)
-                if *state == ElementState::Pressed {
-                    match key {
-                        _ => self.camera_controller.process_keyboard(*key, *state),
-                    }
-                } else {
-                    self.camera_controller.process_keyboard(*key, *state)
-                }
+                self.camera_controller.process_keyboard(*key, *state);
+                true
             },
             WindowEvent::MouseWheel { delta, .. } => {
                 self.camera_controller.process_scroll(delta);
@@ -1135,14 +1129,6 @@ impl State{
             // Third argument is the instance count.
             let stride = std::mem::size_of::<InstanceRaw>() as u64;
             
-            #[cfg(not(target_arch = "wasm32"))]
-            {
-                let pointcloud_batches = self.batches.iter().filter(|b| matches!(b.kind, BatchKind::PointCloud)).count();
-                if pointcloud_batches > 0 {
-                    println!("🎯 Found {} point cloud batches, {} instances", pointcloud_batches, self.pointcloud_num_instances);
-                }
-            }
-            
             for d in &self.batches {
                 // Integrated rendering:
                 // - Pipe batches render in BOTH Solid and Color modes using the pipe pipeline.
@@ -1191,7 +1177,7 @@ impl State{
                             static mut FRAME_COUNT: u32 = 0;
                             unsafe {
                                 FRAME_COUNT += 1;
-                                if FRAME_COUNT % 60 == 0 { // Log every 60 frames
+                                if FRAME_COUNT.is_multiple_of(60) { // Log every 60 frames
                                 }
                             }
                             
@@ -1344,12 +1330,13 @@ pub struct App {
     #[cfg(target_arch = "wasm32")]
     proxy: Option<winit::event_loop::EventLoopProxy<State>>,
     state: Option<State>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Used during State initialization
     vertices: Vec<Vertex>, // User geometry
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Used during State initialization
     indices: Vec<u16>, // User geometry,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Used during State initialization
     batches: Vec<DrawBatch>,
+    #[cfg(not(target_arch = "wasm32"))]
     geom_rx: std::sync::mpsc::Receiver<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, Vec<ArrowTransform>, [[f32; 4]; 4])>,
 }
 
@@ -1360,6 +1347,7 @@ impl App {
         vertices: Vec<Vertex>, // User geometry
         indices: Vec<u16>, // User geometry
         batches: Vec<DrawBatch>,
+        #[cfg(not(target_arch = "wasm32"))]
         geom_rx: std::sync::mpsc::Receiver<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, Vec<ArrowTransform>, [[f32; 4]; 4])>,
     ) -> Self {      
 
@@ -1371,6 +1359,7 @@ impl App {
             vertices, // User geometry
             indices, // User geometry
             batches,
+            #[cfg(not(target_arch = "wasm32"))]
             geom_rx,
             #[cfg(target_arch = "wasm32")]
             proxy,
@@ -1422,6 +1411,7 @@ impl ApplicationHandler<State> for App {
             self.indices = indices;
             self.batches = batches;
             // Create State with point cloud vertices and pass the geometry receiver
+            #[cfg(not(target_arch = "wasm32"))]
             let geom_rx = std::mem::replace(&mut self.geom_rx, std::sync::mpsc::channel().1);
             self.state = Some(
                 pollster::block_on(State::new(
@@ -1434,8 +1424,25 @@ impl ApplicationHandler<State> for App {
                     sphere_transforms,
                     arrow_transforms,
                     geom_rx,
-                )).expect("Unable to create state")
+                ))
+                .unwrap(),
             );
+            #[cfg(target_arch = "wasm32")]
+            {
+                self.state = Some(
+                    pollster::block_on(State::new(
+                        window,
+                        &self.vertices,
+                        &self.indices,
+                        &self.batches,
+                        &pointcloud_vertices,
+                        pipe_transforms,
+                        sphere_transforms,
+                        arrow_transforms,
+                    ))
+                    .unwrap(),
+                );
+            }
         }
         #[cfg(target_arch = "wasm32")]
         {
@@ -1542,7 +1549,7 @@ impl ApplicationHandler<State> for App {
                         state.window.request_redraw();
                     }
                     Err(e) => {
-                        log::error!("Unable to render {}", e);
+                        log::error!("Unable to render {e}");
                         // Try to continue rendering next frame on transient errors
                         state.window.request_redraw();
                     }
@@ -1568,13 +1575,10 @@ impl ApplicationHandler<State> for App {
         event: winit::event::DeviceEvent,
     ) {
         if let Some(state) = &mut self.state {
-             match event {
-                 winit::event::DeviceEvent::MouseMotion { delta } => {
-                    // Always forward mouse motion; controller decides based on active mode (orbit/pan)
-                    state.camera_controller.process_mouse(delta.0, delta.1);
-                 }
-                 _ => {}
-             }
+            if let winit::event::DeviceEvent::MouseMotion { delta } = event {
+                // Always forward mouse motion; controller decides based on active mode (orbit/pan)
+                state.camera_controller.process_mouse(delta.0, delta.1);
+            }
         }
     }
 }
@@ -1597,6 +1601,7 @@ pub fn run() -> anyhow::Result<()> {
     let event_loop = EventLoop::with_user_event().build()?;
 
     // Create geometry channel for background loading
+    #[cfg(not(target_arch = "wasm32"))]
     let (tx_geom, rx_geom) = std::sync::mpsc::channel::<(Vec<Vertex>, Vec<u16>, Vec<DrawBatch>, Vec<PointCloudInstance>, Vec<PipeTransform>, Vec<SphereTransform>, Vec<ArrowTransform>, [[f32; 4]; 4])>();
     
     // Start file watcher thread for native app
@@ -1604,7 +1609,7 @@ pub fn run() -> anyhow::Result<()> {
     {
         use std::time::{Duration, SystemTime};
         std::thread::spawn(move || {
-            let geometry_path = format!("{}/data/all_geometry.json", env!("CARGO_MANIFEST_DIR"));
+            let geometry_path = format!("{}/data/session.json", env!("CARGO_MANIFEST_DIR"));
             let mut last_modified = SystemTime::UNIX_EPOCH;
             
             loop {
@@ -1648,7 +1653,6 @@ pub fn run() -> anyhow::Result<()> {
         Vec::new(),
         Vec::new(),
         Vec::new(),
-        rx_geom,
     );
     event_loop.run_app(&mut app)?;
 

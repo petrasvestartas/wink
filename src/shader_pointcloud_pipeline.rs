@@ -87,7 +87,7 @@ pub fn create(
         push_constant_ranges: &[],
     });
 
-    let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: Some("Point Cloud Render Pipeline"),
         layout: Some(&render_pipeline_layout),
         cache: None,
@@ -140,7 +140,5 @@ pub fn create(
             alpha_to_coverage_enabled: false,
         },
         multiview: None,
-    });
-
-    pipeline
+    })
 }

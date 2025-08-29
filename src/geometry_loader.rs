@@ -220,7 +220,7 @@ impl GeometryLoader {
         let mut spheres = Vec::new();
         
         // Extract pipe transforms from lines with color data preserved
-        for (_i, line) in all_geom.lines.iter().enumerate() {
+        for line in all_geom.lines.iter() {
             if let Some(xf) = line.to_pipe_transform() {
                 let color = line.data.get_color();
                 let gpu_color = [color[0] as f32 / 255.0, color[1] as f32 / 255.0, color[2] as f32 / 255.0];
@@ -334,7 +334,7 @@ impl GeometryLoader {
         // Add pipe batch
         if let Some(pipe_idx) = pipe_idx {
             if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == pipe_idx) {
-                let pipe_instances: Vec<Instance> = mi.transforms.iter().map(|xf| xform_to_instance(xf)).collect();
+                let pipe_instances: Vec<Instance> = mi.transforms.iter().map(xform_to_instance).collect();
                 if !pipe_instances.is_empty() {
                     let mut unit_pipe = Mesh::create_unit_pipe_high_res();
                     let first_index = indices.len() as u32;
@@ -356,7 +356,7 @@ impl GeometryLoader {
         // Add sphere batch
         if let Some(sphere_idx) = sphere_idx {
             if let Some(mi) = all_geom.mesh_instances.iter().find(|mi| mi.mesh_index == sphere_idx) {
-                let sphere_instances: Vec<Instance> = mi.transforms.iter().map(|xf| xform_to_instance(xf)).collect();
+                let sphere_instances: Vec<Instance> = mi.transforms.iter().map(xform_to_instance).collect();
                 if !sphere_instances.is_empty() {
                     let mut unit_sphere = Mesh::create_unit_sphere_high_res();
                     let first_index = indices.len() as u32;
@@ -378,7 +378,7 @@ impl GeometryLoader {
         // Populate mesh instances into batches
         for mi in &all_geom.mesh_instances {
             if let Some(Some(bi)) = mesh_to_batch.get(mi.mesh_index) {
-                let insts = mi.transforms.iter().map(|xf| xform_to_instance(xf)).collect();
+                let insts = mi.transforms.iter().map(xform_to_instance).collect();
                 batches[*bi].instances = insts;
             }
         }
@@ -395,7 +395,7 @@ impl GeometryLoader {
         
         // Convert arrows to ArrowTransform format
         let arrows: Vec<ArrowTransform> = all_geom.arrows.iter()
-            .filter_map(|arrow| ArrowTransform::from_arrow(arrow))
+            .filter_map(ArrowTransform::from_arrow)
             .collect();
         
         

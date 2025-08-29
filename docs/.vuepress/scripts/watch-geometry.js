@@ -9,9 +9,9 @@ const srcDir = path.join(repoRoot, 'data');
 const dstDir = path.resolve(__dirname, '../public/geometry');
 
 const files = [
-  'all_geometry.json',
+  'session.json',
   'geometry_data.json',
-  'geometry_metadata.json',
+  'session_metadata.json',
 ];
 
 function ensureDir(dir) {

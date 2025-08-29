@@ -22,8 +22,8 @@ impl ArrowTransform {
         // Check if we have a transformation matrix in the JSON data
         let json_transform = arrow.data.transformation();
         let _is_identity = json_transform.iter().enumerate().all(|(i, &val)| {
-            (i % 5 == 0 && (val - 1.0).abs() < f32::EPSILON) || // Diagonal elements are 1.0
-            (i % 5 != 0 && val.abs() < f32::EPSILON) // Non-diagonal elements are 0.0
+            (i.is_multiple_of(5) && (val - 1.0).abs() < f32::EPSILON) || // Diagonal elements are 1.0
+            (!i.is_multiple_of(5) && val.abs() < f32::EPSILON) // Non-diagonal elements are 0.0
         });
 
         // Calculate transforms with proper proportions
@@ -83,7 +83,7 @@ impl ArrowTransform {
         
         // Rotation aligning +Z to the arrow direction
         let mut dot = axis.dot(&z_axis);
-        if dot > 1.0 { dot = 1.0; } else if dot < -1.0 { dot = -1.0; }
+        dot = dot.clamp(-1.0, 1.0);
         let rotation = if (dot - 1.0).abs() < eps {
             Xform::identity()
         } else if (dot + 1.0).abs() < eps {
@@ -138,7 +138,7 @@ impl ArrowTransform {
         
         // Rotation aligning +Z to the arrow direction
         let mut dot = axis.dot(&z_axis);
-        if dot > 1.0 { dot = 1.0; } else if dot < -1.0 { dot = -1.0; }
+        dot = dot.clamp(-1.0, 1.0);
         let rotation = if (dot - 1.0).abs() < eps {
             Xform::identity()
         } else if (dot + 1.0).abs() < eps {
