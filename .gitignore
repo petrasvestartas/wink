@@ -48,3 +48,13 @@ Thumbs.db
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Generated geometry data (build artifacts)
+/data/session.json
+/data/session_metadata.json
+/data/geometry_data.json
+/data/all_geometry.json
+
+# Copied WASM files in docs (build artifacts)
+/docs/.vuepress/public/wasm/
+/docs/.vuepress/public/geometry/
